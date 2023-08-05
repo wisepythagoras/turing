@@ -1,10 +1,11 @@
 const std = @import("std");
 
 pub const OpCode = enum(u8) {
-    OP_RETURN,
+    RETURN,
+    CONSTANT,
 };
 
-pub fn opInstruction(name: []const u8, offset: usize) usize {
+pub fn returnInstruction(name: []const u8, offset: usize) usize {
     std.debug.print("{s}\n", .{name});
     return offset + 1;
 }
