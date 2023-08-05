@@ -1,16 +1,19 @@
 const std = @import("std");
+const vm = @import("vm.zig");
 const chunk = @import("chunk.zig");
 const core = @import("core.zig");
 
 pub fn main() !void {
-    var c2 = chunk.Chunk().init(std.heap.page_allocator);
-    try c2.writeOpCode(core.OpCode.CONSTANT, 1);
-    try c2.addConstant(14.7391);
-    try c2.writeOpCode(core.OpCode.RETURN, 2);
+    const myVm = try vm.VM().init();
+    var ck = myVm.chunk;
+    // var c2 = chunk.Chunk().init(std.heap.page_allocator);
+    try ck.writeOpCode(core.OpCode.CONSTANT, 1);
+    try ck.addConstant(14.7391);
+    try ck.writeOpCode(core.OpCode.RETURN, 2);
 
-    c2.disassemble();
+    ck.disassemble();
 
-    defer c2.destroy();
+    defer myVm.destroy();
 }
 
 test "simple test" {
