@@ -78,6 +78,14 @@ pub fn Chunk() type {
 
 fn disassembleInstruction(chunk: *Chunk(), offset: usize) usize {
     const instruction = chunk.code.items[offset];
+
+    if (offset == 0 or instruction[1] != chunk.code.items[offset - 1][1]) {
+        // TODO: Formatting based on how many lines there are.
+        std.debug.print("{d:4}: ", .{instruction[1]});
+    } else {
+        std.debug.print("    : ", .{});
+    }
+
     return switch (instruction[0]) {
         .RETURN => core.returnInstruction("OP_RETURN", offset),
         .CONSTANT => core.constantInstruction("OP_CONSTANT", chunk, offset),
