@@ -1,6 +1,8 @@
 const std = @import("std");
 const core = @import("core.zig");
 
+const CodeTuple = std.meta.Tuple(&.{ core.OpCode, usize });
+
 /// Creates a new chunk, which essentially represents a single bytecode instruction
 /// group.
 /// Remember to `chunk.destroy()` when you're done using. You can even `defer` it.
@@ -8,12 +10,12 @@ pub fn Chunk() type {
     return struct {
         const Self = @This();
 
-        code: std.ArrayList(core.OpCode),
+        code: std.ArrayList(CodeTuple),
         values: std.ArrayList(f64),
 
         /// Initialize the new Chunk.
         pub fn init(allocator: std.mem.Allocator) Self {
-            var code = std.ArrayList(core.OpCode).init(allocator);
+            var code = std.ArrayList(CodeTuple).init(allocator);
             var values = std.ArrayList(f64).init(allocator);
 
             return Self{
@@ -29,22 +31,22 @@ pub fn Chunk() type {
         }
 
         /// Writes a single opcode to the chunk.
-        pub fn writeOpCode(self: *Self, opCode: core.OpCode) !void {
-            try self.code.append(opCode);
+        pub fn writeOpCode(self: *Self, opCode: core.OpCode, line: usize) !void {
+            try self.code.append(.{ opCode, line });
         }
 
         /// Converts a byte to an opcode and writes it to the chunk.
-        pub fn writeByte(self: *Self, byte: u8) !void {
+        pub fn writeByte(self: *Self, byte: u8, line: usize) !void {
             const opCode = @as(core.OpCode, @enumFromInt(byte));
-            try self.writeOpCode(opCode);
+            try self.writeOpCode(opCode, line);
         }
 
         pub fn print(self: Self) void {
             for (self.code.items) |item| {
                 std.debug.print(" -> {any} {any} ({any})\n", .{
-                    @TypeOf(item),
-                    item,
-                    @intFromEnum(item),
+                    @TypeOf(item[0]),
+                    item[0],
+                    @intFromEnum(item[0]),
                 });
             }
         }
@@ -52,7 +54,7 @@ pub fn Chunk() type {
         pub fn addConstant(self: *Self, constant: f64) !void {
             if (self.values.append(constant)) {
                 const pos: u8 = @as(u8, @intCast(self.values.items.len)) - 1;
-                return self.writeByte(pos);
+                return self.writeByte(pos, 0);
             } else |err| {
                 return err;
             }
@@ -76,7 +78,7 @@ pub fn Chunk() type {
 
 fn disassembleInstruction(chunk: *Chunk(), offset: usize) usize {
     const instruction = chunk.code.items[offset];
-    return switch (instruction) {
+    return switch (instruction[0]) {
         .RETURN => core.returnInstruction("OP_RETURN", offset),
         .CONSTANT => core.constantInstruction("OP_CONSTANT", chunk, offset),
     };
