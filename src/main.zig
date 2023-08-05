@@ -9,9 +9,12 @@ pub fn main() !void {
     // var c2 = chunk.Chunk().init(std.heap.page_allocator);
     try ck.writeOpCode(core.OpCode.CONSTANT, 1);
     try ck.addConstant(14.7391);
-    try ck.writeOpCode(core.OpCode.RETURN, 2);
+    try ck.writeOpCode(core.OpCode.CONSTANT, 2);
+    try ck.addConstant(123.321);
+    try ck.writeOpCode(core.OpCode.RETURN, 3);
 
     ck.disassemble();
+    try myVm.run();
 
     defer myVm.destroy();
 }

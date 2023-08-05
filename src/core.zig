@@ -7,6 +7,22 @@ pub const OpCode = enum(u8) {
     CONSTANT_16,
 };
 
+pub const InterpretResults = enum(u8) {
+    OK,
+    CONTINUE,
+    COMPILE_ERROR,
+    RUNTIME_ERROR,
+};
+
+pub const CompilerError = error{ CompileError, RuntimeError };
+
+pub fn readConstant(c: *chunk.Chunk(), offset: usize) f64 {
+    const idx: u8 = @intFromEnum(c.code.items[offset + 1][0]);
+    const constant: f64 = c.values.items[idx];
+
+    return constant;
+}
+
 pub fn returnInstruction(name: []const u8, offset: usize) usize {
     std.debug.print("{s}\n", .{name});
     return offset + 1;
