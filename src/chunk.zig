@@ -49,11 +49,18 @@ pub fn Chunk() type {
             }
         }
 
+        pub fn addConstant(self: *Self, constant: f64) !void {
+            if (self.values.append(constant)) {
+                const pos: u8 = @as(u8, @intCast(self.values.items.len)) - 1;
+                return self.writeByte(pos);
+            } else |err| {
+                return err;
+            }
+        }
+
         /// Disassembles the chunk byte-by-byte.
         pub fn disassemble(self: *Self) void {
             var offset: usize = 0;
-            const testf = "dsadsa";
-            _ = testf;
 
             while (offset < self.code.items.len) {
                 offset = disassembleInstruction(self, offset);
@@ -70,7 +77,7 @@ pub fn Chunk() type {
 fn disassembleInstruction(chunk: *Chunk(), offset: usize) usize {
     const instruction = chunk.code.items[offset];
     return switch (instruction) {
-        .RETURN => core.returnInstruction("RETURN", offset),
-        .CONSTANT => offset + 1,
+        .RETURN => core.returnInstruction("OP_RETURN", offset),
+        .CONSTANT => core.constantInstruction("OP_CONSTANT", chunk, offset),
     };
 }

@@ -4,8 +4,9 @@ const core = @import("core.zig");
 
 pub fn main() !void {
     var c2 = chunk.Chunk().init(std.heap.page_allocator);
+    try c2.writeOpCode(core.OpCode.CONSTANT);
+    try c2.addConstant(14.7391);
     try c2.writeOpCode(core.OpCode.RETURN);
-    try c2.writeByte(0);
 
     c2.print();
     c2.disassemble();
