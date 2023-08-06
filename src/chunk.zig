@@ -11,12 +11,12 @@ pub fn Chunk() type {
         const Self = @This();
 
         code: std.ArrayList(CodeTuple),
-        values: std.ArrayList(f64),
+        values: std.ArrayList(core.ValueT),
 
         /// Initialize the new Chunk.
         pub fn init(allocator: std.mem.Allocator) Self {
             var code = std.ArrayList(CodeTuple).init(allocator);
-            var values = std.ArrayList(f64).init(allocator);
+            var values = std.ArrayList(core.ValueT).init(allocator);
 
             return Self{
                 .code = code,

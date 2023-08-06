@@ -14,6 +14,7 @@ pub const InterpretResults = enum(u8) {
     RUNTIME_ERROR,
 };
 
+pub const ValueT = f64;
 pub const CompilerError = error{ CompileError, RuntimeError };
 
 pub fn readConstant(c: *chunk.Chunk(), offset: usize) f64 {

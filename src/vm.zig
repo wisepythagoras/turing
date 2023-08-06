@@ -7,7 +7,7 @@ pub fn VM() type {
         const Self = @This();
 
         chunk: *chunk.Chunk(),
-        stack: std.atomic.Stack(f64),
+        stack: std.atomic.Stack(core.ValueT),
 
         /// Creates a new VM instance. The `destroy` function should be run in order to free
         /// up memory. `defer myVm.destroy()` is possible.
@@ -17,7 +17,7 @@ pub fn VM() type {
             if (allocator.create(chunk.Chunk())) |memory| {
                 var newChunk = chunk.Chunk().init(allocator);
                 memory.* = newChunk;
-                var stack = std.atomic.Stack(f64).init();
+                var stack = std.atomic.Stack(core.ValueT).init();
 
                 return Self{
                     .chunk = memory,
