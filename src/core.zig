@@ -6,6 +6,7 @@ pub const OpCode = enum(u8) {
     CONSTANT,
     CONSTANT_16,
     NEGATE,
+    ADD,
 };
 
 pub const InterpretResults = enum(u8) {
@@ -80,7 +81,7 @@ pub fn constant16Instruction(name: []const u8, c: *chunk.Chunk(), offset: usize)
     return offset + 2;
 }
 
-pub fn negateInstruction(name: []const u8, offset: usize) CompilerError!usize {
+pub fn simpleInstruction(name: []const u8, offset: usize) CompilerError!usize {
     std.debug.print("{s}\n", .{name});
     return offset + 1;
 }

@@ -95,6 +95,26 @@ pub fn VM() type {
 
                         break :blk core.InterpretResults.RUNTIME_ERROR;
                     },
+                    .ADD => blk: {
+                        var aOptional = self.pop();
+
+                        if (aOptional) |a| {
+                            var bOptional = self.pop();
+
+                            if (bOptional) |b| {
+                                var newValue = core.Value().initNumber(a.number + b.number);
+                                self.push(newValue);
+                                newValue.print();
+                                offset += 1;
+
+                                break :blk core.InterpretResults.CONTINUE;
+                            }
+
+                            break :blk core.InterpretResults.RUNTIME_ERROR;
+                        }
+
+                        break :blk core.InterpretResults.RUNTIME_ERROR;
+                    },
                     .RETURN => core.InterpretResults.OK,
                 };
 
