@@ -124,6 +124,6 @@ fn disassembleInstruction(chunk: *Chunk(), offset: usize) core.CompilerError!usi
             return core.constantInstruction("OP_CONSTANT", chunk, offset);
         },
         .CONSTANT_16 => core.constant16Instruction("OP_CONSTANT_16", chunk, offset),
-        .NEGATE => core.negateInstruction("OP_NEGATE", chunk, offset),
+        .NEGATE => core.negateInstruction("OP_NEGATE", offset),
     };
 }

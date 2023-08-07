@@ -2,12 +2,14 @@ const std = @import("std");
 const chunk = @import("chunk.zig");
 const core = @import("core.zig");
 
+const Stack = std.atomic.Stack;
+
 pub fn VM() type {
     return struct {
         const Self = @This();
 
         chunk: *chunk.Chunk(),
-        stack: std.atomic.Stack(core.Value()),
+        stack: Stack(core.Value()),
 
         /// Creates a new VM instance. The `destroy` function should be run in order to free
         /// up memory. `defer myVm.destroy()` is possible.
@@ -19,7 +21,7 @@ pub fn VM() type {
             if (allocator.create(chunk.Chunk())) |memory| {
                 var newChunk = chunk.Chunk().init(allocator);
                 memory.* = newChunk;
-                var stack = std.atomic.Stack(core.Value()).init();
+                var stack = Stack(core.Value()).init();
 
                 return Self{
                     .chunk = memory,
@@ -30,8 +32,27 @@ pub fn VM() type {
             }
         }
 
+        pub fn push(self: *Self, constant: core.Value()) void {
+            const node = std.heap.page_allocator.create(Stack(core.Value()).Node) catch unreachable;
+            node.* = Stack(core.Value()).Node{
+                .next = undefined,
+                .data = constant,
+            };
+            self.stack.push(node);
+        }
+
+        pub fn pop(self: *Self) ?core.Value() {
+            const node = self.stack.pop();
+
+            if (node == null) {
+                return null;
+            }
+
+            return node.?.data;
+        }
+
         /// Runs the bytecode in the chunk.
-        pub fn run(self: Self) core.CompilerError!void {
+        pub fn run(self: *Self) core.CompilerError!void {
             var offset: usize = 0;
 
             while (offset < self.chunk.code.items.len) {
@@ -42,6 +63,7 @@ pub fn VM() type {
                         if (core.readConstant(self.chunk, offset)) |constant| {
                             offset += 2;
                             constant.print();
+                            self.push(constant);
                             break :blk core.InterpretResults.CONTINUE;
                         } else |err| {
                             std.debug.print("ERROR: {?}\n", .{err});
@@ -54,7 +76,24 @@ pub fn VM() type {
                         break :blk core.InterpretResults.CONTINUE;
                     },
                     .NEGATE => blk: {
-                        break :blk core.InterpretResults.CONTINUE;
+                        var optionalConstant = self.pop();
+
+                        if (optionalConstant) |eConstant| {
+                            var constant = eConstant;
+
+                            if (!constant.isNumber) {
+                                break :blk core.InterpretResults.RUNTIME_ERROR;
+                            }
+
+                            constant.number *= -1;
+                            self.push(constant);
+                            constant.print();
+                            offset += 1;
+
+                            break :blk core.InterpretResults.CONTINUE;
+                        }
+
+                        break :blk core.InterpretResults.RUNTIME_ERROR;
                     },
                     .RETURN => core.InterpretResults.OK,
                 };
@@ -68,7 +107,7 @@ pub fn VM() type {
         }
 
         pub fn resetStack(self: *Self) void {
-            self.stack = std.atomic.Stack(core.Value()).init();
+            self.stack = Stack(core.Value()).init();
         }
 
         pub fn destroy(self: Self) void {

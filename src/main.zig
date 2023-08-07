@@ -4,14 +4,15 @@ const chunk = @import("chunk.zig");
 const core = @import("core.zig");
 
 pub fn main() !void {
-    const myVm = try vm.VM().init(false);
+    var myVm = try vm.VM().init(false);
     var ck = myVm.chunk;
     // var c2 = chunk.Chunk().init(std.heap.page_allocator);
     try ck.writeOpCode(core.OpCode.CONSTANT, 1);
     try ck.addConstant(core.Value().initNumber(14.7391));
     try ck.writeOpCode(core.OpCode.CONSTANT, 2);
     try ck.addConstant(core.Value().initNumber(123.321));
-    try ck.writeOpCode(core.OpCode.RETURN, 3);
+    try ck.writeOpCode(core.OpCode.NEGATE, 3);
+    try ck.writeOpCode(core.OpCode.RETURN, 4);
 
     try ck.disassemble();
     try myVm.run();

@@ -80,14 +80,7 @@ pub fn constant16Instruction(name: []const u8, c: *chunk.Chunk(), offset: usize)
     return offset + 2;
 }
 
-pub fn negateInstruction(name: []const u8, c: *chunk.Chunk(), offset: usize) CompilerError!usize {
-    const idx: u8 = @intFromEnum(c.code.items[offset + 1][0]);
-    const constant = c.values.items[idx];
-
-    if (constant.isNumber) {
-        const num = -constant.number;
-        std.debug.print("{s} = 0x{x} ({d})\n", .{ name, num, num });
-    }
-
-    return CompilerError.RuntimeError;
+pub fn negateInstruction(name: []const u8, offset: usize) CompilerError!usize {
+    std.debug.print("{s}\n", .{name});
+    return offset + 1;
 }
