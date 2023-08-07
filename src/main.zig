@@ -8,15 +8,9 @@ pub fn main() !void {
     var ck = myVm.chunk;
     // var c2 = chunk.Chunk().init(std.heap.page_allocator);
     try ck.writeOpCode(core.OpCode.CONSTANT, 1);
-    try ck.addConstant(core.Value{
-        .number = 14.7391,
-        .isNumber = true,
-    });
+    try ck.addConstant(core.Value().initNumber(14.7391));
     try ck.writeOpCode(core.OpCode.CONSTANT, 2);
-    try ck.addConstant(core.Value{
-        .number = 123.321,
-        .isNumber = true,
-    });
+    try ck.addConstant(core.Value().initNumber(123.321));
     try ck.writeOpCode(core.OpCode.RETURN, 3);
 
     ck.disassemble();

@@ -11,12 +11,12 @@ pub fn Chunk() type {
         const Self = @This();
 
         code: std.ArrayList(CodeTuple),
-        values: std.ArrayList(core.Value),
+        values: std.ArrayList(core.Value()),
 
         /// Initialize the new Chunk.
         pub fn init(allocator: std.mem.Allocator) Self {
             var code = std.ArrayList(CodeTuple).init(allocator);
-            var values = std.ArrayList(core.Value).init(allocator);
+            var values = std.ArrayList(core.Value()).init(allocator);
 
             return Self{
                 .code = code,
@@ -59,7 +59,7 @@ pub fn Chunk() type {
             }
         }
 
-        pub fn addConstant(self: *Self, constant: core.Value) !void {
+        pub fn addConstant(self: *Self, constant: core.Value()) !void {
             if (self.values.append(constant)) {
                 const pos: u16 = @as(u16, @intCast(self.values.items.len)) - 1;
 
