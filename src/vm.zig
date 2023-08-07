@@ -96,24 +96,13 @@ pub fn VM() type {
                         break :blk core.InterpretResults.RUNTIME_ERROR;
                     },
                     .ADD => blk: {
-                        var aOptional = self.pop();
+                        var res = self.operation(core.addOp);
 
-                        if (aOptional) |a| {
-                            var bOptional = self.pop();
-
-                            if (bOptional) |b| {
-                                var newValue = core.Value().initNumber(a.number + b.number);
-                                self.push(newValue);
-                                newValue.print();
-                                offset += 1;
-
-                                break :blk core.InterpretResults.CONTINUE;
-                            }
-
-                            break :blk core.InterpretResults.RUNTIME_ERROR;
+                        if (res == core.InterpretResults.CONTINUE) {
+                            offset += 1;
                         }
 
-                        break :blk core.InterpretResults.RUNTIME_ERROR;
+                        break :blk res;
                     },
                     .RETURN => core.InterpretResults.OK,
                 };
@@ -124,6 +113,24 @@ pub fn VM() type {
                     return core.CompilerError.RuntimeError;
                 }
             }
+        }
+
+        pub fn operation(self: *Self, op: core.OperationFn) core.InterpretResults {
+            var aOptional = self.pop();
+
+            if (aOptional) |a| {
+                var bOptional = self.pop();
+
+                if (bOptional) |b| {
+                    var newValue = op(a, b);
+                    self.push(newValue);
+                    newValue.print();
+
+                    return core.InterpretResults.CONTINUE;
+                }
+            }
+
+            return core.InterpretResults.RUNTIME_ERROR;
         }
 
         pub fn resetStack(self: *Self) void {

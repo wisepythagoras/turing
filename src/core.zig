@@ -7,6 +7,8 @@ pub const OpCode = enum(u8) {
     CONSTANT_16,
     NEGATE,
     ADD,
+
+    pub fn print() void {}
 };
 
 pub const InterpretResults = enum(u8) {
@@ -38,7 +40,12 @@ pub fn Value() type {
     };
 }
 
+pub const OperationFn = *const fn (Value(), Value()) Value();
 pub const CompilerError = error{ CompileError, RuntimeError, InvalidMemoryLookup };
+
+pub fn addOp(a: Value(), b: Value()) Value() {
+    return Value().initNumber(a.number + b.number);
+}
 
 pub fn readConstant(c: *chunk.Chunk(), offset: usize) CompilerError!Value() {
     if (offset + 1 > c.code.items.len) {
