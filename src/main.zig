@@ -4,7 +4,7 @@ const chunk = @import("chunk.zig");
 const core = @import("core.zig");
 
 pub fn main() !void {
-    const myVm = try vm.VM().init();
+    const myVm = try vm.VM().init(false);
     var ck = myVm.chunk;
     // var c2 = chunk.Chunk().init(std.heap.page_allocator);
     try ck.writeOpCode(core.OpCode.CONSTANT, 1);

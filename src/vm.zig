@@ -11,7 +11,9 @@ pub fn VM() type {
 
         /// Creates a new VM instance. The `destroy` function should be run in order to free
         /// up memory. `defer myVm.destroy()` is possible.
-        pub fn init() !Self {
+        pub fn init(verbose: bool) !Self {
+            _ = verbose;
+            // TODO: To be used to print the stack trace and disassemble as we run through bytecode.
             const allocator = std.heap.page_allocator;
 
             if (allocator.create(chunk.Chunk())) |memory| {
