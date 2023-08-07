@@ -14,14 +14,28 @@ pub const InterpretResults = enum(u8) {
     RUNTIME_ERROR,
 };
 
-pub const ValueT = f64;
-pub const CompilerError = error{ CompileError, RuntimeError };
+pub const Value = struct {
+    const Self = @This();
 
-pub fn readConstant(c: *chunk.Chunk(), offset: usize) f64 {
+    number: f64,
+    isNumber: bool,
+
+    pub fn print(self: Self) void {
+        if (self.isNumber) {
+            std.debug.print("{d:.6}\n", .{self.number});
+        }
+    }
+};
+
+pub const CompilerError = error{ CompileError, RuntimeError, InvalidMemoryLookup };
+
+pub fn readConstant(c: *chunk.Chunk(), offset: usize) CompilerError!Value {
+    if (offset + 1 > c.code.items.len) {
+        return CompilerError.InvalidMemoryLookup;
+    }
+
     const idx: u8 = @intFromEnum(c.code.items[offset + 1][0]);
-    const constant: f64 = c.values.items[idx];
-
-    return constant;
+    return c.values.items[idx];
 }
 
 pub fn returnInstruction(name: []const u8, offset: usize) usize {
@@ -31,8 +45,11 @@ pub fn returnInstruction(name: []const u8, offset: usize) usize {
 
 pub fn constantInstruction(name: []const u8, c: *chunk.Chunk(), offset: usize) usize {
     const idx: u8 = @intFromEnum(c.code.items[offset + 1][0]);
-    const constant: f64 = c.values.items[idx];
-    std.debug.print("{s} = 0x{x} ({d})\n", .{ name, idx, constant });
+    const constant: Value = c.values.items[idx];
+
+    if (constant.isNumber) {
+        std.debug.print("{s} = 0x{x} ({d})\n", .{ name, idx, constant.number });
+    }
 
     return offset + 2;
 }
@@ -42,8 +59,11 @@ pub fn constant16Instruction(name: []const u8, c: *chunk.Chunk(), offset: usize)
     const idxA: u16 = @intFromEnum(c.code.items[offset + 2][0]);
     const idx: u16 = (idxB << 8) | idxA;
 
-    const constant: f64 = c.values.items[idx];
-    std.debug.print("{s} = 0x{x} ({d})\n", .{ name, idx, constant });
+    const constant: Value = c.values.items[idx];
+
+    if (constant.isNumber) {
+        std.debug.print("{s} = 0x{x} ({d})\n", .{ name, idx, constant.number });
+    }
 
     return offset + 2;
 }
