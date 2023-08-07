@@ -53,6 +53,9 @@ pub fn VM() type {
                         offset += 1;
                         break :blk core.InterpretResults.CONTINUE;
                     },
+                    .NEGATE => blk: {
+                        break :blk core.InterpretResults.CONTINUE;
+                    },
                     .RETURN => core.InterpretResults.OK,
                 };
 

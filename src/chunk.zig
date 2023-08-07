@@ -80,12 +80,24 @@ pub fn Chunk() type {
             }
         }
 
+        pub fn replaceConstant(self: *Self, constant: core.Value(), idx: usize) core.CompilerError!void {
+            if (idx >= self.values.items.len) {
+                return core.CompilerError.InvalidMemoryLookup;
+            }
+
+            self.values.items[idx] = constant;
+        }
+
         /// Disassembles the chunk byte-by-byte.
-        pub fn disassemble(self: *Self) void {
+        pub fn disassemble(self: *Self) core.CompilerError!void {
             var offset: usize = 0;
 
             while (offset < self.code.items.len) {
-                offset = disassembleInstruction(self, offset);
+                if (disassembleInstruction(self, offset)) |newOffset| {
+                    offset = newOffset;
+                } else |err| {
+                    return err;
+                }
             }
 
             // for (self.code.items) |opCode| {
@@ -96,7 +108,7 @@ pub fn Chunk() type {
     };
 }
 
-fn disassembleInstruction(chunk: *Chunk(), offset: usize) usize {
+fn disassembleInstruction(chunk: *Chunk(), offset: usize) core.CompilerError!usize {
     const instruction = chunk.code.items[offset];
 
     if (offset == 0 or (instruction[1] != 0 and instruction[1] != chunk.code.items[offset - 1][1])) {
@@ -108,7 +120,10 @@ fn disassembleInstruction(chunk: *Chunk(), offset: usize) usize {
 
     return switch (instruction[0]) {
         .RETURN => core.returnInstruction("OP_RETURN", offset),
-        .CONSTANT => core.constantInstruction("OP_CONSTANT", chunk, offset),
+        .CONSTANT => {
+            return core.constantInstruction("OP_CONSTANT", chunk, offset);
+        },
         .CONSTANT_16 => core.constant16Instruction("OP_CONSTANT_16", chunk, offset),
+        .NEGATE => core.negateInstruction("OP_NEGATE", chunk, offset),
     };
 }

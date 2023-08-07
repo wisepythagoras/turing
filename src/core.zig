@@ -5,6 +5,7 @@ pub const OpCode = enum(u8) {
     RETURN,
     CONSTANT,
     CONSTANT_16,
+    NEGATE,
 };
 
 pub const InterpretResults = enum(u8) {
@@ -52,15 +53,17 @@ pub fn returnInstruction(name: []const u8, offset: usize) usize {
     return offset + 1;
 }
 
-pub fn constantInstruction(name: []const u8, c: *chunk.Chunk(), offset: usize) usize {
-    const idx: u8 = @intFromEnum(c.code.items[offset + 1][0]);
-    const constant: Value() = c.values.items[idx];
+pub fn constantInstruction(name: []const u8, c: *chunk.Chunk(), offset: usize) CompilerError!usize {
+    if (readConstant(c, offset)) |constant| {
+        if (constant.isNumber) {
+            const num = constant.number;
+            std.debug.print("{s} = {x} ({d})\n", .{ name, num, num });
+        }
 
-    if (constant.isNumber) {
-        std.debug.print("{s} = 0x{x} ({d})\n", .{ name, idx, constant.number });
+        return offset + 2;
+    } else |err| {
+        return err;
     }
-
-    return offset + 2;
 }
 
 pub fn constant16Instruction(name: []const u8, c: *chunk.Chunk(), offset: usize) usize {
@@ -71,8 +74,20 @@ pub fn constant16Instruction(name: []const u8, c: *chunk.Chunk(), offset: usize)
     const constant: Value() = c.values.items[idx];
 
     if (constant.isNumber) {
-        std.debug.print("{s} = 0x{x} ({d})\n", .{ name, idx, constant.number });
+        std.debug.print("{s} = {x} ({d})\n", .{ name, idx, constant.number });
     }
 
     return offset + 2;
+}
+
+pub fn negateInstruction(name: []const u8, c: *chunk.Chunk(), offset: usize) CompilerError!usize {
+    const idx: u8 = @intFromEnum(c.code.items[offset + 1][0]);
+    const constant = c.values.items[idx];
+
+    if (constant.isNumber) {
+        const num = -constant.number;
+        std.debug.print("{s} = 0x{x} ({d})\n", .{ name, num, num });
+    }
+
+    return CompilerError.RuntimeError;
 }
