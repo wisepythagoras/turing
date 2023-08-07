@@ -2,13 +2,25 @@ const std = @import("std");
 const chunk = @import("chunk.zig");
 
 pub const OpCode = enum(u8) {
+    const Self = @This();
+
     RETURN,
     CONSTANT,
     CONSTANT_16,
     NEGATE,
     ADD,
 
-    pub fn print() void {}
+    pub fn toString(self: Self) []const u8 {
+        const allocator = std.heap.page_allocator;
+
+        if (std.fmt.allocPrint(allocator, "{?}", .{self})) |string| {
+            // defer allocator.free(string);
+            return string;
+        } else |err| {
+            std.debug.print("{?}\n", .{err});
+            return "";
+        }
+    }
 };
 
 pub const InterpretResults = enum(u8) {

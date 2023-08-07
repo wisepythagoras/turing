@@ -118,13 +118,15 @@ fn disassembleInstruction(chunk: *Chunk(), offset: usize) core.CompilerError!usi
         std.debug.print("    : ", .{});
     }
 
-    return switch (instruction[0]) {
-        .RETURN => core.returnInstruction("OP_RETURN", offset),
+    const opCode = instruction[0];
+    const opCodeStr = opCode.toString();
+
+    return switch (opCode) {
+        .RETURN => core.returnInstruction(opCodeStr, offset),
         .CONSTANT => {
-            return core.constantInstruction("OP_CONSTANT", chunk, offset);
+            return core.constantInstruction(opCodeStr, chunk, offset);
         },
-        .CONSTANT_16 => core.constant16Instruction("OP_CONSTANT_16", chunk, offset),
-        .NEGATE => core.simpleInstruction("OP_NEGATE", offset),
-        .ADD => core.simpleInstruction("OP_ADD", offset),
+        .CONSTANT_16 => core.constant16Instruction(opCodeStr, chunk, offset),
+        .NEGATE, .ADD => core.simpleInstruction(opCodeStr, offset),
     };
 }
