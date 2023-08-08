@@ -143,12 +143,12 @@ pub fn VM() type {
         }
 
         pub fn operation(self: *Self, op: core.OperationFn) core.InterpretResults {
-            var aOptional = self.pop();
+            var bOptional = self.pop();
 
-            if (aOptional) |a| {
-                var bOptional = self.pop();
+            if (bOptional) |b| {
+                var aOptional = self.pop();
 
-                if (bOptional) |b| {
+                if (aOptional) |a| {
                     var newValue = op(a, b);
                     self.push(newValue);
                     newValue.print();
