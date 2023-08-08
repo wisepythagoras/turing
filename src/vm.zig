@@ -131,6 +131,15 @@ pub fn VM() type {
 
                         break :blk res;
                     },
+                    .MOD => blk: {
+                        var res = self.operation(core.divOp);
+
+                        if (res == core.InterpretResults.CONTINUE) {
+                            offset += 1;
+                        }
+
+                        break :blk res;
+                    },
                     .RETURN => core.InterpretResults.OK,
                 };
 

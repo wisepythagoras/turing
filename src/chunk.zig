@@ -127,7 +127,7 @@ fn disassembleInstruction(chunk: *Chunk(), offset: usize) core.CompilerError!usi
             return core.constantInstruction(opCodeStr, chunk, offset);
         },
         .CONSTANT_16 => core.constant16Instruction(opCodeStr, chunk, offset),
-        .NEGATE, .ADD, .MUL, .DIV, .SUB => {
+        .NEGATE, .ADD, .MUL, .DIV, .SUB, .MOD => {
             return core.simpleInstruction(opCodeStr, offset);
         },
     };

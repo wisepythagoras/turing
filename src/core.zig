@@ -12,6 +12,7 @@ pub const OpCode = enum(u8) {
     SUB,
     DIV,
     MUL,
+    MOD,
 
     // https://ziglearn.org/chapter-2/#formatting
     pub fn toString(self: Self) []const u8 {
@@ -73,6 +74,10 @@ pub fn mulOp(a: Value(), b: Value()) Value() {
 
 pub fn divOp(a: Value(), b: Value()) Value() {
     return Value().initNumber(a.number / b.number);
+}
+
+pub fn modOp(a: Value(), b: Value()) Value() {
+    return Value().initNumber(a.number % b.number);
 }
 
 pub fn readConstant(c: *chunk.Chunk(), offset: usize) CompilerError!Value() {
