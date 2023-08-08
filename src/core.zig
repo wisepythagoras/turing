@@ -9,7 +9,11 @@ pub const OpCode = enum(u8) {
     CONSTANT_16,
     NEGATE,
     ADD,
+    SUB,
+    DIV,
+    MUL,
 
+    // https://ziglearn.org/chapter-2/#formatting
     pub fn toString(self: Self) []const u8 {
         const allocator = std.heap.page_allocator;
 
@@ -57,6 +61,18 @@ pub const CompilerError = error{ CompileError, RuntimeError, InvalidMemoryLookup
 
 pub fn addOp(a: Value(), b: Value()) Value() {
     return Value().initNumber(a.number + b.number);
+}
+
+pub fn subOp(a: Value(), b: Value()) Value() {
+    return Value().initNumber(a.number - b.number);
+}
+
+pub fn mulOp(a: Value(), b: Value()) Value() {
+    return Value().initNumber(a.number * b.number);
+}
+
+pub fn divOp(a: Value(), b: Value()) Value() {
+    return Value().initNumber(a.number / b.number);
 }
 
 pub fn readConstant(c: *chunk.Chunk(), offset: usize) CompilerError!Value() {

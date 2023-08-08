@@ -104,6 +104,33 @@ pub fn VM() type {
 
                         break :blk res;
                     },
+                    .SUB => blk: {
+                        var res = self.operation(core.subOp);
+
+                        if (res == core.InterpretResults.CONTINUE) {
+                            offset += 1;
+                        }
+
+                        break :blk res;
+                    },
+                    .MUL => blk: {
+                        var res = self.operation(core.mulOp);
+
+                        if (res == core.InterpretResults.CONTINUE) {
+                            offset += 1;
+                        }
+
+                        break :blk res;
+                    },
+                    .DIV => blk: {
+                        var res = self.operation(core.divOp);
+
+                        if (res == core.InterpretResults.CONTINUE) {
+                            offset += 1;
+                        }
+
+                        break :blk res;
+                    },
                     .RETURN => core.InterpretResults.OK,
                 };
 

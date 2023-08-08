@@ -13,7 +13,10 @@ pub fn main() !void {
     try ck.addConstant(core.Value().initNumber(123.321));
     try ck.writeOpCode(core.OpCode.NEGATE, 3);
     try ck.writeOpCode(core.OpCode.ADD, 4);
-    try ck.writeOpCode(core.OpCode.RETURN, 5);
+    try ck.writeOpCode(core.OpCode.CONSTANT, 5);
+    try ck.addConstant(core.Value().initNumber(-2));
+    try ck.writeOpCode(core.OpCode.MUL, 6);
+    try ck.writeOpCode(core.OpCode.RETURN, 7);
 
     try ck.disassemble();
     try myVm.run();
