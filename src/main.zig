@@ -24,6 +24,15 @@ pub fn main() !void {
     defer myVm.destroy();
 }
 
+fn readFile() !void {
+    var turFile = try std.fs.cwd().openFile("source.tur", .{});
+    defer turFile.close();
+
+    var buf_reader = std.io.bufferedReader(turFile.reader());
+    var in_stream = buf_reader.reader();
+    _ = in_stream;
+}
+
 test "simple test" {
     var list = std.ArrayList(i32).init(std.testing.allocator);
     defer list.deinit(); // try commenting this out and see if zig detects the memory leak!
