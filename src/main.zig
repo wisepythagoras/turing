@@ -2,8 +2,11 @@ const std = @import("std");
 const vm = @import("vm.zig");
 const chunk = @import("chunk.zig");
 const core = @import("core.zig");
+const utils = @import("utils.zig");
 
 pub fn main() !void {
+    _ = try utils.readFile("source.tur");
+
     var myVm = try vm.VM().init(false);
     var ck = myVm.chunk;
     // var c2 = chunk.Chunk().init(std.heap.page_allocator);
@@ -22,15 +25,6 @@ pub fn main() !void {
     try myVm.run();
 
     defer myVm.destroy();
-}
-
-fn readFile() !void {
-    var turFile = try std.fs.cwd().openFile("source.tur", .{});
-    defer turFile.close();
-
-    var buf_reader = std.io.bufferedReader(turFile.reader());
-    var in_stream = buf_reader.reader();
-    _ = in_stream;
 }
 
 test "simple test" {
