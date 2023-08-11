@@ -8,7 +8,7 @@ const utils = @import("utils.zig");
 pub fn main() !void {
     if (utils.readFile("source.tur")) |source| {
         var comp = compiler.Compiler().init(source);
-        _ = comp;
+        try comp.interpret();
     } else |err| {
         std.debug.print("{?}\n", .{err});
     }
