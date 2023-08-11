@@ -2,10 +2,16 @@ const std = @import("std");
 const vm = @import("vm.zig");
 const chunk = @import("chunk.zig");
 const core = @import("core.zig");
+const compiler = @import("compiler.zig");
 const utils = @import("utils.zig");
 
 pub fn main() !void {
-    _ = try utils.readFile("source.tur");
+    if (utils.readFile("source.tur")) |source| {
+        var comp = compiler.Compiler().init(source);
+        _ = comp;
+    } else |err| {
+        std.debug.print("{?}\n", .{err});
+    }
 
     var myVm = try vm.VM().init(false);
     var ck = myVm.chunk;
