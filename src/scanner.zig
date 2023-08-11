@@ -17,17 +17,29 @@ pub fn Scanner() type {
             };
         }
 
+        fn skipWhitespace(self: *Self) void {
+            while (self.pos < self.source.len) {
+                switch (self.source[self.pos]) {
+                    ' ', '\r', '\t' => self.pos += 1,
+                    '\n' => {
+                        self.line += 1;
+                        self.pos += 1;
+                    },
+                    else => break,
+                }
+            }
+        }
+
         pub fn scanToken(self: *Self) token.Token() {
+            self.skipWhitespace();
             const pos = self.pos;
-            self.pos += 1;
 
             if (pos == self.source.len) {
                 return token.Token().init(token.TokenType.EOF, pos, self.line);
             }
 
-            if (self.source[pos] == '\n') {
-                self.line += 1;
-            }
+            // This will be updated further when encountering multi character tokens.
+            self.pos += 1;
 
             return switch (self.source[pos]) {
                 '(' => token.Token().init(token.TokenType.LEFT_PAREN, pos, self.line),
