@@ -79,21 +79,13 @@ pub fn Token() type {
         const Self = @This();
 
         tokenType: TokenType,
-        start: []u8,
-        len: usize,
+        pos: usize,
         line: usize,
 
-        pub fn init(t: TokenType, start: []u8, line: usize, len: usize) Self {
-            var tokenLen = len;
-
-            if (tokenLen == 0) {
-                tokenLen = tokenSizes[t.toUsize()];
-            }
-
+        pub fn init(t: TokenType, pos: usize, line: usize) Self {
             return Self{
                 .tokenType = t,
-                .start = start,
-                .len = tokenLen,
+                .pos = pos,
                 .line = line,
             };
         }
