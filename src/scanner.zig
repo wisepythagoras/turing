@@ -61,6 +61,14 @@ pub fn Scanner() type {
 
                     return token.Token().init(token.TokenType.BANG, pos, self.line);
                 },
+                '=' => {
+                    if (pos < self.source.len - 1 and self.source[pos + 1] == '=') {
+                        self.pos += 1;
+                        return token.Token().init(token.TokenType.DOUBLE_EQUAL, pos, self.line);
+                    }
+
+                    return token.Token().init(token.TokenType.EQUAL, pos, self.line);
+                },
                 else => token.Token().init(token.TokenType.IDENTIFIER, pos, self.line),
             };
         }
