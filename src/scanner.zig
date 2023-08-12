@@ -30,6 +30,15 @@ pub fn Scanner() type {
             }
         }
 
+        fn singleOrDouble(self: *Self, two: u8, a: token.TokenType, b: token.TokenType) token.Token() {
+            if (self.pos < self.source.len - 1 and self.source[self.pos + 1] == two) {
+                self.pos += 1;
+                return token.Token().init(b, self.pos - 1, self.line);
+            }
+
+            return token.Token().init(a, self.pos, self.line);
+        }
+
         pub fn scanToken(self: *Self) token.Token() {
             self.skipWhitespace();
             const pos = self.pos;
@@ -38,10 +47,7 @@ pub fn Scanner() type {
                 return token.Token().init(token.TokenType.EOF, pos, self.line);
             }
 
-            // This will be updated further when encountering multi character tokens.
-            self.pos += 1;
-
-            return switch (self.source[pos]) {
+            var newToken = switch (self.source[pos]) {
                 '(' => token.Token().init(token.TokenType.LEFT_PAREN, pos, self.line),
                 ')' => token.Token().init(token.TokenType.RIGHT_PAREN, pos, self.line),
                 '{' => token.Token().init(token.TokenType.LEFT_BRACE, pos, self.line),
@@ -53,24 +59,17 @@ pub fn Scanner() type {
                 '*' => token.Token().init(token.TokenType.STAR, pos, self.line),
                 ';' => token.Token().init(token.TokenType.SEMICOLON, pos, self.line),
                 '/' => token.Token().init(token.TokenType.SLASH, pos, self.line),
-                '!' => {
-                    if (pos < self.source.len - 1 and self.source[pos + 1] == '=') {
-                        self.pos += 1;
-                        return token.Token().init(token.TokenType.BANG_EQUAL, pos, self.line);
-                    }
-
-                    return token.Token().init(token.TokenType.BANG, pos, self.line);
-                },
-                '=' => {
-                    if (pos < self.source.len - 1 and self.source[pos + 1] == '=') {
-                        self.pos += 1;
-                        return token.Token().init(token.TokenType.DOUBLE_EQUAL, pos, self.line);
-                    }
-
-                    return token.Token().init(token.TokenType.EQUAL, pos, self.line);
-                },
+                '!' => self.singleOrDouble('=', token.TokenType.BANG, token.TokenType.BANG_EQUAL),
+                '=' => self.singleOrDouble('=', token.TokenType.EQUAL, token.TokenType.DOUBLE_EQUAL),
+                '>' => self.singleOrDouble('=', token.TokenType.GREATER_THAN, token.TokenType.GREATER_EQUAL_THAN),
+                '<' => self.singleOrDouble('=', token.TokenType.LESS_THAN, token.TokenType.LESS_EQUAL_THAN),
                 else => token.Token().init(token.TokenType.IDENTIFIER, pos, self.line),
             };
+
+            // This will be updated further when encountering multi character tokens.
+            self.pos += 1;
+
+            return newToken;
         }
     };
 }
