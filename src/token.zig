@@ -89,5 +89,33 @@ pub fn Token() type {
                 .line = line,
             };
         }
+
+        pub fn toString(self: Self, source: []u8) ![]u8 {
+            var len = tokenSizes[self.tokenType.toUsize()];
+            const allocator = std.heap.page_allocator;
+
+            // TODO: This is temporary.
+            if (len == 0) {
+                len = 1;
+            }
+
+            if (allocator.alloc(u8, len)) |buf| {
+                if (len == 1) {
+                    buf[0] = source[self.pos];
+                    return buf;
+                }
+
+                var i: usize = 0;
+
+                while (i < len) {
+                    buf[i] = source[i + self.pos];
+                    i += 1;
+                }
+
+                return buf;
+            } else |err| {
+                return err;
+            }
+        }
     };
 }

@@ -28,10 +28,10 @@ pub fn Compiler() type {
                     return;
                 }
 
-                const char: [1]u8 = [1]u8{self.source[self.scanner.pos - 1]};
+                var tokenStr = try t.toString(self.source);
                 std.debug.print("{?} <= {s}\n", .{
                     t.tokenType,
-                    char,
+                    tokenStr,
                 });
             }
         }
