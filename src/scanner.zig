@@ -153,6 +153,8 @@ pub fn Scanner() type {
                 if (identifierToken.toString(self.source)) |str| {
                     var newTokenType = token.TokenType.IDENTIFIER;
 
+                    // TODO: The following is not efficient, so we're going to need to do some extra
+                    // work here to do these comparisons only when they're necessary.
                     if (utils.strcomp(str, "and")) {
                         newTokenType = token.TokenType.AND;
                     } else if (utils.strcomp(str, "or")) {
@@ -185,6 +187,8 @@ pub fn Scanner() type {
                         newTokenType = token.TokenType.VAR;
                     } else if (utils.strcomp(str, "return")) {
                         newTokenType = token.TokenType.RETURN;
+                    } else if (utils.strcomp(str, "struct")) {
+                        newTokenType = token.TokenType.STRUCT;
                     }
 
                     // TODO: Add everything here.

@@ -54,6 +54,7 @@ pub const TokenType = enum(u8) {
     ERROR,
     EOF,
 
+    /// Gets the numerical representation of the enum value.
     pub fn toUsize(self: Self) usize {
         return @as(usize, @intFromEnum(self));
     }
@@ -72,7 +73,7 @@ const tokenSizes: [41]usize = [41]usize{
     6, // Return
     5, // Super
     4, // This
-    3, 4, // Var and const
+    3, 4, // Var (let) and const
     3, // Nil
     0,
     0,
