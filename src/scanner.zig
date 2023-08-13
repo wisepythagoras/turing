@@ -1,6 +1,7 @@
 const std = @import("std");
 const token = @import("token.zig");
 const core = @import("core.zig");
+const utils = @import("utils.zig");
 
 pub fn Scanner() type {
     return struct {
@@ -66,6 +67,21 @@ pub fn Scanner() type {
             return token.Token().init(a, self.pos, self.line);
         }
 
+        /// Checks if the next token is a digit and returns its size. If it's not a digit it returns 0.
+        fn getDigitEndPos(self: Self) usize {
+            var pos = self.pos;
+
+            while (utils.isDigit(self.source[pos])) {
+                pos += 1;
+            }
+
+            if (pos == self.pos) {
+                return 0;
+            }
+
+            return pos;
+        }
+
         pub fn scanToken(self: *Self) core.CompilerError!token.Token() {
             self.skipWhitespace();
 
@@ -76,7 +92,10 @@ pub fn Scanner() type {
             // This is a single-line comment.
             if (self.source[self.pos] == '#') {
                 self.skipToNewLine();
-            } else if (self.source[self.pos] == '\'' or self.source[self.pos] == '"') {
+            }
+
+            // Here we check for a string.
+            else if (self.source[self.pos] == '\'' or self.source[self.pos] == '"') {
                 if (self.findEndQuote(self.source[self.pos])) |endPos| {
                     var stringToken = token.Token().initWithSize(
                         token.TokenType.STRING,
@@ -89,6 +108,20 @@ pub fn Scanner() type {
                 } else |err| {
                     return err;
                 }
+            }
+
+            // Now let's check for numbers.
+            var digitEndPos = self.getDigitEndPos();
+
+            if (digitEndPos > 0) {
+                var stringToken = token.Token().initWithSize(
+                    token.TokenType.NUMBER,
+                    self.pos,
+                    digitEndPos - self.pos,
+                );
+                self.pos = digitEndPos + 1;
+
+                return stringToken;
             }
 
             const pos = self.pos;

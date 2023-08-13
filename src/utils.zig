@@ -23,3 +23,7 @@ pub fn readFile(fName: []const u8) ![]u8 {
         return err;
     }
 }
+
+pub fn isDigit(char: u8) bool {
+    return char >= '0' and char <= '9';
+}
