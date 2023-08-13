@@ -36,6 +36,7 @@ pub fn isAlpha(char: u8) bool {
         char == '_';
 }
 
+/// Returns whether a character is alphanumeric. This excludes dots (decimal point).
 pub fn isAlphaNum(char: u8) bool {
     return isAlpha(char) or isDigit(char, false);
 }

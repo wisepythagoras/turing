@@ -82,6 +82,20 @@ pub fn Scanner() type {
             return pos;
         }
 
+        fn getAlphanumEndPos(self: Self) usize {
+            var pos = self.pos;
+
+            if (!utils.isAlpha(self.source[pos])) {
+                return 0;
+            }
+
+            while (utils.isAlphaNum(self.source[pos])) {
+                pos += 1;
+            }
+
+            return pos;
+        }
+
         pub fn scanToken(self: *Self) core.CompilerError!token.Token() {
             self.skipWhitespace();
 
@@ -114,14 +128,28 @@ pub fn Scanner() type {
             var digitEndPos = self.getDigitEndPos();
 
             if (digitEndPos > 0) {
-                var stringToken = token.Token().initWithSize(
+                var numberToken = token.Token().initWithSize(
                     token.TokenType.NUMBER,
                     self.pos,
                     digitEndPos - self.pos,
                 );
-                self.pos = digitEndPos + 1;
+                self.pos = digitEndPos;
 
-                return stringToken;
+                return numberToken;
+            }
+
+            // Now let's check for identifiers.
+            var alphaNumEndPos = self.getAlphanumEndPos();
+
+            if (alphaNumEndPos > 0) {
+                var identifierToken = token.Token().initWithSize(
+                    token.TokenType.IDENTIFIER,
+                    self.pos,
+                    alphaNumEndPos - self.pos,
+                );
+                self.pos = alphaNumEndPos;
+
+                return identifierToken;
             }
 
             const pos = self.pos;
@@ -141,7 +169,7 @@ pub fn Scanner() type {
                 '=' => self.singleOrDouble('=', token.TokenType.EQUAL, token.TokenType.DOUBLE_EQUAL),
                 '>' => self.singleOrDouble('=', token.TokenType.GREATER_THAN, token.TokenType.GREATER_EQUAL_THAN),
                 '<' => self.singleOrDouble('=', token.TokenType.LESS_THAN, token.TokenType.LESS_EQUAL_THAN),
-                else => token.Token().init(token.TokenType.IDENTIFIER, pos, self.line),
+                else => token.Token().init(token.TokenType.ERROR, pos, self.line),
             };
 
             // This will be updated further when encountering multi character tokens.
