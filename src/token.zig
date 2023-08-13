@@ -19,6 +19,7 @@ pub const TokenType = enum(u8) {
     EQUAL,
     GREATER_THAN,
     LESS_THAN,
+    COMMENT,
 
     // Multi-character tokens.
     BANG_EQUAL,
@@ -57,8 +58,8 @@ pub const TokenType = enum(u8) {
     }
 };
 
-const tokenSizes: [39]usize = [39]usize{
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+const tokenSizes: [40]usize = [40]usize{
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     2, 2, 2, 2,
     0, 0, 0, // The literals, because they're dynamic
     3, 2, // And and or

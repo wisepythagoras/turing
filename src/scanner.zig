@@ -30,6 +30,18 @@ pub fn Scanner() type {
             }
         }
 
+        fn skipToNewLine(self: *Self) void {
+            while (self.pos < self.source.len) {
+                if (self.source[self.pos] == '\n') {
+                    self.pos += 1;
+                    self.line += 1;
+                    break;
+                }
+
+                self.pos += 1;
+            }
+        }
+
         fn singleOrDouble(self: *Self, two: u8, a: token.TokenType, b: token.TokenType) token.Token() {
             if (self.pos < self.source.len - 1 and self.source[self.pos + 1] == two) {
                 self.pos += 1;
@@ -41,12 +53,17 @@ pub fn Scanner() type {
 
         pub fn scanToken(self: *Self) token.Token() {
             self.skipWhitespace();
-            const pos = self.pos;
 
-            if (pos == self.source.len) {
-                return token.Token().init(token.TokenType.EOF, pos, self.line);
+            if (self.pos == self.source.len) {
+                return token.Token().init(token.TokenType.EOF, self.pos, self.line);
             }
 
+            // This is a single-line comment.
+            if (self.source[self.pos] == '#') {
+                self.skipToNewLine();
+            }
+
+            const pos = self.pos;
             var newToken = switch (self.source[pos]) {
                 '(' => token.Token().init(token.TokenType.LEFT_PAREN, pos, self.line),
                 ')' => token.Token().init(token.TokenType.RIGHT_PAREN, pos, self.line),
