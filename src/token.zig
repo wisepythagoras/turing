@@ -38,7 +38,7 @@ pub const TokenType = enum(u8) {
     STRUCT, // Class equivalent
     IF,
     ELSE,
-    FALSE, //29
+    FALSE,
     TRUE,
     FOR,
     WHILE,

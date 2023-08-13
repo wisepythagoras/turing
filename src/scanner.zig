@@ -171,6 +171,20 @@ pub fn Scanner() type {
                         newTokenType = token.TokenType.FALSE;
                     } else if (utils.strcomp(str, "nil")) {
                         newTokenType = token.TokenType.NIL;
+                    } else if (utils.strcomp(str, "fun")) {
+                        newTokenType = token.TokenType.FUNCTION;
+                    } else if (utils.strcomp(str, "this")) {
+                        newTokenType = token.TokenType.THIS;
+                    } else if (utils.strcomp(str, "nil")) {
+                        newTokenType = token.TokenType.NIL;
+                    } else if (utils.strcomp(str, "super")) {
+                        newTokenType = token.TokenType.SUPER;
+                    } else if (utils.strcomp(str, "const")) {
+                        newTokenType = token.TokenType.CONST;
+                    } else if (utils.strcomp(str, "let")) {
+                        newTokenType = token.TokenType.VAR;
+                    } else if (utils.strcomp(str, "return")) {
+                        newTokenType = token.TokenType.RETURN;
                     }
 
                     // TODO: Add everything here.
