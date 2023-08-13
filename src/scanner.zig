@@ -1,5 +1,6 @@
 const std = @import("std");
 const token = @import("token.zig");
+const core = @import("core.zig");
 
 pub fn Scanner() type {
     return struct {
@@ -42,6 +43,20 @@ pub fn Scanner() type {
             }
         }
 
+        fn findEndQuote(self: *Self, kind: u8) core.CompilerError!usize {
+            var pos = self.pos + 1;
+
+            while (pos < self.source.len) {
+                if (self.source[pos] == kind) {
+                    return pos;
+                }
+
+                pos += 1;
+            }
+
+            return core.CompilerError.UnterminatedString;
+        }
+
         fn singleOrDouble(self: *Self, two: u8, a: token.TokenType, b: token.TokenType) token.Token() {
             if (self.pos < self.source.len - 1 and self.source[self.pos + 1] == two) {
                 self.pos += 1;
@@ -51,7 +66,7 @@ pub fn Scanner() type {
             return token.Token().init(a, self.pos, self.line);
         }
 
-        pub fn scanToken(self: *Self) token.Token() {
+        pub fn scanToken(self: *Self) core.CompilerError!token.Token() {
             self.skipWhitespace();
 
             if (self.pos == self.source.len) {
@@ -61,6 +76,19 @@ pub fn Scanner() type {
             // This is a single-line comment.
             if (self.source[self.pos] == '#') {
                 self.skipToNewLine();
+            } else if (self.source[self.pos] == '\'' or self.source[self.pos] == '"') {
+                if (self.findEndQuote(self.source[self.pos])) |endPos| {
+                    var stringToken = token.Token().initWithSize(
+                        token.TokenType.STRING,
+                        self.pos + 1,
+                        endPos - self.pos - 1,
+                    );
+                    self.pos = endPos + 1;
+
+                    return stringToken;
+                } else |err| {
+                    return err;
+                }
             }
 
             const pos = self.pos;

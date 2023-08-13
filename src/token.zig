@@ -81,13 +81,25 @@ pub fn Token() type {
 
         tokenType: TokenType,
         pos: usize,
-        line: usize,
+        // line: usize,
+        size: usize,
 
         pub fn init(t: TokenType, pos: usize, line: usize) Self {
+            _ = line;
             return Self{
                 .tokenType = t,
                 .pos = pos,
-                .line = line,
+                // .line = line,
+                .size = 0,
+            };
+        }
+
+        pub fn initWithSize(t: TokenType, pos: usize, size: usize) Self {
+            return Self{
+                .tokenType = t,
+                .pos = pos,
+                // .line = line,
+                .size = size,
             };
         }
 
@@ -95,9 +107,13 @@ pub fn Token() type {
             var len = tokenSizes[self.tokenType.toUsize()];
             const allocator = std.heap.page_allocator;
 
-            // TODO: This is temporary.
             if (len == 0) {
-                len = 1;
+                // TODO: This is temporary.
+                if (self.tokenType == TokenType.EOF or self.tokenType == TokenType.ERROR) {
+                    len = 1;
+                } else {
+                    len = self.size;
+                }
             }
 
             if (allocator.alloc(u8, len)) |buf| {

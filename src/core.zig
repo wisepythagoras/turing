@@ -58,7 +58,12 @@ pub fn Value() type {
 }
 
 pub const OperationFn = *const fn (Value(), Value()) Value();
-pub const CompilerError = error{ CompileError, RuntimeError, InvalidMemoryLookup };
+pub const CompilerError = error{
+    CompileError,
+    RuntimeError,
+    InvalidMemoryLookup,
+    UnterminatedString,
+};
 
 pub fn addOp(a: Value(), b: Value()) Value() {
     return Value().initNumber(a.number + b.number);

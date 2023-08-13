@@ -22,17 +22,19 @@ pub fn Compiler() type {
 
         pub fn compile(self: *Self) !void {
             while (true) {
-                var t = self.scanner.scanToken();
+                if (self.scanner.scanToken()) |t| {
+                    if (t.tokenType == token.TokenType.EOF) {
+                        return;
+                    }
 
-                if (t.tokenType == token.TokenType.EOF) {
-                    return;
+                    var tokenStr = try t.toString(self.source);
+                    std.debug.print("{?} <= {s}\n", .{
+                        t.tokenType,
+                        tokenStr,
+                    });
+                } else |err| {
+                    return err;
                 }
-
-                var tokenStr = try t.toString(self.source);
-                std.debug.print("{?} <= {s}\n", .{
-                    t.tokenType,
-                    tokenStr,
-                });
             }
         }
     };
