@@ -25,5 +25,5 @@ pub fn readFile(fName: []const u8) ![]u8 {
 }
 
 pub fn isDigit(char: u8) bool {
-    return char >= '0' and char <= '9';
+    return char >= '0' and char <= '9' or char == '.';
 }
