@@ -63,6 +63,7 @@ pub const CompilerError = error{
     RuntimeError,
     InvalidMemoryLookup,
     UnterminatedString,
+    UnknownToken,
 };
 
 pub fn addOp(a: Value(), b: Value()) Value() {

@@ -172,6 +172,10 @@ pub fn Scanner() type {
                 else => token.Token().init(token.TokenType.ERROR, pos, self.line),
             };
 
+            if (newToken.tokenType == token.TokenType.ERROR) {
+                return core.CompilerError.UnknownToken;
+            }
+
             // This will be updated further when encountering multi character tokens.
             self.pos += 1;
 
