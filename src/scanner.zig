@@ -71,7 +71,7 @@ pub fn Scanner() type {
         fn getDigitEndPos(self: Self) usize {
             var pos = self.pos;
 
-            while (utils.isDigit(self.source[pos])) {
+            while (utils.isDigit(self.source[pos], true)) {
                 pos += 1;
             }
 
