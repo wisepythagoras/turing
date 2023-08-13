@@ -38,7 +38,7 @@ pub const TokenType = enum(u8) {
     STRUCT, // Class equivalent
     IF,
     ELSE,
-    FALSE,
+    FALSE, //29
     TRUE,
     FOR,
     WHILE,
@@ -48,6 +48,7 @@ pub const TokenType = enum(u8) {
     THIS,
     VAR,
     CONST,
+    NIL,
 
     // Misc.
     ERROR,
@@ -58,21 +59,23 @@ pub const TokenType = enum(u8) {
     }
 };
 
-const tokenSizes: [40]usize = [40]usize{
+const tokenSizes: [41]usize = [41]usize{
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     2, 2, 2, 2,
     0, 0, 0, // The literals, because they're dynamic
     3, 2, // And and or
     6, // Stuct
-    5, 4, // False and true
     2, 4, // if-else
+    5, 4, // False and true
     3, 5, // for and while
     3, // Function
     6, // Return
     5, // Super
     4, // This
     3, 4, // Var and const
-    0, 0,
+    3, // Nil
+    0,
+    0,
 };
 
 pub fn Token() type {

@@ -71,7 +71,9 @@ pub fn Scanner() type {
         fn getDigitEndPos(self: Self) usize {
             var pos = self.pos;
 
-            while (utils.isDigit(self.source[pos], true)) {
+            while (pos < self.source.len and
+                utils.isDigit(self.source[pos], true))
+            {
                 pos += 1;
             }
 
@@ -89,7 +91,7 @@ pub fn Scanner() type {
                 return 0;
             }
 
-            while (utils.isAlphaNum(self.source[pos])) {
+            while (pos < self.source.len and utils.isAlphaNum(self.source[pos])) {
                 pos += 1;
             }
 
@@ -99,7 +101,7 @@ pub fn Scanner() type {
         pub fn scanToken(self: *Self) core.CompilerError!token.Token() {
             self.skipWhitespace();
 
-            if (self.pos == self.source.len) {
+            if (self.pos >= self.source.len) {
                 return token.Token().init(token.TokenType.EOF, self.pos, self.line);
             }
 
@@ -147,6 +149,38 @@ pub fn Scanner() type {
                     self.pos,
                     alphaNumEndPos - self.pos,
                 );
+
+                if (identifierToken.toString(self.source)) |str| {
+                    var newTokenType = token.TokenType.IDENTIFIER;
+
+                    if (utils.strcomp(str, "and")) {
+                        newTokenType = token.TokenType.AND;
+                    } else if (utils.strcomp(str, "or")) {
+                        newTokenType = token.TokenType.OR;
+                    } else if (utils.strcomp(str, "for")) {
+                        newTokenType = token.TokenType.FOR;
+                    } else if (utils.strcomp(str, "while")) {
+                        newTokenType = token.TokenType.WHILE;
+                    } else if (utils.strcomp(str, "if")) {
+                        newTokenType = token.TokenType.IF;
+                    } else if (utils.strcomp(str, "else")) {
+                        newTokenType = token.TokenType.ELSE;
+                    } else if (utils.strcomp(str, "true")) {
+                        newTokenType = token.TokenType.TRUE;
+                    } else if (utils.strcomp(str, "false")) {
+                        newTokenType = token.TokenType.FALSE;
+                    } else if (utils.strcomp(str, "nil")) {
+                        newTokenType = token.TokenType.NIL;
+                    }
+
+                    // TODO: Add everything here.
+
+                    identifierToken.tokenType = newTokenType;
+                } else |err| {
+                    std.debug.print("ERROR: {?}\n", .{err});
+                    return core.CompilerError.CompileError;
+                }
+
                 self.pos = alphaNumEndPos;
 
                 return identifierToken;

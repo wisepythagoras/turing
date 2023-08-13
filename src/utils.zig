@@ -40,3 +40,8 @@ pub fn isAlpha(char: u8) bool {
 pub fn isAlphaNum(char: u8) bool {
     return isAlpha(char) or isDigit(char, false);
 }
+
+/// Compares two strings. Shorthand for `std.mem.eql`.
+pub fn strcomp(a: []const u8, b: []const u8) bool {
+    return std.mem.eql(u8, a, b);
+}
