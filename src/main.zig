@@ -6,9 +6,11 @@ const compiler = @import("compiler.zig");
 const utils = @import("utils.zig");
 
 pub fn main() !void {
+    var myVm = try vm.VM().init(false);
+
     if (utils.readFile("source.tur")) |source| {
-        var comp = compiler.Compiler().init(source);
-        if (comp.interpret()) {
+        var comp = compiler.Compiler().init(source, myVm.chunk);
+        if (comp.interpret()) |_| {
             std.debug.print("Success\n", .{});
         } else |err| {
             std.debug.print("ERROR: {?}\n", .{err});
@@ -17,7 +19,6 @@ pub fn main() !void {
         std.debug.print("{?}\n", .{err});
     }
 
-    var myVm = try vm.VM().init(false);
     var ck = myVm.chunk;
     // var c2 = chunk.Chunk().init(std.heap.page_allocator);
     try ck.writeOpCode(core.OpCode.CONSTANT, 1);

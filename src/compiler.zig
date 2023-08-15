@@ -11,20 +11,20 @@ pub fn Compiler() type {
 
         source: []u8,
         scanner: scanner.Scanner(),
-        chunk: chunk.Chunk(),
+        chunk: *chunk.Chunk(),
 
-        pub fn init(source: []u8) Self {
+        pub fn init(source: []u8, c: *chunk.Chunk()) Self {
             var p = parser.Parser().init();
             _ = p;
             return Self{
                 .source = source,
                 .scanner = scanner.Scanner().init(source),
-                .chunk = chunk.Chunk().init(std.heap.page_allocator),
+                .chunk = c, // chunk.Chunk().init(std.heap.page_allocator),
             };
         }
 
-        pub fn interpret(self: *Self) !void {
-            try self.compile();
+        pub fn interpret(self: *Self) !*chunk.Chunk() {
+            return self.compile();
         }
 
         pub fn advance(self: *Self) !void {
@@ -51,8 +51,10 @@ pub fn Compiler() type {
             }
         }
 
-        pub fn compile(self: *Self) !void {
+        pub fn compile(self: *Self) !*chunk.Chunk() {
             try self.advance();
+
+            return self.chunk;
         }
     };
 }
