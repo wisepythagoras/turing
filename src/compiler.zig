@@ -20,7 +20,7 @@ pub fn Compiler() type {
             try self.compile();
         }
 
-        pub fn compile(self: *Self) !void {
+        pub fn advance(self: *Self) !void {
             while (true) {
                 if (self.scanner.scanToken()) |t| {
                     if (t.tokenType == token.TokenType.EOF) {
@@ -36,6 +36,10 @@ pub fn Compiler() type {
                     return err;
                 }
             }
+        }
+
+        pub fn compile(self: *Self) !void {
+            try self.advance();
         }
     };
 }
