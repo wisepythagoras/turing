@@ -1,6 +1,7 @@
 const std = @import("std");
 const scanner = @import("scanner.zig");
 const token = @import("token.zig");
+const core = @import("core.zig");
 
 pub fn Compiler() type {
     return struct {
@@ -25,6 +26,8 @@ pub fn Compiler() type {
                 if (self.scanner.scanToken()) |t| {
                     if (t.tokenType == token.TokenType.EOF) {
                         return;
+                    } else if (t.tokenType == token.TokenType.ERROR) {
+                        return core.CompilerError.CompileError;
                     }
 
                     var tokenStr = try t.toString(self.source);
