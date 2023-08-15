@@ -65,6 +65,10 @@ pub const CompilerError = error{
     UnterminatedString,
     UnknownToken,
     SyntaxError,
+    UnterminatedBlock,
+    InvalidBlock,
+    UnclosedParen,
+    InvalidParen,
 };
 
 pub fn addOp(a: Value(), b: Value()) Value() {

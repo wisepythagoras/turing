@@ -10,12 +10,16 @@ pub fn Scanner() type {
         source: []u8,
         line: usize,
         pos: usize,
+        parenLevel: usize,
+        braceLevel: usize,
 
         pub fn init(source: []u8) Self {
             return Self{
                 .source = source,
                 .line = 1,
                 .pos = 0,
+                .parenLevel = 0,
+                .braceLevel = 0,
             };
         }
 
@@ -102,6 +106,12 @@ pub fn Scanner() type {
             self.skipWhitespace();
 
             if (self.pos >= self.source.len) {
+                if (self.parenLevel > 0) {
+                    return core.CompilerError.UnclosedParen;
+                } else if (self.braceLevel > 0) {
+                    return core.CompilerError.UnterminatedBlock;
+                }
+
                 return token.Token().init(token.TokenType.EOF, self.pos, self.line);
             }
 
@@ -226,6 +236,22 @@ pub fn Scanner() type {
 
             if (newToken.tokenType == token.TokenType.ERROR) {
                 return core.CompilerError.UnknownToken;
+            } else if (newToken.tokenType == token.TokenType.LEFT_PAREN) {
+                self.parenLevel += 1;
+            } else if (newToken.tokenType == token.TokenType.RIGHT_PAREN) {
+                if (self.parenLevel == 0) {
+                    return core.CompilerError.InvalidParen;
+                }
+
+                self.parenLevel -= 1;
+            } else if (newToken.tokenType == token.TokenType.LEFT_BRACE) {
+                self.braceLevel += 1;
+            } else if (newToken.tokenType == token.TokenType.RIGHT_BRACE) {
+                if (self.parenLevel == 0) {
+                    return core.CompilerError.InvalidBlock;
+                }
+
+                self.braceLevel -= 1;
             }
 
             // This will be updated further when encountering multi character tokens.
