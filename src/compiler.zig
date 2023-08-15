@@ -1,6 +1,8 @@
 const std = @import("std");
 const scanner = @import("scanner.zig");
 const token = @import("token.zig");
+const parser = @import("parser.zig");
+const chunk = @import("chunk.zig");
 const core = @import("core.zig");
 
 pub fn Compiler() type {
@@ -9,11 +11,15 @@ pub fn Compiler() type {
 
         source: []u8,
         scanner: scanner.Scanner(),
+        chunk: chunk.Chunk(),
 
         pub fn init(source: []u8) Self {
+            var p = parser.Parser().init();
+            _ = p;
             return Self{
                 .source = source,
                 .scanner = scanner.Scanner().init(source),
+                .chunk = chunk.Chunk().init(std.heap.page_allocator),
             };
         }
 
