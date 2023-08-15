@@ -155,39 +155,39 @@ pub fn Scanner() type {
 
                     // TODO: The following is not efficient, so we're going to need to do some extra
                     // work here to do these comparisons only when they're necessary.
-                    if (utils.strcomp(str, "and")) {
+                    if (str.len == 3 and utils.strcomp(str, "and")) {
                         newTokenType = token.TokenType.AND;
-                    } else if (utils.strcomp(str, "or")) {
+                    } else if (str.len == 2 and utils.strcomp(str, "or")) {
                         newTokenType = token.TokenType.OR;
-                    } else if (utils.strcomp(str, "for")) {
+                    } else if (str.len == 3 and utils.strcomp(str, "for")) {
                         newTokenType = token.TokenType.FOR;
-                    } else if (utils.strcomp(str, "while")) {
+                    } else if (str.len == 5 and utils.strcomp(str, "while")) {
                         newTokenType = token.TokenType.WHILE;
-                    } else if (utils.strcomp(str, "if")) {
+                    } else if (str.len == 2 and utils.strcomp(str, "if")) {
                         newTokenType = token.TokenType.IF;
-                    } else if (utils.strcomp(str, "else")) {
+                    } else if (str.len == 4 and utils.strcomp(str, "else")) {
                         newTokenType = token.TokenType.ELSE;
-                    } else if (utils.strcomp(str, "true")) {
+                    } else if (str.len == 4 and utils.strcomp(str, "true")) {
                         newTokenType = token.TokenType.TRUE;
-                    } else if (utils.strcomp(str, "false")) {
+                    } else if (str.len == 5 and utils.strcomp(str, "false")) {
                         newTokenType = token.TokenType.FALSE;
-                    } else if (utils.strcomp(str, "nil")) {
+                    } else if (str.len == 3 and utils.strcomp(str, "nil")) {
                         newTokenType = token.TokenType.NIL;
-                    } else if (utils.strcomp(str, "fun")) {
+                    } else if (str.len == 3 and utils.strcomp(str, "fun")) {
                         newTokenType = token.TokenType.FUNCTION;
-                    } else if (utils.strcomp(str, "this")) {
+                    } else if (str.len == 4 and utils.strcomp(str, "this")) {
                         newTokenType = token.TokenType.THIS;
-                    } else if (utils.strcomp(str, "nil")) {
+                    } else if (str.len == 3 and utils.strcomp(str, "nil")) {
                         newTokenType = token.TokenType.NIL;
-                    } else if (utils.strcomp(str, "super")) {
+                    } else if (str.len == 4 and utils.strcomp(str, "super")) {
                         newTokenType = token.TokenType.SUPER;
-                    } else if (utils.strcomp(str, "const")) {
+                    } else if (str.len == 5 and utils.strcomp(str, "const")) {
                         newTokenType = token.TokenType.CONST;
-                    } else if (utils.strcomp(str, "let")) {
+                    } else if (str.len == 3 and utils.strcomp(str, "let")) {
                         newTokenType = token.TokenType.VAR;
-                    } else if (utils.strcomp(str, "return")) {
+                    } else if (str.len == 6 and utils.strcomp(str, "return")) {
                         newTokenType = token.TokenType.RETURN;
-                    } else if (utils.strcomp(str, "struct")) {
+                    } else if (str.len == 6 and utils.strcomp(str, "struct")) {
                         newTokenType = token.TokenType.STRUCT;
                     }
 
