@@ -19,7 +19,6 @@ pub const OpCode = enum(u8) {
         const allocator = std.heap.page_allocator;
 
         if (std.fmt.allocPrint(allocator, "{?}", .{self})) |string| {
-            // defer allocator.free(string);
             return string;
         } else |err| {
             std.debug.print("{?}\n", .{err});
@@ -33,6 +32,7 @@ pub const InterpretResults = enum(u8) {
     CONTINUE,
     COMPILE_ERROR,
     RUNTIME_ERROR,
+    SYNTAX_ERROR,
 };
 
 pub fn Value() type {
@@ -64,6 +64,7 @@ pub const CompilerError = error{
     InvalidMemoryLookup,
     UnterminatedString,
     UnknownToken,
+    SyntaxError,
 };
 
 pub fn addOp(a: Value(), b: Value()) Value() {
