@@ -36,6 +36,7 @@ pub fn Compiler() type {
                         tokenStr,
                     });
                 } else |err| {
+                    std.debug.print("ERROR: line {d} / pos {d}\n", .{ self.scanner.line, self.scanner.pos });
                     return err;
                 }
             }
