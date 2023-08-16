@@ -12,14 +12,15 @@ pub fn Compiler() type {
         source: []u8,
         scanner: scanner.Scanner(),
         chunk: *chunk.Chunk(),
+        parser: parser.Parser(),
 
         pub fn init(source: []u8, c: *chunk.Chunk()) Self {
-            var p = parser.Parser().init();
-            _ = p;
+            var p = parser.Parser().init(c, source);
             return Self{
                 .source = source,
                 .scanner = scanner.Scanner().init(source),
-                .chunk = c, // chunk.Chunk().init(std.heap.page_allocator),
+                .chunk = c,
+                .parser = p,
             };
         }
 
