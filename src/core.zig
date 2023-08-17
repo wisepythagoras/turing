@@ -69,6 +69,8 @@ pub const CompilerError = error{
     InvalidBlock,
     UnclosedParen,
     InvalidParen,
+    UnexpectedToken,
+    UninitializedStack,
 };
 
 pub fn addOp(a: Value(), b: Value()) Value() {

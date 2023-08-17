@@ -7,13 +7,14 @@ pub fn Parser() type {
     return struct {
         const Self = @This();
 
-        // next: token.Token(),
+        current: ?token.Token(),
         previous: ?token.Token(),
         chunk: *chunk.Chunk(),
         source: []u8,
 
         pub fn init(c: *chunk.Chunk(), source: []u8) Self {
             return Self{
+                .current = null,
                 .previous = null,
                 .chunk = c,
                 .source = source,
@@ -31,6 +32,10 @@ pub fn Parser() type {
                     return err;
                 }
             }
+        }
+
+        fn grouping(self: *Self) void {
+            _ = self;
         }
     };
 }
