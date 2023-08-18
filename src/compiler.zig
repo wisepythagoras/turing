@@ -90,6 +90,7 @@ pub fn Compiler() type {
             return core.CompilerError.UninitializedStack;
         }
 
+        /// Compiles and returns a chunk that's ready for the VM to run.
         pub fn compile(self: *Self) !*chunk.Chunk() {
             if (self.advance()) |t| {
                 _ = t;

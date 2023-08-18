@@ -12,6 +12,7 @@ pub fn Parser() type {
         chunk: *chunk.Chunk(),
         source: []u8,
 
+        /// Creates a new instance of the parser. This should be used only by the compiler.
         pub fn init(c: *chunk.Chunk(), source: []u8) Self {
             return Self{
                 .current = null,
