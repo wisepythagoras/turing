@@ -15,10 +15,11 @@ pub fn Compiler() type {
         parser: parser.Parser(),
 
         pub fn init(source: []u8, c: *chunk.Chunk()) Self {
-            var p = parser.Parser().init(c, source);
+            var newScanner = scanner.Scanner().init(source);
+            var p = parser.Parser().init(c, source, &newScanner);
             return Self{
                 .source = source,
-                .scanner = scanner.Scanner().init(source),
+                .scanner = newScanner,
                 .chunk = c,
                 .parser = p,
             };
