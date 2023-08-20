@@ -38,6 +38,10 @@ pub fn Parser() type {
             }
         }
 
+        pub fn expression(self: *Self) void {
+            _ = self;
+        }
+
         fn grouping(self: *Self) void {
             _ = self;
         }
