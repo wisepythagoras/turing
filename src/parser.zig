@@ -60,7 +60,7 @@ pub fn Parser() type {
                 // After parsing the operator, we parse the rest of the expression which we need to negate.
                 // This could be a simple number (such as 1 => -1) or a more complex operation, which could
                 // include a function call (ie: -(2 + myFn(a, b))).
-                self.expression();
+                self.parsePrecedence(Precedence.UNARY);
 
                 // We should emit the opcode for the operation last, since we only want to push the number
                 // onto the stack and then run the command on it.
