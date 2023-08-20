@@ -38,6 +38,19 @@ pub fn Parser() type {
             }
         }
 
+        pub fn unary(self: *Self) !void {
+            if (self.previous) |previous| {
+                var operatorType = previous.tokenType;
+
+                switch (operatorType) {
+                    .NEGATE => return self.chunk.writeOpCode(core.OpCode.NEGATE, 0),
+                    else => return,
+                }
+            }
+
+            return core.CompilerError.UninitializedStack;
+        }
+
         pub fn expression(self: *Self) void {
             _ = self;
         }
