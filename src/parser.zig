@@ -25,7 +25,7 @@ pub fn Parser() type {
             };
         }
 
-        pub fn number(self: *Self) !void {
+        fn number(self: *Self) !void {
             if (self.previous) |prev| {
                 self.chunk.writeOpCode(core.OpCode.CONSTANT, 0);
                 var numStr = prev.toString(self.source);
@@ -38,9 +38,15 @@ pub fn Parser() type {
             }
         }
 
-        pub fn unary(self: *Self) !void {
+        fn unary(self: *Self) !void {
             if (self.previous) |previous| {
+                // The operator has been consumed and is stored in the previous token.
                 var operatorType = previous.tokenType;
+
+                // After parsing the operator, we parse the rest of the expression which we need to negate.
+                // This could be a simple number (such as 1 => -1) or a more complex operation, which could
+                // include a function call (ie: -(2 + myFn(a, b))).
+                self.expression();
 
                 switch (operatorType) {
                     .NEGATE => return self.chunk.writeOpCode(core.OpCode.NEGATE, 0),
@@ -51,12 +57,18 @@ pub fn Parser() type {
             return core.CompilerError.UninitializedStack;
         }
 
-        pub fn expression(self: *Self) void {
+        fn expression(self: *Self) void {
             _ = self;
         }
 
-        fn grouping(self: *Self) void {
-            _ = self;
+        fn grouping(self: *Self) !void {
+            self.expression();
+
+            if (self.consume(token.TokenType.RIGHT_PAREN)) |_| {
+                return;
+            } else |err| {
+                return err;
+            }
         }
 
         pub fn advance(self: *Self) !token.Token() {
