@@ -4,6 +4,20 @@ const chunk = @import("chunk.zig");
 const core = @import("core.zig");
 const scanner = @import("scanner.zig");
 
+pub const Precedence = enum(u8) {
+    NONE,
+    ASSIGNMENT, // =
+    OR, // or
+    AND, // and
+    EQUALITY, // == !=
+    COMPARISON, // > < >= <=
+    TERM, // + -
+    FACTOR, // * /
+    UNARY, // ! -
+    CALL, // . ()
+    PRIMARY,
+};
+
 pub fn Parser() type {
     return struct {
         const Self = @This();
@@ -48,6 +62,8 @@ pub fn Parser() type {
                 // include a function call (ie: -(2 + myFn(a, b))).
                 self.expression();
 
+                // We should emit the opcode for the operation last, since we only want to push the number
+                // onto the stack and then run the command on it.
                 switch (operatorType) {
                     .NEGATE => return self.chunk.writeOpCode(core.OpCode.NEGATE, 0),
                     else => return,
@@ -58,7 +74,7 @@ pub fn Parser() type {
         }
 
         fn expression(self: *Self) void {
-            _ = self;
+            self.parsePrecedence(Precedence.ASSIGNMENT);
         }
 
         fn grouping(self: *Self) !void {
@@ -69,6 +85,11 @@ pub fn Parser() type {
             } else |err| {
                 return err;
             }
+        }
+
+        fn parsePrecedence(self: *Self, prec: Precedence) void {
+            _ = prec;
+            _ = self;
         }
 
         pub fn advance(self: *Self) !token.Token() {
