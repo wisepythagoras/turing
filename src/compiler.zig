@@ -60,40 +60,10 @@ pub fn Compiler() type {
             }
         }
 
-        pub fn advance(self: *Self) !token.Token() {
-            self.parser.previous = self.parser.current;
-
-            while (true) {
-                if (self.scanner.scanToken()) |t| {
-                    self.parser.current = t;
-                    var tokenStr = try t.toString(self.source);
-                    std.debug.print("{?} <= {s}\n", .{
-                        t.tokenType,
-                        tokenStr,
-                    });
-                    return t;
-                } else |err| {
-                    return err;
-                }
-            }
-        }
-
-        /// TODO: maybe add a message here?
-        pub fn consume(self: *Self, tokenType: token.TokenType) !token.Token() {
-            if (self.parser.current) |current| {
-                if (current.tokenType == tokenType) {
-                    return self.advance();
-                } else {
-                    return core.CompilerError.UnexpectedToken;
-                }
-            }
-
-            return core.CompilerError.UninitializedStack;
-        }
-
-        /// Compiles and returns a chunk that's ready for the VM to run.
+        /// Compiles and returns a chunk that's ready for the VM to run. To just dump every scanned
+        /// token, run `scanAllTokens`.
         pub fn compile(self: *Self) !*chunk.Chunk() {
-            if (self.advance()) |t| {
+            if (self.parser.advance()) |t| {
                 _ = t;
                 return self.chunk;
             } else |err| {

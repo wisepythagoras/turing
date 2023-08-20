@@ -59,5 +59,18 @@ pub fn Parser() type {
                 }
             }
         }
+
+        /// TODO: maybe add a message here?
+        pub fn consume(self: *Self, tokenType: token.TokenType) !token.Token() {
+            if (self.current) |current| {
+                if (current.tokenType == tokenType) {
+                    return self.advance();
+                } else {
+                    return core.CompilerError.UnexpectedToken;
+                }
+            }
+
+            return core.CompilerError.UninitializedStack;
+        }
     };
 }

@@ -10,7 +10,9 @@ pub fn main() !void {
 
     if (utils.readFile("source.tur")) |source| {
         var comp = compiler.Compiler().init(source, myVm.chunk);
-        if (comp.scanAllTokens()) |_| {
+
+        // To see every parsed token: scanAllTokens.
+        if (comp.compile()) |_| {
             std.debug.print("Success\n", .{});
         } else |err| {
             std.debug.print("ERROR: {?}\n", .{err});
