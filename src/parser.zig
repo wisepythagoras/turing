@@ -73,6 +73,25 @@ pub fn Parser() type {
             return core.CompilerError.UninitializedStack;
         }
 
+        fn binary(self: *Self) !void {
+            if (self.previous) |previous| {
+                var operatorType = previous.tokenType;
+                // var rule = self.getRule(operatorType);
+                // var newPrec = @as(Precedence, @enumFromInt(@intFromEnum(rule.precedence) + 1));
+                // return self.parsePrecedence(newPrec);
+
+                return switch (operatorType) {
+                    .PLUS => self.chunk.writeOpCode(core.OpCode.ADD, 0),
+                    .MINUS => self.chunk.writeOpCode(core.OpCode.SUB, 0),
+                    .STAR => self.chunk.writeOpCode(core.OpCode.MUL, 0),
+                    .SLASH => self.chunk.writeOpCode(core.OpCode.DIV, 0),
+                    else => core.CompilerError.UnexpectedToken,
+                };
+            }
+
+            return core.CompilerError.UninitializedStack;
+        }
+
         fn expression(self: *Self) void {
             self.parsePrecedence(Precedence.ASSIGNMENT);
         }
