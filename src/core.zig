@@ -71,6 +71,7 @@ pub const CompilerError = error{
     InvalidParen,
     UnexpectedToken,
     UninitializedStack,
+    InvalidOperation,
 };
 
 pub fn addOp(a: Value(), b: Value()) Value() {

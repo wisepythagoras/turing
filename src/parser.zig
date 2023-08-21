@@ -18,6 +18,39 @@ pub const Precedence = enum(u8) {
     PRIMARY,
 };
 
+pub const OperationType = enum(u8) {
+    NONE,
+    GROUPING,
+    UNARY,
+    BINARY,
+};
+
+pub const Stuff = struct {
+    token.TokenType,
+    OperationType,
+    OperationType,
+    Precedence,
+};
+
+pub const ParseRules: [16]Stuff = [16]Stuff{
+    .{ token.TokenType.LEFT_PAREN, OperationType.GROUPING, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.RIGHT_PAREN, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.LEFT_BRACE, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.RIGHT_BRACE, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.COMMA, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.DOT, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.MINUS, OperationType.UNARY, OperationType.BINARY, Precedence.TERM },
+    .{ token.TokenType.PLUS, OperationType.NONE, OperationType.BINARY, Precedence.TERM },
+    .{ token.TokenType.SEMICOLON, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.STAR, OperationType.NONE, OperationType.BINARY, Precedence.FACTOR },
+    .{ token.TokenType.SLASH, OperationType.NONE, OperationType.BINARY, Precedence.FACTOR },
+    .{ token.TokenType.BANG, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.EQUAL, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.GREATER_THAN, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.LESS_THAN, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.COMMENT, OperationType.NONE, OperationType.NONE, Precedence.NONE }, // Useless
+};
+
 pub fn Parser() type {
     return struct {
         const Self = @This();
@@ -85,7 +118,7 @@ pub fn Parser() type {
                     .MINUS => self.chunk.writeOpCode(core.OpCode.SUB, 0),
                     .STAR => self.chunk.writeOpCode(core.OpCode.MUL, 0),
                     .SLASH => self.chunk.writeOpCode(core.OpCode.DIV, 0),
-                    else => core.CompilerError.UnexpectedToken,
+                    else => core.CompilerError.InvalidOperation,
                 };
             }
 
