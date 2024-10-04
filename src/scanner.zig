@@ -123,7 +123,7 @@ pub fn Scanner() type {
             // Here we check for a string.
             else if (self.source[self.pos] == '\'' or self.source[self.pos] == '"') {
                 if (self.findEndQuote(self.source[self.pos])) |endPos| {
-                    var stringToken = token.Token().initWithSize(
+                    const stringToken = token.Token().initWithSize(
                         token.TokenType.STRING,
                         self.pos + 1,
                         endPos - self.pos - 1,
@@ -137,10 +137,10 @@ pub fn Scanner() type {
             }
 
             // Now let's check for numbers.
-            var digitEndPos = self.getDigitEndPos();
+            const digitEndPos = self.getDigitEndPos();
 
             if (digitEndPos > 0) {
-                var numberToken = token.Token().initWithSize(
+                const numberToken = token.Token().initWithSize(
                     token.TokenType.NUMBER,
                     self.pos,
                     digitEndPos - self.pos,
@@ -151,7 +151,7 @@ pub fn Scanner() type {
             }
 
             // Now let's check for identifiers.
-            var alphaNumEndPos = self.getAlphanumEndPos();
+            const alphaNumEndPos = self.getAlphanumEndPos();
 
             if (alphaNumEndPos > 0) {
                 var identifierToken = token.Token().initWithSize(
@@ -215,7 +215,7 @@ pub fn Scanner() type {
             }
 
             const pos = self.pos;
-            var newToken = switch (self.source[pos]) {
+            const newToken = switch (self.source[pos]) {
                 '(' => token.Token().init(token.TokenType.LEFT_PAREN, pos, self.line),
                 ')' => token.Token().init(token.TokenType.RIGHT_PAREN, pos, self.line),
                 '{' => token.Token().init(token.TokenType.LEFT_BRACE, pos, self.line),

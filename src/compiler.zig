@@ -16,7 +16,7 @@ pub fn Compiler() type {
 
         pub fn init(source: []u8, c: *chunk.Chunk()) Self {
             var newScanner = scanner.Scanner().init(source);
-            var p = parser.Parser().init(c, source, &newScanner);
+            const p = parser.Parser().init(c, source, &newScanner);
             return Self{
                 .source = source,
                 .scanner = newScanner,
@@ -33,7 +33,7 @@ pub fn Compiler() type {
         /// the parser so it runs them all at once. The problem with this approach is that it's going
         /// to be slower.
         pub fn scanAllTokens(self: *Self) !std.ArrayList(token.Token()) {
-            var tokens = std.ArrayList(token.Token()).init(std.heap.page_allocator);
+            const tokens = std.ArrayList(token.Token()).init(std.heap.page_allocator);
 
             while (true) {
                 if (self.scanner.scanToken()) |t| {
@@ -45,7 +45,7 @@ pub fn Compiler() type {
                         return core.CompilerError.CompileError;
                     }
 
-                    var tokenStr = try t.toString(self.source);
+                    const tokenStr = try t.toString(self.source);
                     std.debug.print("{?} <= {s}\n", .{
                         t.tokenType,
                         tokenStr,

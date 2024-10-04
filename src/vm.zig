@@ -2,14 +2,12 @@ const std = @import("std");
 const chunk = @import("chunk.zig");
 const core = @import("core.zig");
 
-const Stack = std.atomic.Stack;
-
 pub fn VM() type {
     return struct {
         const Self = @This();
 
         chunk: *chunk.Chunk(),
-        stack: Stack(core.Value()),
+        stack: std.ArrayList(core.Value()),
 
         /// Creates a new VM instance. The `destroy` function should be run in order to free
         /// up memory. `defer myVm.destroy()` is possible.
@@ -19,9 +17,12 @@ pub fn VM() type {
             const allocator = std.heap.page_allocator;
 
             if (allocator.create(chunk.Chunk())) |memory| {
-                var newChunk = chunk.Chunk().init(allocator);
+                const newChunk = chunk.Chunk().init(allocator);
                 memory.* = newChunk;
-                var stack = Stack(core.Value()).init();
+                const stack = std.ArrayList(core.Value()).init(
+                    allocator,
+                );
+                // defer stack.deinit();
 
                 return Self{
                     .chunk = memory,
@@ -32,23 +33,24 @@ pub fn VM() type {
             }
         }
 
-        pub fn push(self: *Self, constant: core.Value()) void {
-            const node = std.heap.page_allocator.create(Stack(core.Value()).Node) catch unreachable;
-            node.* = Stack(core.Value()).Node{
-                .next = undefined,
-                .data = constant,
-            };
-            self.stack.push(node);
+        pub fn push(self: *Self, constant: core.Value()) !void {
+            // const node = std.heap.page_allocator.create(Stack(core.Value()).Node) catch unreachable;
+            // node.* = Stack(core.Value()).Node{
+            //     .next = undefined,
+            //     .data = constant,
+            // };
+            // self.stack.push(node);
+            try self.stack.append(constant);
         }
 
         pub fn pop(self: *Self) ?core.Value() {
             const node = self.stack.pop();
 
-            if (node == null) {
-                return null;
-            }
+            // if (node == null) {
+            //     return null;
+            // }
 
-            return node.?.data;
+            return node;
         }
 
         /// Runs the bytecode in the chunk.
@@ -63,7 +65,12 @@ pub fn VM() type {
                         if (core.readConstant(self.chunk, offset)) |constant| {
                             offset += 2;
                             constant.print();
-                            self.push(constant);
+
+                            self.push(constant) catch |err| {
+	                            std.debug.print("ERROR: {?}\n", .{err});
+                            	break :blk core.InterpretResults.RUNTIME_ERROR;
+                            };
+
                             break :blk core.InterpretResults.CONTINUE;
                         } else |err| {
                             std.debug.print("ERROR: {?}\n", .{err});
@@ -76,7 +83,7 @@ pub fn VM() type {
                         break :blk core.InterpretResults.CONTINUE;
                     },
                     .NEGATE => blk: {
-                        var optionalConstant = self.pop();
+                        const optionalConstant = self.pop();
 
                         if (optionalConstant) |eConstant| {
                             var constant = eConstant;
@@ -86,7 +93,12 @@ pub fn VM() type {
                             }
 
                             constant.number *= -1;
-                            self.push(constant);
+
+                            self.push(constant) catch |err| {
+	                            std.debug.print("ERROR: {?}\n", .{err});
+                            	break :blk core.InterpretResults.RUNTIME_ERROR;
+                            };
+
                             constant.print();
                             offset += 1;
 
@@ -96,7 +108,7 @@ pub fn VM() type {
                         break :blk core.InterpretResults.RUNTIME_ERROR;
                     },
                     .ADD => blk: {
-                        var res = self.operation(core.addOp);
+                        const res = self.operation(core.addOp);
 
                         if (res == core.InterpretResults.CONTINUE) {
                             offset += 1;
@@ -105,7 +117,7 @@ pub fn VM() type {
                         break :blk res;
                     },
                     .SUB => blk: {
-                        var res = self.operation(core.subOp);
+                        const res = self.operation(core.subOp);
 
                         if (res == core.InterpretResults.CONTINUE) {
                             offset += 1;
@@ -114,7 +126,7 @@ pub fn VM() type {
                         break :blk res;
                     },
                     .MUL => blk: {
-                        var res = self.operation(core.mulOp);
+                        const res = self.operation(core.mulOp);
 
                         if (res == core.InterpretResults.CONTINUE) {
                             offset += 1;
@@ -123,7 +135,7 @@ pub fn VM() type {
                         break :blk res;
                     },
                     .DIV => blk: {
-                        var res = self.operation(core.divOp);
+                        const res = self.operation(core.divOp);
 
                         if (res == core.InterpretResults.CONTINUE) {
                             offset += 1;
@@ -132,7 +144,7 @@ pub fn VM() type {
                         break :blk res;
                     },
                     .MOD => blk: {
-                        var res = self.operation(core.divOp);
+                        const res = self.operation(core.divOp);
 
                         if (res == core.InterpretResults.CONTINUE) {
                             offset += 1;
@@ -152,14 +164,17 @@ pub fn VM() type {
         }
 
         pub fn operation(self: *Self, op: core.OperationFn) core.InterpretResults {
-            var bOptional = self.pop();
+            const bOptional = self.pop();
 
             if (bOptional) |b| {
-                var aOptional = self.pop();
+                const aOptional = self.pop();
 
                 if (aOptional) |a| {
-                    var newValue = op(a, b);
-                    self.push(newValue);
+                    const newValue = op(a, b);
+                    self.push(newValue) catch |err| {
+                    	std.debug.print("ERROR: {?}\n", .{err});
+                    	return core.InterpretResults.RUNTIME_ERROR;
+                    };
                     newValue.print();
 
                     return core.InterpretResults.CONTINUE;
@@ -170,7 +185,9 @@ pub fn VM() type {
         }
 
         pub fn resetStack(self: *Self) void {
-            self.stack = Stack(core.Value()).init();
+            self.stack = std.ArrayList(core.Value()).init(
+                std.heap.page_allocator,
+            );
         }
 
         pub fn destroy(self: Self) void {

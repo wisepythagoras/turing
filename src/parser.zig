@@ -75,7 +75,7 @@ pub fn Parser() type {
         fn number(self: *Self) !void {
             if (self.previous) |prev| {
                 self.chunk.writeOpCode(core.OpCode.CONSTANT, 0);
-                var numStr = prev.toString(self.source);
+                const numStr = prev.toString(self.source);
 
                 if (std.fmt.parseFloat(f64, numStr)) |num| {
                     self.chunk.addConstant(core.Value().initNumber(num));
@@ -88,7 +88,7 @@ pub fn Parser() type {
         fn unary(self: *Self) !void {
             if (self.previous) |previous| {
                 // The operator has been consumed and is stored in the previous token.
-                var operatorType = previous.tokenType;
+                const operatorType = previous.tokenType;
 
                 // After parsing the operator, we parse the rest of the expression which we need to negate.
                 // This could be a simple number (such as 1 => -1) or a more complex operation, which could
@@ -108,7 +108,7 @@ pub fn Parser() type {
 
         fn binary(self: *Self) !void {
             if (self.previous) |previous| {
-                var operatorType = previous.tokenType;
+                const operatorType = previous.tokenType;
                 // var rule = self.getRule(operatorType);
                 // var newPrec = @as(Precedence, @enumFromInt(@intFromEnum(rule.precedence) + 1));
                 // return self.parsePrecedence(newPrec);
@@ -150,7 +150,7 @@ pub fn Parser() type {
             while (true) {
                 if (self.scanner.scanToken()) |t| {
                     self.current = t;
-                    var tokenStr = try t.toString(self.source);
+                    const tokenStr = try t.toString(self.source);
                     std.debug.print("{?} <= {s}\n", .{
                         t.tokenType,
                         tokenStr,

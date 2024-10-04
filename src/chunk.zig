@@ -15,8 +15,8 @@ pub fn Chunk() type {
 
         /// Initialize the new Chunk.
         pub fn init(allocator: std.mem.Allocator) Self {
-            var code = std.ArrayList(CodeTuple).init(allocator);
-            var values = std.ArrayList(core.Value()).init(allocator);
+            const code = std.ArrayList(CodeTuple).init(allocator);
+            const values = std.ArrayList(core.Value()).init(allocator);
 
             return Self{
                 .code = code,
