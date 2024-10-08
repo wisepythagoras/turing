@@ -1,4 +1,5 @@
 const std = @import("std");
+const parser = @import("parser.zig");
 
 pub const TokenType = enum(u8) {
     const Self = @This();
@@ -57,6 +58,11 @@ pub const TokenType = enum(u8) {
     /// Gets the numerical representation of the enum value.
     pub fn toUsize(self: Self) usize {
         return @as(usize, @intFromEnum(self));
+    }
+
+    /// Returns the appropriate parser rule
+    pub fn getRule(self: Self) parser.ParseRules {
+        return parser.ParseRules[self.toUsize()];
     }
 };
 

@@ -23,6 +23,7 @@ pub const OperationType = enum(u8) {
     GROUPING,
     UNARY,
     BINARY,
+    NUMBER,
 };
 
 pub const Stuff = struct {
@@ -49,6 +50,39 @@ pub const ParseRules: [16]Stuff = [16]Stuff{
     .{ token.TokenType.GREATER_THAN, OperationType.NONE, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.LESS_THAN, OperationType.NONE, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.COMMENT, OperationType.NONE, OperationType.NONE, Precedence.NONE }, // Useless
+
+    // Multi-character tokens
+    .{ token.TokenType.BANG_EQUAL, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.DOUBLE_EQUAL, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.GREATER_EQUAL_THAN, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.LESS_EQUAL_THAN, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+
+    // Literals
+    .{ token.TokenType.IDENTIFIER, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.STRING, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.NUMBER, OperationType.NUMBER, OperationType.NONE, Precedence.NONE },
+
+    // Keywords
+    .{ token.TokenType.AND, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.OR, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.STRUCT, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.IF, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.ELSE, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.FALSE, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.TRUE, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.FOR, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.WHILE, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.FUNCTION, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.RETURN, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.SUPER, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.THIS, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.VAR, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.CONST, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.NIL, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+
+    // Misc
+    .{ token.TokenType.ERROR, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.EOF, OperationType.NONE, OperationType.NONE, Precedence.NONE },
 };
 
 pub fn Parser() type {
@@ -109,7 +143,8 @@ pub fn Parser() type {
         fn binary(self: *Self) !void {
             if (self.previous) |previous| {
                 const operatorType = previous.tokenType;
-                // var rule = self.getRule(operatorType);
+                const rule = self.getRulee(operatorType);
+                std.debug.print("{}\n", rule);
                 // var newPrec = @as(Precedence, @enumFromInt(@intFromEnum(rule.precedence) + 1));
                 // return self.parsePrecedence(newPrec);
 
