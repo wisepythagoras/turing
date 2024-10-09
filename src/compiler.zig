@@ -60,11 +60,26 @@ pub fn Compiler() type {
             }
         }
 
+        pub fn end(self: *Self) !void {
+            return self.chunk.writeOpCode(core.OpCode.RETURN, self.scanner.line);
+        }
+
         /// Compiles and returns a chunk that's ready for the VM to run. To just dump every scanned
         /// token, run `scanAllTokens`.
         pub fn compile(self: *Self) !*chunk.Chunk() {
+            // const a = parser.ParseRules[0][1];
+            // std.debug.print("\n\n{}\n\n", .{a});
+
             if (self.parser.advance()) |t| {
                 _ = t;
+
+                try self.parser.expression();
+                if (self.parser.consume(token.TokenType.EOF)) |_| {
+                    //
+                } else |err| {
+                    return err;
+                }
+
                 return self.chunk;
             } else |err| {
                 return err;

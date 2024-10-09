@@ -1,5 +1,6 @@
 const std = @import("std");
 const parser = @import("parser.zig");
+const core = @import("core.zig");
 
 pub const TokenType = enum(u8) {
     const Self = @This();
@@ -61,8 +62,14 @@ pub const TokenType = enum(u8) {
     }
 
     /// Returns the appropriate parser rule
-    pub fn getRule(self: Self) parser.ParseRules {
-        return parser.ParseRules[self.toUsize()];
+    pub fn getRule(self: Self) !parser.Rule {
+        const idx = self.toUsize();
+
+        if (idx < 0 or idx >= tokenSizes.len) {
+            return core.CompilerError.InvalidOperation;
+        }
+
+        return parser.ParseRules[idx];
     }
 };
 

@@ -5,6 +5,8 @@ const core = @import("core.zig");
 const scanner = @import("scanner.zig");
 
 pub const Precedence = enum(u8) {
+    const Self = @This();
+
     NONE,
     ASSIGNMENT, // =
     OR, // or
@@ -16,6 +18,11 @@ pub const Precedence = enum(u8) {
     UNARY, // ! -
     CALL, // . ()
     PRIMARY,
+
+    /// Gets the numerical representation of the enum value.
+    pub fn toUsize(self: Self) usize {
+        return @as(usize, @intFromEnum(self));
+    }
 };
 
 pub const OperationType = enum(u8) {
@@ -26,14 +33,14 @@ pub const OperationType = enum(u8) {
     NUMBER,
 };
 
-pub const Stuff = struct {
+pub const Rule = struct {
     token.TokenType,
     OperationType,
     OperationType,
     Precedence,
 };
 
-pub const ParseRules: [16]Stuff = [16]Stuff{
+pub const ParseRules: [41]Rule = [41]Rule{
     .{ token.TokenType.LEFT_PAREN, OperationType.GROUPING, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.RIGHT_PAREN, OperationType.NONE, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.LEFT_BRACE, OperationType.NONE, OperationType.NONE, Precedence.NONE },
@@ -108,11 +115,11 @@ pub fn Parser() type {
 
         fn number(self: *Self) !void {
             if (self.previous) |prev| {
-                self.chunk.writeOpCode(core.OpCode.CONSTANT, 0);
-                const numStr = prev.toString(self.source);
+                try self.chunk.writeOpCode(core.OpCode.CONSTANT, 0);
+                const numStr = try prev.toString(self.source);
 
                 if (std.fmt.parseFloat(f64, numStr)) |num| {
-                    self.chunk.addConstant(core.Value().initNumber(num));
+                    try self.chunk.addConstant(core.Value().initNumber(num));
                 } else |err| {
                     return err;
                 }
@@ -127,12 +134,12 @@ pub fn Parser() type {
                 // After parsing the operator, we parse the rest of the expression which we need to negate.
                 // This could be a simple number (such as 1 => -1) or a more complex operation, which could
                 // include a function call (ie: -(2 + myFn(a, b))).
-                self.parsePrecedence(Precedence.UNARY);
+                try self.parsePrecedence(Precedence.UNARY);
 
                 // We should emit the opcode for the operation last, since we only want to push the number
                 // onto the stack and then run the command on it.
                 switch (operatorType) {
-                    .NEGATE => return self.chunk.writeOpCode(core.OpCode.NEGATE, 0),
+                    .BANG => return self.chunk.writeOpCode(core.OpCode.NEGATE, 0),
                     else => return,
                 }
             }
@@ -140,13 +147,15 @@ pub fn Parser() type {
             return core.CompilerError.UninitializedStack;
         }
 
-        fn binary(self: *Self) !void {
+        fn binary(self: *Self) core.CompilerError!void {
             if (self.previous) |previous| {
                 const operatorType = previous.tokenType;
-                const rule = self.getRulee(operatorType);
+                const rule = try operatorType.getRule();
+
                 std.debug.print("{}\n", rule);
-                // var newPrec = @as(Precedence, @enumFromInt(@intFromEnum(rule.precedence) + 1));
-                // return self.parsePrecedence(newPrec);
+
+                const newPrec = @as(Precedence, @enumFromInt(@intFromEnum(rule[3]) + 1));
+                try self.parsePrecedence(newPrec);
 
                 return switch (operatorType) {
                     .PLUS => self.chunk.writeOpCode(core.OpCode.ADD, 0),
@@ -160,12 +169,16 @@ pub fn Parser() type {
             return core.CompilerError.UninitializedStack;
         }
 
-        fn expression(self: *Self) void {
-            self.parsePrecedence(Precedence.ASSIGNMENT);
+        pub fn expression(self: *Self) core.CompilerError!void {
+            return self.parsePrecedence(Precedence.ASSIGNMENT);
+        }
+
+        fn empty(self: *Self) !void {
+            _ = self;
         }
 
         fn grouping(self: *Self) !void {
-            self.expression();
+            try self.expression();
 
             if (self.consume(token.TokenType.RIGHT_PAREN)) |_| {
                 return;
@@ -174,9 +187,50 @@ pub fn Parser() type {
             }
         }
 
-        fn parsePrecedence(self: *Self, prec: Precedence) void {
-            _ = prec;
-            _ = self;
+        fn parsePrecedence(self: *Self, prec: Precedence) core.CompilerError!void {
+            const t = self.advance() catch |err| {
+                std.debug.print("ERROR: {}\n", .{err});
+                return core.CompilerError.CompileError;
+            };
+            const rule = try t.tokenType.getRule();
+            const prefixRule: OperationType = rule[1];
+
+            if (prefixRule != OperationType.NONE) {
+                std.debug.print("Run {}\n", .{prefixRule});
+                if (prefixRule == OperationType.GROUPING) {
+                    self.grouping() catch |err| {
+                        std.debug.print("ERROR: {}\n", .{err});
+                        return core.CompilerError.CompileError;
+                    };
+                    // fun = self.grouping;
+                } else if (prefixRule == OperationType.UNARY) {
+                    self.unary() catch |err| {
+                        std.debug.print("ERROR: {}\n", .{err});
+                        return core.CompilerError.CompileError;
+                    };
+                    // fun = self.unary;
+                } else if (prefixRule == OperationType.NUMBER) {
+                    self.number() catch |err| {
+                        std.debug.print("ERROR: {}\n", .{err});
+                        return core.CompilerError.CompileError;
+                    };
+                    // fun = self.number;
+                }
+            }
+
+            while (prec.toUsize() <= rule[3].toUsize()) {
+                const t2 = self.advance() catch |err| {
+                    std.debug.print("ERROR: {}\n", .{err});
+                    return core.CompilerError.CompileError;
+                };
+                _ = t2;
+
+                const influxRule: OperationType = rule[2];
+
+                if (influxRule == OperationType.BINARY) {
+                    try self.binary();
+                }
+            }
         }
 
         pub fn advance(self: *Self) !token.Token() {
