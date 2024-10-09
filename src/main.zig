@@ -19,7 +19,7 @@ pub fn main() !void {
         if (comp.compile()) |_| {
             std.debug.print("Success\n", .{});
         } else |err| {
-            std.debug.print("ERROR: {?}\n", .{err});
+            std.debug.print("ERROR: compile(): {?}\n", .{err});
         }
     } else |err| {
         std.debug.print("{?}\n", .{err});

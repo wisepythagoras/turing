@@ -134,6 +134,11 @@ pub fn Token() type {
             }
 
             if (allocator.alloc(u8, len)) |buf| {
+                if (self.pos >= source.len) {
+                    buf[0] = 0;
+                    return buf;
+                }
+
                 if (len == 1) {
                     buf[0] = source[self.pos];
                     return buf;

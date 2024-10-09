@@ -127,6 +127,7 @@ pub fn Parser() type {
                 if (std.fmt.parseFloat(f64, numStr)) |num| {
                     try self.chunk.addConstant(core.Value().initNumber(num));
                 } else |err| {
+                    std.debug.print("ParseFloatError: {s}\n", .{numStr});
                     return err;
                 }
             }
@@ -206,24 +207,27 @@ pub fn Parser() type {
             };
             const prefixRule: OperationType = rule[1];
 
-            if (prefixRule != OperationType.NONE) {
-                std.debug.print("Run {}\n", .{prefixRule});
-                if (prefixRule == OperationType.GROUPING) {
-                    self.grouping() catch |err| {
-                        std.debug.print("ERROR: {}\n", .{err});
-                        return core.CompilerError.CompileError;
-                    };
-                } else if (prefixRule == OperationType.UNARY) {
-                    self.unary() catch |err| {
-                        std.debug.print("ERROR: {}\n", .{err});
-                        return core.CompilerError.CompileError;
-                    };
-                } else if (prefixRule == OperationType.NUMBER) {
-                    self.number() catch |err| {
-                        std.debug.print("ERROR: {}\n", .{err});
-                        return core.CompilerError.CompileError;
-                    };
-                }
+            if (prefixRule == OperationType.NONE) {
+                return core.CompilerError.ExpectExpression;
+            }
+
+            std.debug.print("Run {}\n", .{prefixRule});
+
+            if (prefixRule == OperationType.GROUPING) {
+                self.grouping() catch |err| {
+                    std.debug.print("ERROR: grouping(): {}\n", .{err});
+                    return core.CompilerError.CompileError;
+                };
+            } else if (prefixRule == OperationType.UNARY) {
+                self.unary() catch |err| {
+                    std.debug.print("ERROR: unary(): {}\n", .{err});
+                    return core.CompilerError.CompileError;
+                };
+            } else if (prefixRule == OperationType.NUMBER) {
+                self.number() catch |err| {
+                    std.debug.print("ERROR: number(): {}\n", .{err});
+                    return core.CompilerError.CompileError;
+                };
             }
 
             while (prec.toUsize() <= rule[3].toUsize()) {
@@ -255,11 +259,16 @@ pub fn Parser() type {
                         t.tokenType,
                         tokenStr,
                     });
-                    return t;
+
+                    if (t.tokenType == token.TokenType.EOF) {
+                        return token.Token().init(token.TokenType.EOF, self.scanner.pos, self.scanner.line);
+                    }
                 } else |err| {
                     return err;
                 }
             }
+
+            return self.current;
         }
 
         /// TODO: maybe add a message here?

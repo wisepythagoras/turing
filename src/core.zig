@@ -72,6 +72,7 @@ pub const CompilerError = error{
     UnexpectedToken,
     UninitializedStack,
     InvalidOperation,
+    ExpectExpression,
 };
 
 pub fn addOp(a: Value(), b: Value()) Value() {

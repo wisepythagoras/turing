@@ -65,9 +65,12 @@ pub fn Compiler() type {
         /// token, run `scanAllTokens`.
         pub fn compile(self: *Self) !*chunk.Chunk() {
             if (self.parser.advance()) |t| {
-                _ = t;
+                if (t.tokenType == token.TokenType.EOF) {
+                    return self.chunk;
+                }
 
                 try self.parser.expression();
+
                 if (self.parser.consume(token.TokenType.EOF)) |_| {
                     return self.chunk;
                 } else |err| {
