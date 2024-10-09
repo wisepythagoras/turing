@@ -10,16 +10,13 @@ pub fn Compiler() type {
         const Self = @This();
 
         source: []u8,
-        scanner: scanner.Scanner(),
         chunk: *chunk.Chunk(),
         parser: parser.Parser(),
 
         pub fn init(source: []u8, c: *chunk.Chunk()) Self {
-            var newScanner = scanner.Scanner().init(source);
-            const p = parser.Parser().init(c, source, &newScanner);
+            const p = parser.Parser().init(c, source);
             return Self{
                 .source = source,
-                .scanner = newScanner,
                 .chunk = c,
                 .parser = p,
             };
@@ -33,10 +30,10 @@ pub fn Compiler() type {
         /// the parser so it runs them all at once. The problem with this approach is that it's going
         /// to be slower.
         pub fn scanAllTokens(self: *Self) !std.ArrayList(token.Token()) {
-            const tokens = std.ArrayList(token.Token()).init(std.heap.page_allocator);
+            var tokens = std.ArrayList(token.Token()).init(std.heap.page_allocator);
 
             while (true) {
-                if (self.scanner.scanToken()) |t| {
+                if (self.parser.getScanner().scanToken()) |t| {
                     try tokens.append(t);
 
                     if (t.tokenType == token.TokenType.EOF) {
@@ -52,8 +49,8 @@ pub fn Compiler() type {
                     });
                 } else |err| {
                     std.debug.print("ERROR: line {d} / pos {d}\n", .{
-                        self.scanner.line,
-                        self.scanner.pos,
+                        self.parser.getScanner().line,
+                        self.parser.getScanner().pos,
                     });
                     return err;
                 }
@@ -61,26 +58,21 @@ pub fn Compiler() type {
         }
 
         pub fn end(self: *Self) !void {
-            return self.chunk.writeOpCode(core.OpCode.RETURN, self.scanner.line);
+            return self.chunk.writeOpCode(core.OpCode.RETURN, self.parser.getScanner().line);
         }
 
         /// Compiles and returns a chunk that's ready for the VM to run. To just dump every scanned
         /// token, run `scanAllTokens`.
         pub fn compile(self: *Self) !*chunk.Chunk() {
-            // const a = parser.ParseRules[0][1];
-            // std.debug.print("\n\n{}\n\n", .{a});
-
             if (self.parser.advance()) |t| {
                 _ = t;
 
                 try self.parser.expression();
                 if (self.parser.consume(token.TokenType.EOF)) |_| {
-                    //
+                    return self.chunk;
                 } else |err| {
                     return err;
                 }
-
-                return self.chunk;
             } else |err| {
                 return err;
             }

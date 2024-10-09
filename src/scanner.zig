@@ -243,14 +243,17 @@ pub fn Scanner() type {
                     return core.CompilerError.InvalidParen;
                 }
 
+                std.debug.print("Down the brace level -> {}\n", .{self.braceLevel});
                 self.parenLevel -= 1;
             } else if (newToken.tokenType == token.TokenType.LEFT_BRACE) {
+                std.debug.print("Up the brace level -> {}\n", .{self.braceLevel});
                 self.braceLevel += 1;
             } else if (newToken.tokenType == token.TokenType.RIGHT_BRACE) {
                 if (self.parenLevel == 0) {
                     return core.CompilerError.InvalidBlock;
                 }
 
+                std.debug.print("Down the brace level -> {}\n", .{self.braceLevel});
                 self.braceLevel -= 1;
             }
 

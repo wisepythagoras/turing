@@ -100,17 +100,23 @@ pub fn Parser() type {
         previous: ?token.Token(),
         chunk: *chunk.Chunk(),
         source: []u8,
-        scanner: *scanner.Scanner(),
+        scanner: scanner.Scanner(),
 
         /// Creates a new instance of the parser. This should be used only by the compiler.
-        pub fn init(c: *chunk.Chunk(), source: []u8, sPtr: *scanner.Scanner()) Self {
+        pub fn init(c: *chunk.Chunk(), source: []u8) Self {
+            const newScanner = scanner.Scanner().init(source);
+
             return Self{
                 .current = null,
                 .previous = null,
                 .chunk = c,
                 .source = source,
-                .scanner = sPtr,
+                .scanner = newScanner,
             };
+        }
+
+        pub fn getScanner(self: *Self) *scanner.Scanner() {
+            return &self.scanner;
         }
 
         fn number(self: *Self) !void {
@@ -189,10 +195,15 @@ pub fn Parser() type {
 
         fn parsePrecedence(self: *Self, prec: Precedence) core.CompilerError!void {
             const t = self.advance() catch |err| {
-                std.debug.print("ERROR: {}\n", .{err});
+                std.debug.print("ERROR: advance(): {}\n", .{err});
                 return core.CompilerError.CompileError;
             };
-            const rule = try t.tokenType.getRule();
+            const rule = t.tokenType.getRule() catch |err| {
+                std.debug.print("ERROR: token.getRule(): {}\n", .{
+                    err,
+                });
+                return err;
+            };
             const prefixRule: OperationType = rule[1];
 
             if (prefixRule != OperationType.NONE) {
@@ -254,7 +265,7 @@ pub fn Parser() type {
         /// TODO: maybe add a message here?
         pub fn consume(self: *Self, tokenType: token.TokenType) !token.Token() {
             if (self.current) |current| {
-                // std.debug.print("> {} = {}", .{ current.tokenType, tokenType });
+                std.debug.print("> {} = {} - {}\n", .{ current.tokenType, tokenType, self.scanner.pos });
                 if (current.tokenType == tokenType) {
                     return self.advance();
                 } else {

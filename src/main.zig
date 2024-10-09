@@ -11,6 +11,10 @@ pub fn main() !void {
     if (utils.readFile("source.tur")) |source| {
         var comp = compiler.Compiler().init(source, myVm.chunk);
 
+        // _ = try comp.scanAllTokens();
+
+        // std.debug.print("----\n", .{});
+
         // To see every parsed token: scanAllTokens.
         if (comp.compile()) |_| {
             std.debug.print("Success\n", .{});
