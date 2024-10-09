@@ -67,8 +67,8 @@ pub fn VM() type {
                             constant.print();
 
                             self.push(constant) catch |err| {
-	                            std.debug.print("ERROR: {?}\n", .{err});
-                            	break :blk core.InterpretResults.RUNTIME_ERROR;
+                                std.debug.print("ERROR: {?}\n", .{err});
+                                break :blk core.InterpretResults.RUNTIME_ERROR;
                             };
 
                             break :blk core.InterpretResults.CONTINUE;
@@ -95,8 +95,8 @@ pub fn VM() type {
                             constant.number *= -1;
 
                             self.push(constant) catch |err| {
-	                            std.debug.print("ERROR: {?}\n", .{err});
-                            	break :blk core.InterpretResults.RUNTIME_ERROR;
+                                std.debug.print("ERROR: {?}\n", .{err});
+                                break :blk core.InterpretResults.RUNTIME_ERROR;
                             };
 
                             constant.print();
@@ -172,8 +172,8 @@ pub fn VM() type {
                 if (aOptional) |a| {
                     const newValue = op(a, b);
                     self.push(newValue) catch |err| {
-                    	std.debug.print("ERROR: {?}\n", .{err});
-                    	return core.InterpretResults.RUNTIME_ERROR;
+                        std.debug.print("ERROR: {?}\n", .{err});
+                        return core.InterpretResults.RUNTIME_ERROR;
                     };
                     newValue.print();
 

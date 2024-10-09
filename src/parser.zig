@@ -202,19 +202,16 @@ pub fn Parser() type {
                         std.debug.print("ERROR: {}\n", .{err});
                         return core.CompilerError.CompileError;
                     };
-                    // fun = self.grouping;
                 } else if (prefixRule == OperationType.UNARY) {
                     self.unary() catch |err| {
                         std.debug.print("ERROR: {}\n", .{err});
                         return core.CompilerError.CompileError;
                     };
-                    // fun = self.unary;
                 } else if (prefixRule == OperationType.NUMBER) {
                     self.number() catch |err| {
                         std.debug.print("ERROR: {}\n", .{err});
                         return core.CompilerError.CompileError;
                     };
-                    // fun = self.number;
                 }
             }
 
@@ -257,6 +254,7 @@ pub fn Parser() type {
         /// TODO: maybe add a message here?
         pub fn consume(self: *Self, tokenType: token.TokenType) !token.Token() {
             if (self.current) |current| {
+                // std.debug.print("> {} = {}", .{ current.tokenType, tokenType });
                 if (current.tokenType == tokenType) {
                     return self.advance();
                 } else {
