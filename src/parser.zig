@@ -147,12 +147,12 @@ pub fn Parser() type {
             return core.CompilerError.UninitializedStack;
         }
 
-        fn binary(self: *Self) core.CompilerError!void {
+        fn binary(self: *Self) !void {
             if (self.previous) |previous| {
                 const operatorType = previous.tokenType;
                 const rule = try operatorType.getRule();
 
-                std.debug.print("{}\n", rule);
+                std.debug.print("{}\n", .{rule});
 
                 const newPrec = @as(Precedence, @enumFromInt(@intFromEnum(rule[3]) + 1));
                 try self.parsePrecedence(newPrec);
@@ -228,7 +228,10 @@ pub fn Parser() type {
                 const influxRule: OperationType = rule[2];
 
                 if (influxRule == OperationType.BINARY) {
-                    try self.binary();
+                    self.binary() catch |err| {
+                        std.debug.print("ERROR: {}\n", .{err});
+                        return core.CompilerError.CompileError;
+                    };
                 }
             }
         }
