@@ -142,11 +142,11 @@ pub fn Parser() type {
         }
 
         fn number(self: *Self) !void {
-            std.debug.print("NUMBER: {?}\n", .{self.current});
-            if (self.current) |prev| {
+            if (self.previous) |prev| {
                 const numStr = try prev.toString(self.source);
 
                 if (std.fmt.parseFloat(f64, numStr)) |num| {
+                    std.debug.print("  {?}\n", .{num});
                     try self.emitConstant(core.Value().initNumber(num));
                 } else |err| {
                     std.debug.print("ParseFloatError: {s}\n", .{numStr});
@@ -156,10 +156,9 @@ pub fn Parser() type {
         }
 
         fn unary(self: *Self) !void {
-            if (self.current) |current| {
-                // The operator has been consumed and is stored in the current token.
-                const operatorType = current.tokenType;
-                std.debug.print("UNARY: {} {}\n", .{ operatorType, current.tokenType });
+            if (self.previous) |previous| {
+                // The operator has been consumed and is stored in the previous token.
+                const operatorType = previous.tokenType;
 
                 // After parsing the operator, we parse the rest of the expression which we need to negate.
                 // This could be a simple number (such as 1 => -1) or a more complex operation, which could
@@ -183,18 +182,19 @@ pub fn Parser() type {
                 const rule = try operatorType.getRule();
 
                 const newPrec = @as(Precedence, @enumFromInt(@intFromEnum(rule[3]) + 1));
-                std.debug.print("BINARY: {} {} {}\n", .{
+                std.debug.print("BINARY: {} {s} {} {}\n", .{
                     operatorType,
+                    try previous.toString(self.source),
                     newPrec,
                     @as(Precedence, @enumFromInt(@intFromEnum(rule[3]))),
                 });
                 try self.parsePrecedence(newPrec);
 
                 return switch (operatorType) {
-                    .PLUS => self.chunk.writeOpCode(core.OpCode.ADD, 0),
-                    .MINUS => self.chunk.writeOpCode(core.OpCode.SUB, 0),
-                    .STAR => self.chunk.writeOpCode(core.OpCode.MUL, 0),
-                    .SLASH => self.chunk.writeOpCode(core.OpCode.DIV, 0),
+                    .PLUS => self.emit(core.OpCode.ADD),
+                    .MINUS => self.emit(core.OpCode.SUB),
+                    .STAR => self.emit(core.OpCode.MUL),
+                    .SLASH => self.emit(core.OpCode.DIV),
                     else => core.CompilerError.InvalidOperation,
                 };
             }
@@ -203,6 +203,7 @@ pub fn Parser() type {
         }
 
         pub fn expression(self: *Self) core.CompilerError!void {
+            std.debug.print("expression() - {?}, {?}\n", .{ self.previous, self.current });
             return self.parsePrecedence(Precedence.ASSIGNMENT);
         }
 
@@ -221,70 +222,98 @@ pub fn Parser() type {
         }
 
         fn parsePrecedence(self: *Self, prec: Precedence) core.CompilerError!void {
-            const t = self.advance() catch |err| {
+            std.debug.print("parsePrecedence() - {?}, {?}, {?}\n", .{ prec, self.previous, self.current });
+
+            // First we have to parse the prefix expression by reading the next token and
+            // get the rule right after. This will give us the prefix operation.
+            _ = self.advance() catch |err| {
                 std.debug.print("ERROR: advance(): {}\n", .{err});
                 return core.CompilerError.CompileError;
             };
 
-            std.debug.print("HERE {?} {}\n", .{ self.previous, t });
-
-            const rule = t.tokenType.getRule() catch |err| {
-                std.debug.print("ERROR: token.getRule(): {}\n", .{
-                    err,
-                });
-                return err;
-            };
-            const prefixRule: OperationType = rule[1];
-
-            if (prefixRule == OperationType.NONE) {
-                return core.CompilerError.ExpectExpression;
-            }
-
-            std.debug.print("Run {}\n", .{prefixRule});
-
-            if (prefixRule == OperationType.GROUPING) {
-                self.grouping() catch |err| {
-                    std.debug.print("ERROR: grouping(): {}\n", .{err});
-                    return core.CompilerError.CompileError;
+            if (self.previous) |t| {
+                const rule = t.tokenType.getRule() catch |err| {
+                    std.debug.print("ERROR: token.getRule(): {}\n", .{
+                        err,
+                    });
+                    return err;
                 };
-            } else if (prefixRule == OperationType.UNARY) {
-                self.unary() catch |err| {
-                    std.debug.print("ERROR: unary(): {}\n", .{err});
-                    return core.CompilerError.CompileError;
-                };
-            } else if (prefixRule == OperationType.NUMBER) {
-                self.number() catch |err| {
-                    std.debug.print("ERROR: number(): {}\n", .{err});
-                    return core.CompilerError.CompileError;
-                };
-            }
+                const prefixRule: OperationType = rule[1];
 
-            while (prec.toUsize() <= rule[3].toUsize()) {
-                const t2 = self.advance() catch |err| {
-                    std.debug.print("ERROR: {}\n", .{err});
-                    return core.CompilerError.CompileError;
-                };
-                _ = t2;
+                if (t.tokenType == token.TokenType.EOF) {
+                    return;
+                }
 
-                const influxRule: OperationType = rule[2];
+                // Return an error if there's no operation type available because we likely
+                // hit some sort of syntax error.
+                if (prefixRule == OperationType.NONE) {
+                    return core.CompilerError.ExpectExpression;
+                }
 
-                if (influxRule == OperationType.BINARY) {
-                    self.binary() catch |err| {
-                        std.debug.print("ERROR: {}\n", .{err});
+                if (prefixRule == OperationType.GROUPING) {
+                    std.debug.print("grouping() - {?}, {?}\n", .{ self.previous, self.current });
+                    self.grouping() catch |err| {
+                        std.debug.print("ERROR: grouping(): {}\n", .{err});
                         return core.CompilerError.CompileError;
                     };
+                } else if (prefixRule == OperationType.UNARY) {
+                    std.debug.print("unary() - {?}, {?}\n", .{ self.previous, self.current });
+                    self.unary() catch |err| {
+                        std.debug.print("ERROR: unary(): {}\n", .{err});
+                        return core.CompilerError.CompileError;
+                    };
+                } else if (prefixRule == OperationType.NUMBER) {
+                    std.debug.print("number() - {?}, {?}\n", .{ self.previous, self.current });
+                    self.number() catch |err| {
+                        std.debug.print("ERROR: number(): {}\n", .{err});
+                        return core.CompilerError.CompileError;
+                    };
+                }
+
+                if (self.current) |currentToken| {
+                    if (currentToken.tokenType == token.TokenType.EOF) {
+                        return;
+                    }
+
+                    const currentTokenRule = try currentToken.tokenType.getRule();
+
+                    while (prec.toUsize() <= currentTokenRule[3].toUsize()) {
+                        std.debug.print("prec <= currentTokenPrec {?}\n", .{currentToken.tokenType});
+
+                        const newToken = self.advance() catch |err| {
+                            std.debug.print("ERROR: {}\n", .{err});
+                            return core.CompilerError.CompileError;
+                        };
+                        // _ = newToken;
+                        // currentTokenRule = try newToken.tokenType.getRule();
+
+                        if (newToken.tokenType == token.TokenType.EOF) {
+                            return;
+                        }
+
+                        const influxRule: OperationType = currentTokenRule[2];
+
+                        if (influxRule == OperationType.BINARY) {
+                            std.debug.print("binary() - {?}, {?}\n", .{ self.previous, self.current });
+                            self.binary() catch |err| {
+                                std.debug.print("ERROR: {}\n", .{err});
+                                return core.CompilerError.CompileError;
+                            };
+                        }
+                    }
                 }
             }
         }
 
         pub fn advance(self: *Self) !token.Token() {
+            std.debug.print("advance() - {?}, {?}\n", .{ self.previous, self.current });
             self.previous = self.current;
 
             while (true) {
                 if (self.scanner.scanToken()) |t| {
                     self.current = t;
                     const tokenStr = try t.toString(self.source);
-                    std.debug.print("{?} <= {s}\n", .{
+                    std.debug.print("\t{?} <= {s} adv\n", .{
                         t.tokenType,
                         tokenStr,
                     });

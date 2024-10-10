@@ -82,6 +82,8 @@ pub fn Compiler() type {
         /// Compiles and returns a chunk that's ready for the VM to run. To just dump every scanned
         /// token, run `scanAllTokens`.
         pub fn compile(self: *Self) !*chunk.Chunk() {
+            std.debug.print("compile()\n", .{});
+
             if (self.parser.advance()) |t| {
                 _ = t;
 
