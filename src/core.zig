@@ -25,6 +25,11 @@ pub const OpCode = enum(u8) {
             return "";
         }
     }
+
+    pub fn fromU8(byte: u8) !OpCode {
+        return std.meta.intToEnum(@This(), byte);
+        // return @as(OpCode, @enumFromInt(byte));
+    }
 };
 
 pub const InterpretResults = enum(u8) {

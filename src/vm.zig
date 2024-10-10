@@ -34,12 +34,6 @@ pub fn VM() type {
         }
 
         pub fn push(self: *Self, constant: core.Value()) !void {
-            // const node = std.heap.page_allocator.create(Stack(core.Value()).Node) catch unreachable;
-            // node.* = Stack(core.Value()).Node{
-            //     .next = undefined,
-            //     .data = constant,
-            // };
-            // self.stack.push(node);
             try self.stack.append(constant);
         }
 

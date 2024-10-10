@@ -57,8 +57,20 @@ pub fn Compiler() type {
             }
         }
 
+        /// Emits a pice of bytecode.
+        pub fn emitByte(self: *Self, byte: u8) !void {
+            const opCode = try core.OpCode.fromU8(byte);
+            return self.chunk.writeOpCode(opCode, self.parser.getScanner().line);
+        }
+
+        /// Emits an opcode of bytecode.
+        pub fn emit(self: *Self, opCode: core.OpCode) !void {
+            return self.chunk.writeOpCode(opCode, self.parser.getScanner().line);
+        }
+
+        /// Simple return function which emits the return opcode.
         pub fn end(self: *Self) !void {
-            return self.chunk.writeOpCode(core.OpCode.RETURN, self.parser.getScanner().line);
+            return self.emit(core.OpCode.RETURN);
         }
 
         /// Compiles and returns a chunk that's ready for the VM to run. To just dump every scanned
