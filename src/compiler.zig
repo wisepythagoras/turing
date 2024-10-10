@@ -68,6 +68,12 @@ pub fn Compiler() type {
             return self.chunk.writeOpCode(opCode, self.parser.getScanner().line);
         }
 
+        /// Emits the necessary bytecode to represent a constant.
+        pub fn emitConstant(self: *Self, value: core.Value()) !void {
+            try self.emit(core.OpCode.CONSTANT);
+            try self.chunk.addConstant(value);
+        }
+
         /// Simple return function which emits the return opcode.
         pub fn end(self: *Self) !void {
             return self.emit(core.OpCode.RETURN);
@@ -77,20 +83,20 @@ pub fn Compiler() type {
         /// token, run `scanAllTokens`.
         pub fn compile(self: *Self) !*chunk.Chunk() {
             if (self.parser.advance()) |t| {
-                if (t.tokenType == token.TokenType.EOF) {
-                    return self.chunk;
-                }
+                _ = t;
 
                 try self.parser.expression();
 
                 if (self.parser.consume(token.TokenType.EOF)) |_| {
-                    return self.chunk;
+                    // return self.chunk;
                 } else |err| {
                     return err;
                 }
             } else |err| {
                 return err;
             }
+
+            return self.chunk;
         }
     };
 }

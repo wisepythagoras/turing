@@ -119,13 +119,35 @@ pub fn Parser() type {
             return &self.scanner;
         }
 
+        /// Emits a pice of bytecode.
+        pub fn emitByte(self: *Self, byte: u8) !void {
+            const opCode = try core.OpCode.fromU8(byte);
+            return self.chunk.writeOpCode(opCode, self.getScanner().line);
+        }
+
+        /// Emits an opcode of bytecode.
+        pub fn emit(self: *Self, opCode: core.OpCode) !void {
+            return self.chunk.writeOpCode(opCode, self.getScanner().line);
+        }
+
+        /// Emits the necessary bytecode to represent a constant.
+        pub fn emitConstant(self: *Self, value: core.Value()) !void {
+            try self.emit(core.OpCode.CONSTANT);
+            try self.chunk.addConstant(value);
+        }
+
+        /// Simple return function which emits the return opcode.
+        pub fn end(self: *Self) !void {
+            return self.emit(core.OpCode.RETURN);
+        }
+
         fn number(self: *Self) !void {
-            if (self.previous) |prev| {
-                try self.chunk.writeOpCode(core.OpCode.CONSTANT, 0);
+            std.debug.print("NUMBER: {?}\n", .{self.current});
+            if (self.current) |prev| {
                 const numStr = try prev.toString(self.source);
 
                 if (std.fmt.parseFloat(f64, numStr)) |num| {
-                    try self.chunk.addConstant(core.Value().initNumber(num));
+                    try self.emitConstant(core.Value().initNumber(num));
                 } else |err| {
                     std.debug.print("ParseFloatError: {s}\n", .{numStr});
                     return err;
@@ -134,9 +156,10 @@ pub fn Parser() type {
         }
 
         fn unary(self: *Self) !void {
-            if (self.previous) |previous| {
-                // The operator has been consumed and is stored in the previous token.
-                const operatorType = previous.tokenType;
+            if (self.current) |current| {
+                // The operator has been consumed and is stored in the current token.
+                const operatorType = current.tokenType;
+                std.debug.print("UNARY: {} {}\n", .{ operatorType, current.tokenType });
 
                 // After parsing the operator, we parse the rest of the expression which we need to negate.
                 // This could be a simple number (such as 1 => -1) or a more complex operation, which could
@@ -146,7 +169,7 @@ pub fn Parser() type {
                 // We should emit the opcode for the operation last, since we only want to push the number
                 // onto the stack and then run the command on it.
                 switch (operatorType) {
-                    .BANG => return self.chunk.writeOpCode(core.OpCode.NEGATE, 0),
+                    .MINUS => return self.chunk.writeOpCode(core.OpCode.NEGATE, 0),
                     else => return,
                 }
             }
@@ -159,9 +182,12 @@ pub fn Parser() type {
                 const operatorType = previous.tokenType;
                 const rule = try operatorType.getRule();
 
-                std.debug.print("{}\n", .{rule});
-
                 const newPrec = @as(Precedence, @enumFromInt(@intFromEnum(rule[3]) + 1));
+                std.debug.print("BINARY: {} {} {}\n", .{
+                    operatorType,
+                    newPrec,
+                    @as(Precedence, @enumFromInt(@intFromEnum(rule[3]))),
+                });
                 try self.parsePrecedence(newPrec);
 
                 return switch (operatorType) {
@@ -199,6 +225,9 @@ pub fn Parser() type {
                 std.debug.print("ERROR: advance(): {}\n", .{err});
                 return core.CompilerError.CompileError;
             };
+
+            std.debug.print("HERE {?} {}\n", .{ self.previous, t });
+
             const rule = t.tokenType.getRule() catch |err| {
                 std.debug.print("ERROR: token.getRule(): {}\n", .{
                     err,
@@ -260,15 +289,17 @@ pub fn Parser() type {
                         tokenStr,
                     });
 
-                    if (t.tokenType == token.TokenType.EOF) {
-                        return token.Token().init(token.TokenType.EOF, self.scanner.pos, self.scanner.line);
+                    if (t.tokenType != token.TokenType.ERROR) {
+                        return t;
                     }
+
+                    return core.CompilerError.CompileError;
                 } else |err| {
                     return err;
                 }
             }
 
-            return self.current;
+            return !self.current;
         }
 
         /// TODO: maybe add a message here?
