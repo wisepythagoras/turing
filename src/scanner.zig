@@ -102,6 +102,10 @@ pub fn Scanner() type {
             return pos;
         }
 
+        pub fn isFlat(self: *Self) bool {
+            return self.braceLevel == 0;
+        }
+
         pub fn scanToken(self: *Self) core.CompilerError!token.Token() {
             self.skipWhitespace();
 

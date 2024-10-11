@@ -142,11 +142,11 @@ pub fn Parser() type {
         }
 
         fn number(self: *Self) !void {
+            std.debug.print("number() - {?}, {?}\n", .{ self.previous, self.current });
             if (self.previous) |prev| {
                 const numStr = try prev.toString(self.source);
 
                 if (std.fmt.parseFloat(f64, numStr)) |num| {
-                    std.debug.print("  {?}\n", .{num});
                     try self.emitConstant(core.Value().initNumber(num));
                 } else |err| {
                     std.debug.print("ParseFloatError: {s}\n", .{numStr});
@@ -182,12 +182,12 @@ pub fn Parser() type {
                 const rule = try operatorType.getRule();
 
                 const newPrec = @as(Precedence, @enumFromInt(@intFromEnum(rule[3]) + 1));
-                std.debug.print("BINARY: {} {s} {} {}\n", .{
-                    operatorType,
-                    try previous.toString(self.source),
-                    newPrec,
-                    @as(Precedence, @enumFromInt(@intFromEnum(rule[3]))),
-                });
+                // std.debug.print("BINARY: {} {s} {} {}\n", .{
+                //     operatorType,
+                //     try previous.toString(self.source),
+                //     newPrec,
+                //     @as(Precedence, @enumFromInt(@intFromEnum(rule[3]))),
+                // });
                 try self.parsePrecedence(newPrec);
 
                 return switch (operatorType) {
@@ -212,8 +212,16 @@ pub fn Parser() type {
         }
 
         fn grouping(self: *Self) !void {
+            std.debug.print("grouping() - {?}, {?}\n", .{ self.previous, self.current });
             try self.expression();
 
+            // Should this be here?
+            if (self.scanner.isFlat()) {
+                // _ = try self.advance();
+                return;
+            }
+
+            std.debug.print("NOOOO {}\n", .{self.scanner.braceLevel});
             if (self.consume(token.TokenType.RIGHT_PAREN)) |_| {
                 return;
             } else |err| {
@@ -251,7 +259,6 @@ pub fn Parser() type {
                 }
 
                 if (prefixRule == OperationType.GROUPING) {
-                    std.debug.print("grouping() - {?}, {?}\n", .{ self.previous, self.current });
                     self.grouping() catch |err| {
                         std.debug.print("ERROR: grouping(): {}\n", .{err});
                         return core.CompilerError.CompileError;
@@ -263,7 +270,6 @@ pub fn Parser() type {
                         return core.CompilerError.CompileError;
                     };
                 } else if (prefixRule == OperationType.NUMBER) {
-                    std.debug.print("number() - {?}, {?}\n", .{ self.previous, self.current });
                     self.number() catch |err| {
                         std.debug.print("ERROR: number(): {}\n", .{err});
                         return core.CompilerError.CompileError;
