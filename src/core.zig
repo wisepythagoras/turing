@@ -38,31 +38,72 @@ pub const InterpretResults = enum(u8) {
     COMPILE_ERROR,
     RUNTIME_ERROR,
     SYNTAX_ERROR,
+    UNEXPECTED_VALUE,
+};
+
+pub const ValueType = enum(u8) {
+    NIL,
+    BOOL,
+    NUMBER,
+    STRING,
+};
+
+pub const ValueUnion = union {
+    number: f64,
+    boolean: bool,
 };
 
 pub fn Value() type {
     return struct {
         const Self = @This();
 
-        number: f64,
-        isNumber: bool,
+        // number: f64,
+        vType: ValueType,
+        val: ValueUnion,
 
         pub fn initNumber(num: f64) Self {
             return Self{
-                .number = num,
-                .isNumber = true,
+                // .number = num,
+                .val = ValueUnion{ .number = num },
+                .vType = ValueType.NUMBER,
             };
         }
 
+        pub fn initBool(b: bool) Self {
+            return Self{
+                .val = ValueUnion{ .boolean = b },
+                .vType = ValueType.BOOL,
+            };
+        }
+
+        pub fn initNil() Self {
+            return Self{
+                .val = ValueUnion{ .number = 0 },
+                .vType = ValueType.NIL,
+            };
+        }
+
+        pub fn isNumber(self: Self) bool {
+            return self.vType == ValueType.NUMBER;
+        }
+
+        pub fn isNil(self: Self) bool {
+            return self.vType == ValueType.NIL;
+        }
+
+        pub fn isBool(self: Self) bool {
+            return self.vType == ValueType.BOOL;
+        }
+
         pub fn print(self: Self) void {
-            if (self.isNumber) {
-                std.debug.print("{d:.6}\n", .{self.number});
+            if (self.vType == ValueType.NUMBER) {
+                std.debug.print("{d:.6}\n", .{self.val.number});
             }
         }
     };
 }
 
-pub const OperationFn = *const fn (Value(), Value()) Value();
+pub const OperationFn = *const fn (Value(), Value()) CompilerError!Value();
 pub const CompilerError = error{
     CompileError,
     RuntimeError,
@@ -80,24 +121,44 @@ pub const CompilerError = error{
     ExpectExpression,
 };
 
-pub fn addOp(a: Value(), b: Value()) Value() {
-    return Value().initNumber(a.number + b.number);
+pub fn addOp(a: Value(), b: Value()) !Value() {
+    if (a.vType != ValueType.NUMBER or b.vType != ValueType.NUMBER) {
+        return CompilerError.RuntimeError;
+    }
+
+    return Value().initNumber(a.val.number + b.val.number);
 }
 
-pub fn subOp(a: Value(), b: Value()) Value() {
-    return Value().initNumber(a.number - b.number);
+pub fn subOp(a: Value(), b: Value()) !Value() {
+    if (a.vType != ValueType.NUMBER or b.vType != ValueType.NUMBER) {
+        return CompilerError.RuntimeError;
+    }
+
+    return Value().initNumber(a.val.number - b.val.number);
 }
 
-pub fn mulOp(a: Value(), b: Value()) Value() {
-    return Value().initNumber(a.number * b.number);
+pub fn mulOp(a: Value(), b: Value()) !Value() {
+    if (a.vType != ValueType.NUMBER or b.vType != ValueType.NUMBER) {
+        return CompilerError.RuntimeError;
+    }
+
+    return Value().initNumber(a.val.number * b.val.number);
 }
 
-pub fn divOp(a: Value(), b: Value()) Value() {
-    return Value().initNumber(a.number / b.number);
+pub fn divOp(a: Value(), b: Value()) !Value() {
+    if (a.vType != ValueType.NUMBER or b.vType != ValueType.NUMBER) {
+        return CompilerError.RuntimeError;
+    }
+
+    return Value().initNumber(a.val.number / b.val.number);
 }
 
-pub fn modOp(a: Value(), b: Value()) Value() {
-    return Value().initNumber(a.number % b.number);
+pub fn modOp(a: Value(), b: Value()) !Value() {
+    if (a.vType != ValueType.NUMBER or b.vType != ValueType.NUMBER) {
+        return CompilerError.RuntimeError;
+    }
+
+    return Value().initNumber(a.val.number % b.val.number);
 }
 
 pub fn readConstant(c: *chunk.Chunk(), offset: usize) CompilerError!Value() {
@@ -116,8 +177,8 @@ pub fn returnInstruction(name: []const u8, offset: usize) usize {
 
 pub fn constantInstruction(name: []const u8, c: *chunk.Chunk(), offset: usize) CompilerError!usize {
     if (readConstant(c, offset)) |constant| {
-        if (constant.isNumber) {
-            const num = constant.number;
+        if (constant.vType == ValueType.NUMBER) {
+            const num = constant.val.number;
             std.debug.print("{s} = {x} ({d})\n", .{ name, num, num });
         }
 
@@ -134,8 +195,8 @@ pub fn constant16Instruction(name: []const u8, c: *chunk.Chunk(), offset: usize)
 
     const constant: Value() = c.values.items[idx];
 
-    if (constant.isNumber) {
-        std.debug.print("{s} = {x} ({d})\n", .{ name, idx, constant.number });
+    if (constant.vType == ValueType.NUMBER) {
+        std.debug.print("{s} = {x} ({d})\n", .{ name, idx, constant.val.number });
     }
 
     return offset + 2;

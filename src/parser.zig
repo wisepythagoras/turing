@@ -215,13 +215,6 @@ pub fn Parser() type {
             std.debug.print("grouping() - {?}, {?}\n", .{ self.previous, self.current });
             try self.expression();
 
-            // Should this be here?
-            if (self.scanner.isFlat()) {
-                // _ = try self.advance();
-                return;
-            }
-
-            std.debug.print("NOOOO {}\n", .{self.scanner.braceLevel});
             if (self.consume(token.TokenType.RIGHT_PAREN)) |_| {
                 return;
             } else |err| {
@@ -281,7 +274,7 @@ pub fn Parser() type {
                         return;
                     }
 
-                    const currentTokenRule = try currentToken.tokenType.getRule();
+                    var currentTokenRule = try currentToken.tokenType.getRule();
 
                     while (prec.toUsize() <= currentTokenRule[3].toUsize()) {
                         std.debug.print("prec <= currentTokenPrec {?}\n", .{currentToken.tokenType});
@@ -290,8 +283,6 @@ pub fn Parser() type {
                             std.debug.print("ERROR: {}\n", .{err});
                             return core.CompilerError.CompileError;
                         };
-                        // _ = newToken;
-                        // currentTokenRule = try newToken.tokenType.getRule();
 
                         if (newToken.tokenType == token.TokenType.EOF) {
                             return;
@@ -305,6 +296,10 @@ pub fn Parser() type {
                                 std.debug.print("ERROR: {}\n", .{err});
                                 return core.CompilerError.CompileError;
                             };
+                        }
+
+                        if (self.current) |ct| {
+                            currentTokenRule = try ct.tokenType.getRule();
                         }
                     }
                 }

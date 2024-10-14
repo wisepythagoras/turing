@@ -82,11 +82,16 @@ pub fn VM() type {
                         if (optionalConstant) |eConstant| {
                             var constant = eConstant;
 
-                            if (!constant.isNumber) {
-                                break :blk core.InterpretResults.RUNTIME_ERROR;
+                            // if (constant.vType != core.ValueType.NUMBER) {
+                            //     break :blk core.InterpretResults.RUNTIME_ERROR;
+                            // }
+
+                            if (constant.vType != core.ValueType.NUMBER) {
+                                break :blk core.InterpretResults.UNEXPECTED_VALUE;
                             }
 
-                            constant.number *= -1;
+                            constant.val.number *= -1;
+                            // constant.number *= -1;
 
                             self.push(constant) catch |err| {
                                 std.debug.print("ERROR: {?}\n", .{err});
@@ -164,7 +169,13 @@ pub fn VM() type {
                 const aOptional = self.pop();
 
                 if (aOptional) |a| {
-                    const newValue = op(a, b);
+                    const newValue = op(a, b) catch |err| {
+                        if (err == core.CompilerError.RuntimeError) {
+                            return core.InterpretResults.RUNTIME_ERROR;
+                        }
+
+                        return core.InterpretResults.COMPILE_ERROR;
+                    };
                     self.push(newValue) catch |err| {
                         std.debug.print("ERROR: {?}\n", .{err});
                         return core.InterpretResults.RUNTIME_ERROR;
