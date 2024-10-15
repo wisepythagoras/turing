@@ -1,2 +1,4 @@
 zig-*
-source.tur
+*.tur
+*.loom
+.zig-cache/

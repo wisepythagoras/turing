@@ -1,4 +1,5 @@
 const std = @import("std");
+const clap = @import("clap");
 const vm = @import("vm.zig");
 const chunk = @import("chunk.zig");
 const core = @import("core.zig");
@@ -6,9 +7,42 @@ const compiler = @import("compiler.zig");
 const utils = @import("utils.zig");
 
 pub fn main() !void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+
+    // https://github.com/Hejsil/zig-clap
+    const params = comptime clap.parseParamsComptime(
+        \\-h, --help             Display the help message.
+        \\<str>...
+        \\
+    );
+
+    var diag = clap.Diagnostic{};
+    var res = clap.parse(clap.Help, &params, clap.parsers.default, .{
+        .diagnostic = &diag,
+        .allocator = gpa.allocator(),
+    }) catch |err| {
+        diag.report(std.io.getStdErr().writer(), err) catch {};
+        return err;
+    };
+    defer res.deinit();
+
+    if (res.args.help != 0) {
+        // const stdOut = std.io.getStdOut();
+        // try clap.help(stdOut, clap.Help, &params, clap.HelpOptions{});{
+        std.debug.print("--help\n", .{});
+        std.process.exit(0);
+    }
+
+    var entry: []const u8 = "index.loom";
+
+    if (res.positionals.len > 0) {
+        entry = res.positionals[0];
+    }
+
     var myVm = try vm.VM().init(false);
 
-    if (utils.readFile("source.tur")) |source| {
+    if (utils.readFile(entry)) |source| {
         var comp = compiler.Compiler().init(source, myVm.chunk);
 
         // _ = try comp.scanAllTokens();

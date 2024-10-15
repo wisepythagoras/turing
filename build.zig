@@ -15,8 +15,15 @@ pub fn build(b: *std.Build) void {
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
 
+    const clap = b.dependency("clap", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    // exe.root_module.addImport("clap", clap.module("clap"));
+    const module = clap.module("clap");
+
     const lib = b.addStaticLibrary(.{
-        .name = "language",
+        .name = "loom",
         // In this case the main source file is merely a path, however, in more
         // complicated build scripts, this could be a generated file.
         .root_source_file = b.path("src/main.zig"),
@@ -24,17 +31,21 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    lib.root_module.addImport("clap", module);
+
     // This declares intent for the library to be installed into the standard
     // location when the user invokes the "install" step (the default step when
     // running `zig build`).
     b.installArtifact(lib);
 
     const exe = b.addExecutable(.{
-        .name = "language",
+        .name = "loom",
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
     });
+
+    exe.root_module.addImport("clap", module);
 
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
