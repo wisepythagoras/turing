@@ -31,6 +31,7 @@ pub const OperationType = enum(u8) {
     UNARY,
     BINARY,
     NUMBER,
+    LITERAL,
 };
 
 pub const Rule = struct {
@@ -75,8 +76,8 @@ pub const ParseRules: [41]Rule = [41]Rule{
     .{ token.TokenType.STRUCT, OperationType.NONE, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.IF, OperationType.NONE, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.ELSE, OperationType.NONE, OperationType.NONE, Precedence.NONE },
-    .{ token.TokenType.FALSE, OperationType.NONE, OperationType.NONE, Precedence.NONE },
-    .{ token.TokenType.TRUE, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.FALSE, OperationType.LITERAL, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.TRUE, OperationType.LITERAL, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.FOR, OperationType.NONE, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.WHILE, OperationType.NONE, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.FUNCTION, OperationType.NONE, OperationType.NONE, Precedence.NONE },
@@ -85,7 +86,7 @@ pub const ParseRules: [41]Rule = [41]Rule{
     .{ token.TokenType.THIS, OperationType.NONE, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.VAR, OperationType.NONE, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.CONST, OperationType.NONE, OperationType.NONE, Precedence.NONE },
-    .{ token.TokenType.NIL, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.NIL, OperationType.LITERAL, OperationType.NONE, Precedence.NONE },
 
     // Misc
     .{ token.TokenType.ERROR, OperationType.NONE, OperationType.NONE, Precedence.NONE },
@@ -176,18 +177,25 @@ pub fn Parser() type {
             return core.CompilerError.UninitializedStack;
         }
 
+        fn literal(self: *Self) !void {
+            std.debug.print("literal() {?}\n", .{self.previous});
+
+            if (self.previous) |prev| {
+                return switch (prev.tokenType) {
+                    .FALSE => self.emit(core.OpCode.FALSE),
+                    .TRUE => self.emit(core.OpCode.TRUE),
+                    .NIL => self.emit(core.OpCode.NIL),
+                    else => core.CompilerError.InvalidOperation,
+                };
+            }
+        }
+
         fn binary(self: *Self) !void {
             if (self.previous) |previous| {
                 const operatorType = previous.tokenType;
                 const rule = try operatorType.getRule();
 
                 const newPrec = @as(Precedence, @enumFromInt(@intFromEnum(rule[3]) + 1));
-                // std.debug.print("BINARY: {} {s} {} {}\n", .{
-                //     operatorType,
-                //     try previous.toString(self.source),
-                //     newPrec,
-                //     @as(Precedence, @enumFromInt(@intFromEnum(rule[3]))),
-                // });
                 try self.parsePrecedence(newPrec);
 
                 return switch (operatorType) {
@@ -265,6 +273,11 @@ pub fn Parser() type {
                 } else if (prefixRule == OperationType.NUMBER) {
                     self.number() catch |err| {
                         std.debug.print("ERROR: number(): {}\n", .{err});
+                        return core.CompilerError.CompileError;
+                    };
+                } else if (prefixRule == OperationType.LITERAL) {
+                    self.literal() catch |err| {
+                        std.debug.print("ERROR: literal(): {}\n", .{err});
                         return core.CompilerError.CompileError;
                     };
                 }

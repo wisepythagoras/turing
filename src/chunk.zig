@@ -130,5 +130,11 @@ fn disassembleInstruction(chunk: *Chunk(), offset: usize) core.CompilerError!usi
         .NEGATE, .ADD, .MUL, .DIV, .SUB, .MOD => {
             return core.simpleInstruction(opCodeStr, offset);
         },
+        .FALSE, .TRUE => {
+            return core.simpleInstruction(opCodeStr, offset);
+        },
+        .NIL => {
+            return core.simpleInstruction(opCodeStr, offset);
+        },
     };
 }

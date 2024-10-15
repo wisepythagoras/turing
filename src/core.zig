@@ -13,6 +13,9 @@ pub const OpCode = enum(u8) {
     DIV,
     MUL,
     MOD,
+    NIL,
+    TRUE,
+    FALSE,
 
     // https://ziglearn.org/chapter-2/#formatting
     pub fn toString(self: Self) []const u8 {
@@ -161,7 +164,7 @@ pub fn modOp(a: Value(), b: Value()) !Value() {
     return Value().initNumber(a.val.number % b.val.number);
 }
 
-pub fn readConstant(c: *chunk.Chunk(), offset: usize) CompilerError!Value() {
+pub fn readValue(c: *chunk.Chunk(), offset: usize) CompilerError!Value() {
     if (offset + 1 > c.code.items.len) {
         return CompilerError.InvalidMemoryLookup;
     }
@@ -175,8 +178,33 @@ pub fn returnInstruction(name: []const u8, offset: usize) usize {
     return offset + 1;
 }
 
+pub fn nilInstruction(name: []const u8, c: *chunk.Chunk(), offset: usize) CompilerError!usize {
+    if (readValue(c, offset)) |constant| {
+        if (constant.vType == ValueType.NIL) {
+            std.debug.print("{s} = nil\n", .{name});
+        }
+
+        return offset + 1;
+    } else |err| {
+        return err;
+    }
+}
+
+pub fn booleanInstruction(name: []const u8, c: *chunk.Chunk(), offset: usize) CompilerError!usize {
+    if (readValue(c, offset)) |constant| {
+        if (constant.vType == ValueType.BOOL) {
+            const b = constant.val.boolean;
+            std.debug.print("{s} = {?}\n", .{ name, b });
+        }
+
+        return offset + 1;
+    } else |err| {
+        return err;
+    }
+}
+
 pub fn constantInstruction(name: []const u8, c: *chunk.Chunk(), offset: usize) CompilerError!usize {
-    if (readConstant(c, offset)) |constant| {
+    if (readValue(c, offset)) |constant| {
         if (constant.vType == ValueType.NUMBER) {
             const num = constant.val.number;
             std.debug.print("{s} = {x} ({d})\n", .{ name, num, num });

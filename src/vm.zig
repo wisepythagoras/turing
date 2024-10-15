@@ -56,7 +56,7 @@ pub fn VM() type {
 
                 const result = switch (byte) {
                     .CONSTANT => blk: {
-                        if (core.readConstant(self.chunk, offset)) |constant| {
+                        if (core.readValue(self.chunk, offset)) |constant| {
                             offset += 2;
                             constant.print();
 
@@ -82,16 +82,12 @@ pub fn VM() type {
                         if (optionalConstant) |eConstant| {
                             var constant = eConstant;
 
-                            // if (constant.vType != core.ValueType.NUMBER) {
-                            //     break :blk core.InterpretResults.RUNTIME_ERROR;
-                            // }
-
                             if (constant.vType != core.ValueType.NUMBER) {
+                                // Otherwise RUNTIME_ERROR.
                                 break :blk core.InterpretResults.UNEXPECTED_VALUE;
                             }
 
                             constant.val.number *= -1;
-                            // constant.number *= -1;
 
                             self.push(constant) catch |err| {
                                 std.debug.print("ERROR: {?}\n", .{err});
@@ -150,6 +146,27 @@ pub fn VM() type {
                         }
 
                         break :blk res;
+                    },
+                    .FALSE => blk: {
+                        self.push(core.Value().initBool(false)) catch {
+                            break :blk core.InterpretResults.RUNTIME_ERROR;
+                        };
+
+                        break :blk core.InterpretResults.CONTINUE;
+                    },
+                    .TRUE => blk: {
+                        self.push(core.Value().initBool(true)) catch {
+                            break :blk core.InterpretResults.RUNTIME_ERROR;
+                        };
+
+                        break :blk core.InterpretResults.CONTINUE;
+                    },
+                    .NIL => blk: {
+                        self.push(core.Value().initNil()) catch {
+                            break :blk core.InterpretResults.RUNTIME_ERROR;
+                        };
+
+                        break :blk core.InterpretResults.CONTINUE;
                     },
                     .RETURN => core.InterpretResults.OK,
                 };
