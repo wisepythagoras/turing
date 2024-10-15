@@ -165,6 +165,15 @@ pub fn VM() type {
 
                         break :blk res;
                     },
+                    .AND => blk: {
+                        const res = self.operation(core.andOp);
+
+                        if (res == core.InterpretResults.CONTINUE) {
+                            offset += 1;
+                        }
+
+                        break :blk res;
+                    },
                     .FALSE => blk: {
                         self.push(core.Value().initBool(false)) catch {
                             break :blk core.InterpretResults.RUNTIME_ERROR;

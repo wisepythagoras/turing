@@ -23,6 +23,7 @@ pub const TokenType = enum(u8) {
     LESS_THAN,
     CARET,
     PERCENT,
+    AMPERSAND,
     COMMENT,
 
     // Multi-character tokens.
@@ -76,8 +77,8 @@ pub const TokenType = enum(u8) {
     }
 };
 
-const tokenSizes: [44]usize = [44]usize{
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+const tokenSizes: [45]usize = [45]usize{
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     2, 2, 2, 2, 2,
     0, 0, 0, // The literals, because they're dynamic
     3, 2, // And and or

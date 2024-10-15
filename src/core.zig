@@ -18,6 +18,7 @@ pub const OpCode = enum(u8) {
     FALSE,
     XOR,
     POW,
+    AND,
     // NOT,
 
     // https://ziglearn.org/chapter-2/#formatting
@@ -173,6 +174,18 @@ pub fn powOp(a: Value(), b: Value()) !Value() {
     }
 
     const res: f64 = std.math.pow(f64, a.val.number, b.val.number);
+
+    return Value().initNumber(res);
+}
+
+pub fn andOp(a: Value(), b: Value()) !Value() {
+    if (a.vType != ValueType.NUMBER or b.vType != ValueType.NUMBER) {
+        return CompilerError.RuntimeError;
+    }
+
+    const numA: u16 = @as(u16, @intFromFloat(a.val.number));
+    const numB: u16 = @as(u16, @intFromFloat(b.val.number));
+    const res: f64 = @as(f64, @floatFromInt(numA & numB));
 
     return Value().initNumber(res);
 }

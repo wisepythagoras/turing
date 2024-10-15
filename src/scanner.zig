@@ -241,6 +241,7 @@ pub fn Scanner() type {
                 '/' => token.Token().init(token.TokenType.SLASH, pos, self.line),
                 '^' => token.Token().init(token.TokenType.CARET, pos, self.line),
                 '%' => token.Token().init(token.TokenType.PERCENT, pos, self.line),
+                '&' => token.Token().init(token.TokenType.AMPERSAND, pos, self.line),
                 '!' => self.singleOrDouble('=', token.TokenType.BANG, token.TokenType.BANG_EQUAL),
                 '=' => self.singleOrDouble('=', token.TokenType.EQUAL, token.TokenType.DOUBLE_EQUAL),
                 '>' => self.singleOrDouble('=', token.TokenType.GREATER_THAN, token.TokenType.GREATER_EQUAL_THAN),

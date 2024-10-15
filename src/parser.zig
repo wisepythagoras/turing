@@ -41,7 +41,7 @@ pub const Rule = struct {
     Precedence,
 };
 
-pub const ParseRules: [44]Rule = [44]Rule{
+pub const ParseRules: [45]Rule = [45]Rule{
     .{ token.TokenType.LEFT_PAREN, OperationType.GROUPING, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.RIGHT_PAREN, OperationType.NONE, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.LEFT_BRACE, OperationType.NONE, OperationType.NONE, Precedence.NONE },
@@ -59,6 +59,7 @@ pub const ParseRules: [44]Rule = [44]Rule{
     .{ token.TokenType.LESS_THAN, OperationType.NONE, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.CARET, OperationType.NONE, OperationType.BINARY, Precedence.FACTOR },
     .{ token.TokenType.PERCENT, OperationType.NONE, OperationType.BINARY, Precedence.FACTOR },
+    .{ token.TokenType.AMPERSAND, OperationType.NONE, OperationType.BINARY, Precedence.FACTOR },
     .{ token.TokenType.COMMENT, OperationType.NONE, OperationType.NONE, Precedence.NONE }, // Useless
 
     // Multi-character tokens
@@ -209,6 +210,7 @@ pub fn Parser() type {
                     .CARET => self.emit(core.OpCode.XOR),
                     .PERCENT => self.emit(core.OpCode.MOD),
                     .STAR_STAR => self.emit(core.OpCode.POW),
+                    .AMPERSAND => self.emit(core.OpCode.AND),
                     else => core.CompilerError.InvalidOperation,
                 };
             }
