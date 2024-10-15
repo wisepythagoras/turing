@@ -62,6 +62,14 @@ pub fn Scanner() type {
             return core.CompilerError.UnterminatedString;
         }
 
+        /// This allows us to use the same token twice or in conjunction with another one to create
+        /// something like `==` or `>=`.
+        ///
+        /// `two` the second charcater.
+        ///
+        /// `a` is the single character token.
+        ///
+        /// `b` is the two character token.
         fn singleOrDouble(self: *Self, two: u8, a: token.TokenType, b: token.TokenType) token.Token() {
             if (self.pos < self.source.len - 1 and self.source[self.pos + 1] == two) {
                 self.pos += 1;
@@ -228,9 +236,11 @@ pub fn Scanner() type {
                 '.' => token.Token().init(token.TokenType.DOT, pos, self.line),
                 '-' => token.Token().init(token.TokenType.MINUS, pos, self.line),
                 '+' => token.Token().init(token.TokenType.PLUS, pos, self.line),
-                '*' => token.Token().init(token.TokenType.STAR, pos, self.line),
+                '*' => self.singleOrDouble('*', token.TokenType.STAR, token.TokenType.STAR_STAR),
                 ';' => token.Token().init(token.TokenType.SEMICOLON, pos, self.line),
                 '/' => token.Token().init(token.TokenType.SLASH, pos, self.line),
+                '^' => token.Token().init(token.TokenType.CARET, pos, self.line),
+                '%' => token.Token().init(token.TokenType.PERCENT, pos, self.line),
                 '!' => self.singleOrDouble('=', token.TokenType.BANG, token.TokenType.BANG_EQUAL),
                 '=' => self.singleOrDouble('=', token.TokenType.EQUAL, token.TokenType.DOUBLE_EQUAL),
                 '>' => self.singleOrDouble('=', token.TokenType.GREATER_THAN, token.TokenType.GREATER_EQUAL_THAN),

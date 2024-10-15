@@ -16,6 +16,9 @@ pub const OpCode = enum(u8) {
     NIL,
     TRUE,
     FALSE,
+    XOR,
+    POW,
+    // NOT,
 
     // https://ziglearn.org/chapter-2/#formatting
     pub fn toString(self: Self) []const u8 {
@@ -162,6 +165,28 @@ pub fn modOp(a: Value(), b: Value()) !Value() {
     }
 
     return Value().initNumber(a.val.number % b.val.number);
+}
+
+pub fn powOp(a: Value(), b: Value()) !Value() {
+    if (a.vType != ValueType.NUMBER or b.vType != ValueType.NUMBER) {
+        return CompilerError.RuntimeError;
+    }
+
+    const res: f64 = std.math.pow(f64, a.val.number, b.val.number);
+
+    return Value().initNumber(res);
+}
+
+pub fn xorOp(a: Value(), b: Value()) !Value() {
+    if (a.vType != ValueType.NUMBER or b.vType != ValueType.NUMBER) {
+        return CompilerError.RuntimeError;
+    }
+
+    const numA: u16 = @as(u16, @intFromFloat(a.val.number));
+    const numB: u16 = @as(u16, @intFromFloat(b.val.number));
+    const res: f64 = @as(f64, @floatFromInt(numA ^ numB));
+
+    return Value().initNumber(res);
 }
 
 pub fn readValue(c: *chunk.Chunk(), offset: usize) CompilerError!Value() {

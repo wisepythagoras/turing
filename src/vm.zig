@@ -147,10 +147,30 @@ pub fn VM() type {
 
                         break :blk res;
                     },
+                    .XOR => blk: {
+                        const res = self.operation(core.xorOp);
+
+                        if (res == core.InterpretResults.CONTINUE) {
+                            offset += 1;
+                        }
+
+                        break :blk res;
+                    },
+                    .POW => blk: {
+                        const res = self.operation(core.powOp);
+
+                        if (res == core.InterpretResults.CONTINUE) {
+                            offset += 2;
+                        }
+
+                        break :blk res;
+                    },
                     .FALSE => blk: {
                         self.push(core.Value().initBool(false)) catch {
                             break :blk core.InterpretResults.RUNTIME_ERROR;
                         };
+
+                        offset += 1;
 
                         break :blk core.InterpretResults.CONTINUE;
                     },
@@ -159,12 +179,16 @@ pub fn VM() type {
                             break :blk core.InterpretResults.RUNTIME_ERROR;
                         };
 
+                        offset += 1;
+
                         break :blk core.InterpretResults.CONTINUE;
                     },
                     .NIL => blk: {
                         self.push(core.Value().initNil()) catch {
                             break :blk core.InterpretResults.RUNTIME_ERROR;
                         };
+
+                        offset += 1;
 
                         break :blk core.InterpretResults.CONTINUE;
                     },

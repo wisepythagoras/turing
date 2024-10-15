@@ -41,7 +41,7 @@ pub const Rule = struct {
     Precedence,
 };
 
-pub const ParseRules: [41]Rule = [41]Rule{
+pub const ParseRules: [44]Rule = [44]Rule{
     .{ token.TokenType.LEFT_PAREN, OperationType.GROUPING, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.RIGHT_PAREN, OperationType.NONE, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.LEFT_BRACE, OperationType.NONE, OperationType.NONE, Precedence.NONE },
@@ -57,6 +57,8 @@ pub const ParseRules: [41]Rule = [41]Rule{
     .{ token.TokenType.EQUAL, OperationType.NONE, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.GREATER_THAN, OperationType.NONE, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.LESS_THAN, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.CARET, OperationType.NONE, OperationType.BINARY, Precedence.FACTOR },
+    .{ token.TokenType.PERCENT, OperationType.NONE, OperationType.BINARY, Precedence.FACTOR },
     .{ token.TokenType.COMMENT, OperationType.NONE, OperationType.NONE, Precedence.NONE }, // Useless
 
     // Multi-character tokens
@@ -64,6 +66,7 @@ pub const ParseRules: [41]Rule = [41]Rule{
     .{ token.TokenType.DOUBLE_EQUAL, OperationType.NONE, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.GREATER_EQUAL_THAN, OperationType.NONE, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.LESS_EQUAL_THAN, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.STAR_STAR, OperationType.NONE, OperationType.BINARY, Precedence.FACTOR },
 
     // Literals
     .{ token.TokenType.IDENTIFIER, OperationType.NONE, OperationType.NONE, Precedence.NONE },
@@ -203,6 +206,9 @@ pub fn Parser() type {
                     .MINUS => self.emit(core.OpCode.SUB),
                     .STAR => self.emit(core.OpCode.MUL),
                     .SLASH => self.emit(core.OpCode.DIV),
+                    .CARET => self.emit(core.OpCode.XOR),
+                    .PERCENT => self.emit(core.OpCode.MOD),
+                    .STAR_STAR => self.emit(core.OpCode.POW),
                     else => core.CompilerError.InvalidOperation,
                 };
             }

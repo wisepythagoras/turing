@@ -21,6 +21,8 @@ pub const TokenType = enum(u8) {
     EQUAL,
     GREATER_THAN,
     LESS_THAN,
+    CARET,
+    PERCENT,
     COMMENT,
 
     // Multi-character tokens.
@@ -28,6 +30,7 @@ pub const TokenType = enum(u8) {
     DOUBLE_EQUAL,
     GREATER_EQUAL_THAN,
     LESS_EQUAL_THAN,
+    STAR_STAR,
 
     // Literals.
     IDENTIFIER,
@@ -73,9 +76,9 @@ pub const TokenType = enum(u8) {
     }
 };
 
-const tokenSizes: [41]usize = [41]usize{
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    2, 2, 2, 2,
+const tokenSizes: [44]usize = [44]usize{
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    2, 2, 2, 2, 2,
     0, 0, 0, // The literals, because they're dynamic
     3, 2, // And and or
     6, // Stuct
