@@ -160,7 +160,7 @@ pub fn VM() type {
                         const res = self.operation(core.powOp);
 
                         if (res == core.InterpretResults.CONTINUE) {
-                            offset += 2;
+                            offset += 1;
                         }
 
                         break :blk res;
