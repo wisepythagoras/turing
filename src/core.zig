@@ -19,7 +19,7 @@ pub const OpCode = enum(u8) {
     XOR,
     POW,
     AND,
-    // NOT,
+    NOT,
 
     // https://ziglearn.org/chapter-2/#formatting
     pub fn toString(self: Self) []const u8 {
@@ -105,6 +105,16 @@ pub fn Value() type {
         pub fn print(self: Self) void {
             if (self.vType == ValueType.NUMBER) {
                 std.debug.print("{d:.6}\n", .{self.val.number});
+            } else if (self.vType == ValueType.BOOL) {
+                var valToPrint: []const u8 = "true";
+
+                if (!self.val.boolean) {
+                    valToPrint = "false";
+                }
+
+                std.debug.print("{s}\n", .{valToPrint});
+            } else if (self.vType == ValueType.NIL) {
+                std.debug.print("nil\n", .{});
             }
         }
     };
@@ -200,6 +210,15 @@ pub fn xorOp(a: Value(), b: Value()) !Value() {
     const res: f64 = @as(f64, @floatFromInt(numA ^ numB));
 
     return Value().initNumber(res);
+}
+
+pub fn isFalsey(a: Value()) bool {
+    const isNil = a.vType == ValueType.NIL;
+    const isZero = a.vType == ValueType.NUMBER and a.val.number == @as(f64, 0);
+    const isFalse = a.vType == ValueType.BOOL and !a.val.boolean;
+    // TODO: If a string is empty then it's falsey.
+
+    return isNil or isZero or isFalse;
 }
 
 pub fn readValue(c: *chunk.Chunk(), offset: usize) CompilerError!Value() {

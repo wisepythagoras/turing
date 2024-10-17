@@ -53,7 +53,7 @@ pub const ParseRules: [45]Rule = [45]Rule{
     .{ token.TokenType.SEMICOLON, OperationType.NONE, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.STAR, OperationType.NONE, OperationType.BINARY, Precedence.FACTOR },
     .{ token.TokenType.SLASH, OperationType.NONE, OperationType.BINARY, Precedence.FACTOR },
-    .{ token.TokenType.BANG, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.BANG, OperationType.UNARY, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.EQUAL, OperationType.NONE, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.GREATER_THAN, OperationType.NONE, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.LESS_THAN, OperationType.NONE, OperationType.NONE, Precedence.NONE },
@@ -173,7 +173,8 @@ pub fn Parser() type {
                 // We should emit the opcode for the operation last, since we only want to push the number
                 // onto the stack and then run the command on it.
                 switch (operatorType) {
-                    .MINUS => return self.chunk.writeOpCode(core.OpCode.NEGATE, 0),
+                    .MINUS => return self.emit(core.OpCode.NEGATE),
+                    .BANG => return self.emit(core.OpCode.NOT),
                     else => return,
                 }
             }

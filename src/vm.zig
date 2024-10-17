@@ -94,7 +94,29 @@ pub fn VM() type {
                                 break :blk core.InterpretResults.RUNTIME_ERROR;
                             };
 
+                            // TODO: Remove the print from here.
                             constant.print();
+                            offset += 1;
+
+                            break :blk core.InterpretResults.CONTINUE;
+                        }
+
+                        break :blk core.InterpretResults.RUNTIME_ERROR;
+                    },
+                    .NOT => blk: {
+                        const optionalConstant = self.pop();
+
+                        if (optionalConstant) |constant| {
+                            const newRawVal = core.isFalsey(constant);
+                            const newVal = core.Value().initBool(newRawVal);
+
+                            self.push(newVal) catch |err| {
+                                std.debug.print("ERROR: {?}\n", .{err});
+                                break :blk core.InterpretResults.RUNTIME_ERROR;
+                            };
+
+                            // TODO: Remove the print from here.
+                            newVal.print();
                             offset += 1;
 
                             break :blk core.InterpretResults.CONTINUE;
