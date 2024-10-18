@@ -1,6 +1,6 @@
-# Turing
+# Loom
 
-Turing is an experimental programming language that I started building so I can learn Zig and how compilers work.
+Loom is an experimental programming language that I started building so I can learn Zig and how compilers work.
 
 ### License
 
