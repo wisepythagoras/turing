@@ -7,7 +7,7 @@ pub const OpCode = enum(u8) {
     RETURN,
     CONSTANT,
     CONSTANT_16,
-    NEGATE,
+    NEG,
     ADD,
     SUB,
     DIV,
@@ -20,6 +20,12 @@ pub const OpCode = enum(u8) {
     POW,
     AND,
     NOT,
+    EQ, // Equal
+    NE, // Not equal
+    GT, // Greater than
+    GE, // Greater or equal
+    LT, // Less than
+    LE, // Less or equal
 
     // https://ziglearn.org/chapter-2/#formatting
     pub fn toString(self: Self) []const u8 {
@@ -120,7 +126,7 @@ pub fn Value() type {
     };
 }
 
-pub const OperationFn = *const fn (Value(), Value()) CompilerError!Value();
+pub const OperationFn = *const fn (Value(), Value(), ?OpCode) CompilerError!Value();
 pub const CompilerError = error{
     CompileError,
     RuntimeError,
@@ -138,7 +144,7 @@ pub const CompilerError = error{
     ExpectExpression,
 };
 
-pub fn addOp(a: Value(), b: Value()) !Value() {
+pub fn addOp(a: Value(), b: Value(), _: ?OpCode) !Value() {
     if (a.vType != ValueType.NUMBER or b.vType != ValueType.NUMBER) {
         return CompilerError.RuntimeError;
     }
@@ -146,7 +152,7 @@ pub fn addOp(a: Value(), b: Value()) !Value() {
     return Value().initNumber(a.val.number + b.val.number);
 }
 
-pub fn subOp(a: Value(), b: Value()) !Value() {
+pub fn subOp(a: Value(), b: Value(), _: ?OpCode) !Value() {
     if (a.vType != ValueType.NUMBER or b.vType != ValueType.NUMBER) {
         return CompilerError.RuntimeError;
     }
@@ -154,7 +160,7 @@ pub fn subOp(a: Value(), b: Value()) !Value() {
     return Value().initNumber(a.val.number - b.val.number);
 }
 
-pub fn mulOp(a: Value(), b: Value()) !Value() {
+pub fn mulOp(a: Value(), b: Value(), _: ?OpCode) !Value() {
     if (a.vType != ValueType.NUMBER or b.vType != ValueType.NUMBER) {
         return CompilerError.RuntimeError;
     }
@@ -162,7 +168,7 @@ pub fn mulOp(a: Value(), b: Value()) !Value() {
     return Value().initNumber(a.val.number * b.val.number);
 }
 
-pub fn divOp(a: Value(), b: Value()) !Value() {
+pub fn divOp(a: Value(), b: Value(), _: ?OpCode) !Value() {
     if (a.vType != ValueType.NUMBER or b.vType != ValueType.NUMBER) {
         return CompilerError.RuntimeError;
     }
@@ -170,7 +176,7 @@ pub fn divOp(a: Value(), b: Value()) !Value() {
     return Value().initNumber(a.val.number / b.val.number);
 }
 
-pub fn modOp(a: Value(), b: Value()) !Value() {
+pub fn modOp(a: Value(), b: Value(), _: ?OpCode) !Value() {
     if (a.vType != ValueType.NUMBER or b.vType != ValueType.NUMBER) {
         return CompilerError.RuntimeError;
     }
@@ -178,7 +184,7 @@ pub fn modOp(a: Value(), b: Value()) !Value() {
     return Value().initNumber(a.val.number % b.val.number);
 }
 
-pub fn powOp(a: Value(), b: Value()) !Value() {
+pub fn powOp(a: Value(), b: Value(), _: ?OpCode) !Value() {
     if (a.vType != ValueType.NUMBER or b.vType != ValueType.NUMBER) {
         return CompilerError.RuntimeError;
     }
@@ -188,7 +194,7 @@ pub fn powOp(a: Value(), b: Value()) !Value() {
     return Value().initNumber(res);
 }
 
-pub fn andOp(a: Value(), b: Value()) !Value() {
+pub fn andOp(a: Value(), b: Value(), _: ?OpCode) !Value() {
     if (a.vType != ValueType.NUMBER or b.vType != ValueType.NUMBER) {
         return CompilerError.RuntimeError;
     }
@@ -200,7 +206,7 @@ pub fn andOp(a: Value(), b: Value()) !Value() {
     return Value().initNumber(res);
 }
 
-pub fn xorOp(a: Value(), b: Value()) !Value() {
+pub fn xorOp(a: Value(), b: Value(), _: ?OpCode) !Value() {
     if (a.vType != ValueType.NUMBER or b.vType != ValueType.NUMBER) {
         return CompilerError.RuntimeError;
     }
@@ -210,6 +216,41 @@ pub fn xorOp(a: Value(), b: Value()) !Value() {
     const res: f64 = @as(f64, @floatFromInt(numA ^ numB));
 
     return Value().initNumber(res);
+}
+
+pub fn eqOp(a: Value(), b: Value(), ins: ?OpCode) !Value() {
+    var aVal: f64 = 0.0;
+    var bVal: f64 = 0.0;
+
+    if (a.vType == ValueType.NUMBER) {
+        aVal = a.val.number;
+    } else if (a.vType == ValueType.BOOL) {
+        aVal = if (a.val.boolean) 1.0 else 0.0;
+    }
+
+    if (b.vType == ValueType.NUMBER) {
+        bVal = b.val.number;
+    } else if (b.vType == ValueType.BOOL) {
+        bVal = if (b.val.boolean) 1.0 else 0.0;
+    }
+
+    if (ins) |instruction| {
+        if (instruction == OpCode.EQ) {
+            return Value().initBool(aVal == bVal);
+        } else if (instruction == OpCode.NE) {
+            return Value().initBool(aVal != bVal);
+        } else if (instruction == OpCode.GT) {
+            return Value().initBool(aVal > bVal);
+        } else if (instruction == OpCode.GE) {
+            return Value().initBool(aVal >= bVal);
+        } else if (instruction == OpCode.LT) {
+            return Value().initBool(aVal < bVal);
+        } else if (instruction == OpCode.LE) {
+            return Value().initBool(aVal <= bVal);
+        }
+    }
+
+    return Value().initBool(false);
 }
 
 pub fn isFalsey(a: Value()) bool {

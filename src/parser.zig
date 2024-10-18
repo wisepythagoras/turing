@@ -55,18 +55,18 @@ pub const ParseRules: [45]Rule = [45]Rule{
     .{ token.TokenType.SLASH, OperationType.NONE, OperationType.BINARY, Precedence.FACTOR },
     .{ token.TokenType.BANG, OperationType.UNARY, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.EQUAL, OperationType.NONE, OperationType.NONE, Precedence.NONE },
-    .{ token.TokenType.GREATER_THAN, OperationType.NONE, OperationType.NONE, Precedence.NONE },
-    .{ token.TokenType.LESS_THAN, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.GREATER_THAN, OperationType.NONE, OperationType.BINARY, Precedence.COMPARISON },
+    .{ token.TokenType.LESS_THAN, OperationType.NONE, OperationType.BINARY, Precedence.COMPARISON },
     .{ token.TokenType.CARET, OperationType.NONE, OperationType.BINARY, Precedence.FACTOR },
     .{ token.TokenType.PERCENT, OperationType.NONE, OperationType.BINARY, Precedence.FACTOR },
     .{ token.TokenType.AMPERSAND, OperationType.NONE, OperationType.BINARY, Precedence.FACTOR },
     .{ token.TokenType.COMMENT, OperationType.NONE, OperationType.NONE, Precedence.NONE }, // Useless
 
     // Multi-character tokens
-    .{ token.TokenType.BANG_EQUAL, OperationType.NONE, OperationType.NONE, Precedence.NONE },
-    .{ token.TokenType.DOUBLE_EQUAL, OperationType.NONE, OperationType.NONE, Precedence.NONE },
-    .{ token.TokenType.GREATER_EQUAL_THAN, OperationType.NONE, OperationType.NONE, Precedence.NONE },
-    .{ token.TokenType.LESS_EQUAL_THAN, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.BANG_EQUAL, OperationType.NONE, OperationType.BINARY, Precedence.EQUALITY },
+    .{ token.TokenType.DOUBLE_EQUAL, OperationType.NONE, OperationType.BINARY, Precedence.EQUALITY },
+    .{ token.TokenType.GREATER_EQUAL_THAN, OperationType.NONE, OperationType.BINARY, Precedence.COMPARISON },
+    .{ token.TokenType.LESS_EQUAL_THAN, OperationType.NONE, OperationType.BINARY, Precedence.COMPARISON },
     .{ token.TokenType.STAR_STAR, OperationType.NONE, OperationType.BINARY, Precedence.FACTOR },
 
     // Literals
@@ -173,7 +173,7 @@ pub fn Parser() type {
                 // We should emit the opcode for the operation last, since we only want to push the number
                 // onto the stack and then run the command on it.
                 switch (operatorType) {
-                    .MINUS => return self.emit(core.OpCode.NEGATE),
+                    .MINUS => return self.emit(core.OpCode.NEG),
                     .BANG => return self.emit(core.OpCode.NOT),
                     else => return,
                 }
@@ -212,6 +212,12 @@ pub fn Parser() type {
                     .PERCENT => self.emit(core.OpCode.MOD),
                     .STAR_STAR => self.emit(core.OpCode.POW),
                     .AMPERSAND => self.emit(core.OpCode.AND),
+                    .DOUBLE_EQUAL => self.emit(core.OpCode.EQ),
+                    .BANG_EQUAL => self.emit(core.OpCode.NE),
+                    .GREATER_THAN => self.emit(core.OpCode.GT),
+                    .GREATER_EQUAL_THAN => self.emit(core.OpCode.GE),
+                    .LESS_THAN => self.emit(core.OpCode.LT),
+                    .LESS_EQUAL_THAN => self.emit(core.OpCode.LE),
                     else => core.CompilerError.InvalidOperation,
                 };
             }

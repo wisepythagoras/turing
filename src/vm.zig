@@ -76,7 +76,7 @@ pub fn VM() type {
                         offset += 1;
                         break :blk core.InterpretResults.CONTINUE;
                     },
-                    .NEGATE => blk: {
+                    .NEG => blk: {
                         const optionalConstant = self.pop();
 
                         if (optionalConstant) |eConstant| {
@@ -125,7 +125,7 @@ pub fn VM() type {
                         break :blk core.InterpretResults.RUNTIME_ERROR;
                     },
                     .ADD => blk: {
-                        const res = self.operation(core.addOp);
+                        const res = self.operation(core.addOp, null);
 
                         if (res == core.InterpretResults.CONTINUE) {
                             offset += 1;
@@ -134,7 +134,7 @@ pub fn VM() type {
                         break :blk res;
                     },
                     .SUB => blk: {
-                        const res = self.operation(core.subOp);
+                        const res = self.operation(core.subOp, null);
 
                         if (res == core.InterpretResults.CONTINUE) {
                             offset += 1;
@@ -143,7 +143,7 @@ pub fn VM() type {
                         break :blk res;
                     },
                     .MUL => blk: {
-                        const res = self.operation(core.mulOp);
+                        const res = self.operation(core.mulOp, null);
 
                         if (res == core.InterpretResults.CONTINUE) {
                             offset += 1;
@@ -152,7 +152,7 @@ pub fn VM() type {
                         break :blk res;
                     },
                     .DIV => blk: {
-                        const res = self.operation(core.divOp);
+                        const res = self.operation(core.divOp, null);
 
                         if (res == core.InterpretResults.CONTINUE) {
                             offset += 1;
@@ -161,7 +161,7 @@ pub fn VM() type {
                         break :blk res;
                     },
                     .MOD => blk: {
-                        const res = self.operation(core.divOp);
+                        const res = self.operation(core.divOp, null);
 
                         if (res == core.InterpretResults.CONTINUE) {
                             offset += 1;
@@ -170,7 +170,7 @@ pub fn VM() type {
                         break :blk res;
                     },
                     .XOR => blk: {
-                        const res = self.operation(core.xorOp);
+                        const res = self.operation(core.xorOp, null);
 
                         if (res == core.InterpretResults.CONTINUE) {
                             offset += 1;
@@ -179,7 +179,61 @@ pub fn VM() type {
                         break :blk res;
                     },
                     .POW => blk: {
-                        const res = self.operation(core.powOp);
+                        const res = self.operation(core.powOp, null);
+
+                        if (res == core.InterpretResults.CONTINUE) {
+                            offset += 1;
+                        }
+
+                        break :blk res;
+                    },
+                    .EQ => blk: {
+                        const res = self.operation(core.eqOp, byte);
+
+                        if (res == core.InterpretResults.CONTINUE) {
+                            offset += 1;
+                        }
+
+                        break :blk res;
+                    },
+                    .NE => blk: {
+                        const res = self.operation(core.eqOp, byte);
+
+                        if (res == core.InterpretResults.CONTINUE) {
+                            offset += 1;
+                        }
+
+                        break :blk res;
+                    },
+                    .GT => blk: {
+                        const res = self.operation(core.eqOp, byte);
+
+                        if (res == core.InterpretResults.CONTINUE) {
+                            offset += 1;
+                        }
+
+                        break :blk res;
+                    },
+                    .GE => blk: {
+                        const res = self.operation(core.eqOp, byte);
+
+                        if (res == core.InterpretResults.CONTINUE) {
+                            offset += 1;
+                        }
+
+                        break :blk res;
+                    },
+                    .LT => blk: {
+                        const res = self.operation(core.eqOp, byte);
+
+                        if (res == core.InterpretResults.CONTINUE) {
+                            offset += 1;
+                        }
+
+                        break :blk res;
+                    },
+                    .LE => blk: {
+                        const res = self.operation(core.eqOp, byte);
 
                         if (res == core.InterpretResults.CONTINUE) {
                             offset += 1;
@@ -188,7 +242,7 @@ pub fn VM() type {
                         break :blk res;
                     },
                     .AND => blk: {
-                        const res = self.operation(core.andOp);
+                        const res = self.operation(core.andOp, byte);
 
                         if (res == core.InterpretResults.CONTINUE) {
                             offset += 1;
@@ -234,14 +288,14 @@ pub fn VM() type {
             }
         }
 
-        pub fn operation(self: *Self, op: core.OperationFn) core.InterpretResults {
+        pub fn operation(self: *Self, op: core.OperationFn, ins: ?core.OpCode) core.InterpretResults {
             const bOptional = self.pop();
 
             if (bOptional) |b| {
                 const aOptional = self.pop();
 
                 if (aOptional) |a| {
-                    const newValue = op(a, b) catch |err| {
+                    const newValue = op(a, b, ins) catch |err| {
                         if (err == core.CompilerError.RuntimeError) {
                             return core.InterpretResults.RUNTIME_ERROR;
                         }

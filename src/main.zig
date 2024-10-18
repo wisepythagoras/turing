@@ -65,7 +65,7 @@ pub fn main() !void {
     // try ck.addConstant(core.Value().initNumber(14.7391));
     // try ck.writeOpCode(core.OpCode.CONSTANT, 2);
     // try ck.addConstant(core.Value().initNumber(123.321));
-    // try ck.writeOpCode(core.OpCode.NEGATE, 3);
+    // try ck.writeOpCode(core.OpCode.NEG, 3);
     // try ck.writeOpCode(core.OpCode.ADD, 4);
     // try ck.writeOpCode(core.OpCode.CONSTANT, 5);
     // try ck.addConstant(core.Value().initNumber(-2));
