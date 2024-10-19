@@ -1,5 +1,6 @@
 const std = @import("std");
 const chunk = @import("chunk.zig");
+const object = @import("object.zig");
 
 pub const OpCode = enum(u8) {
     const Self = @This();
@@ -58,12 +59,13 @@ pub const ValueType = enum(u8) {
     NIL,
     BOOL,
     NUMBER,
-    STRING,
+    OBJECT,
 };
 
 pub const ValueUnion = union {
     number: f64,
     boolean: bool,
+    object: *object.Object(),
 };
 
 pub fn Value() type {
@@ -93,6 +95,13 @@ pub fn Value() type {
             return Self{
                 .val = ValueUnion{ .number = 0 },
                 .vType = ValueType.NIL,
+            };
+        }
+
+        pub fn initObj(obj: *object.Object()) Self {
+            return Self{
+                .val = ValueUnion{ .object = obj },
+                .vType = ValueType.OBJECT,
             };
         }
 
