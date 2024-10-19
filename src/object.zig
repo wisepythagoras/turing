@@ -30,26 +30,6 @@ pub fn Object() type {
     };
 }
 
-// pub const Object = struct {
-//     const Self = @This();
-
-//     objType: ObjectType,
-//     val: ObjectValueUnion,
-
-//     pub fn init(val: anytype) ?Self {
-//         if (@TypeOf(val) == String()) {
-//             return Self{
-//                 .objType = ObjectType.STRING,
-//                 .val = ObjectValueUnion{
-//                     .string = val,
-//                 },
-//             };
-//         }
-
-//         return null;
-//     }
-// };
-
 pub fn String() type {
     return struct {
         const Self = @This();
