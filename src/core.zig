@@ -315,6 +315,13 @@ pub fn constantInstruction(name: []const u8, c: *chunk.Chunk(), offset: usize) C
         if (constant.vType == ValueType.NUMBER) {
             const num = constant.val.number;
             std.debug.print("{s} = {x} ({d})\n", .{ name, num, num });
+        } else if (constant.vType == ValueType.OBJECT) {
+            const obj = constant.val.object;
+
+            if (obj.objType == object.ObjectType.STRING) {
+                const str = obj.val.string.chars;
+                std.debug.print("{s} = \"{s}\"\n", .{ name, str });
+            }
         }
 
         return offset + 2;

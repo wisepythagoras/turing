@@ -1,5 +1,11 @@
+const std = @import("std");
+
 pub const ObjectType = enum(u8) {
     STRING,
+};
+
+pub const ObjectValueUnion = union {
+    string: String(),
 };
 
 pub fn Object() type {
@@ -7,37 +13,55 @@ pub fn Object() type {
         const Self = @This();
 
         objType: ObjectType,
+        val: ObjectValueUnion,
 
-        pub fn init(t: ObjectType) Self {
-            return Self{
-                .objType = t,
-            };
-        }
+        pub fn init(val: anytype) ?Self {
+            if (@TypeOf(val) == String()) {
+                return Self{
+                    .objType = ObjectType.STRING,
+                    .val = ObjectValueUnion{
+                        .string = val,
+                    },
+                };
+            }
 
-        pub fn asString(self: *Self) *String() {
-            return @as(*String(), @ptrCast(self));
+            return null;
         }
     };
 }
 
+// pub const Object = struct {
+//     const Self = @This();
+
+//     objType: ObjectType,
+//     val: ObjectValueUnion,
+
+//     pub fn init(val: anytype) ?Self {
+//         if (@TypeOf(val) == String()) {
+//             return Self{
+//                 .objType = ObjectType.STRING,
+//                 .val = ObjectValueUnion{
+//                     .string = val,
+//                 },
+//             };
+//         }
+
+//         return null;
+//     }
+// };
+
 pub fn String() type {
-    return packed struct {
+    return struct {
         const Self = @This();
 
-        obj: Object(),
-        chars: []const u8,
         len: usize,
+        chars: []const u8,
 
         pub fn init(str: []const u8) Self {
             return Self{
-                .obj = Object().init(ObjectType.STRING),
                 .chars = str,
                 .len = str.len,
             };
-        }
-
-        pub fn asObject(self: *Self) *Object() {
-            return @as(*Object(), @ptrCast(self));
         }
     };
 }

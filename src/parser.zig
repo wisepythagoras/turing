@@ -3,6 +3,7 @@ const token = @import("token.zig");
 const chunk = @import("chunk.zig");
 const core = @import("core.zig");
 const scanner = @import("scanner.zig");
+const object = @import("object.zig");
 
 pub const Precedence = enum(u8) {
     const Self = @This();
@@ -32,6 +33,7 @@ pub const OperationType = enum(u8) {
     BINARY,
     NUMBER,
     LITERAL,
+    STRING,
 };
 
 pub const Rule = struct {
@@ -71,7 +73,7 @@ pub const ParseRules: [45]Rule = [45]Rule{
 
     // Literals
     .{ token.TokenType.IDENTIFIER, OperationType.NONE, OperationType.NONE, Precedence.NONE },
-    .{ token.TokenType.STRING, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.STRING, OperationType.STRING, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.NUMBER, OperationType.NUMBER, OperationType.NONE, Precedence.NONE },
 
     // Keywords
@@ -245,6 +247,29 @@ pub fn Parser() type {
             }
         }
 
+        fn string(self: *Self) !void {
+            if (self.previous) |prev| {
+                const str = self.source[(prev.pos)..(prev.size)];
+                const strObj = object.String().init(str);
+
+                if (object.Object().init(strObj)) |obj| {
+                    const memory = std.heap.page_allocator;
+                    const o = try memory.create(object.Object());
+                    o.* = obj;
+                    // const o = @as(*object.Object(), @ptrCast(@constCast(&obj)));
+
+                    self.emitConstant(core.Value().initObj(o)) catch |err| {
+                        std.debug.print("ERROR: string(): {?}\n", .{err});
+                        return err;
+                    };
+
+                    return;
+                }
+            }
+
+            return core.CompilerError.UninitializedStack;
+        }
+
         fn parsePrecedence(self: *Self, prec: Precedence) core.CompilerError!void {
             std.debug.print("parsePrecedence() - {?}, {?}, {?}\n", .{ prec, self.previous, self.current });
 
@@ -293,6 +318,11 @@ pub fn Parser() type {
                 } else if (prefixRule == OperationType.LITERAL) {
                     self.literal() catch |err| {
                         std.debug.print("ERROR: literal(): {}\n", .{err});
+                        return core.CompilerError.CompileError;
+                    };
+                } else if (prefixRule == OperationType.STRING) {
+                    self.string() catch |err| {
+                        std.debug.print("ERROR: string(): {}\n", .{err});
                         return core.CompilerError.CompileError;
                     };
                 }
