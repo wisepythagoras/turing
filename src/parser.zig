@@ -249,7 +249,7 @@ pub fn Parser() type {
 
         fn string(self: *Self) !void {
             if (self.previous) |prev| {
-                const str = self.source[(prev.pos)..(prev.size)];
+                const str = self.source[(prev.pos)..(prev.pos + prev.size)];
                 const strObj = object.String().init(str);
 
                 if (object.Object().init(strObj)) |obj| {

@@ -138,7 +138,7 @@ pub fn Scanner() type {
                     const stringToken = token.Token().initWithSize(
                         token.TokenType.STRING,
                         self.pos + 1,
-                        endPos - self.pos,
+                        endPos - self.pos - 1,
                     );
                     self.pos = endPos + 1;
 

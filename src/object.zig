@@ -27,6 +27,19 @@ pub fn Object() type {
 
             return null;
         }
+
+        /// Checks two objects for equality.
+        pub fn isEqual(self: Self, obj: *Object()) bool {
+            if (self.objType != obj.objType) {
+                return false;
+            }
+
+            if (self.objType == ObjectType.STRING) {
+                return self.val.string.isEqual(&obj.val.string);
+            }
+
+            return false;
+        }
     };
 }
 
@@ -42,6 +55,10 @@ pub fn String() type {
                 .chars = str,
                 .len = str.len,
             };
+        }
+
+        pub fn isEqual(self: Self, obj: *String()) bool {
+            return std.mem.eql(u8, obj.chars, self.chars);
         }
     };
 }
