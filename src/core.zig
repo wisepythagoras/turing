@@ -40,6 +40,14 @@ pub const OpCode = enum(u8) {
         }
     }
 
+    pub fn toBytes(self: Self) ![]const u8 {
+        const memory = std.heap.page_allocator;
+        const buf = try memory.alloc(u8, 1);
+        buf[0] = @as(u8, self);
+
+        return buf;
+    }
+
     pub fn fromU8(byte: u8) !OpCode {
         return std.meta.intToEnum(@This(), byte);
         // return @as(OpCode, @enumFromInt(byte));
@@ -174,6 +182,7 @@ pub fn Value() type {
             return str;
         }
 
+        /// Convert the value to a byte array.
         pub fn toBytes(self: Self) []const u8 {
             if (self.vType == ValueType.OBJECT) {
                 return self.val.object.toString();
