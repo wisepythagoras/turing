@@ -1,5 +1,6 @@
 const std = @import("std");
 const chunk = @import("chunk.zig");
+const object = @import("object.zig");
 
 pub const OpCode = enum(u8) {
     const Self = @This();
@@ -58,12 +59,13 @@ pub const ValueType = enum(u8) {
     NIL,
     BOOL,
     NUMBER,
-    STRING,
+    OBJECT,
 };
 
 pub const ValueUnion = union {
     number: f64,
     boolean: bool,
+    object: *object.Object(),
 };
 
 pub fn Value() type {
@@ -73,6 +75,27 @@ pub fn Value() type {
         // number: f64,
         vType: ValueType,
         val: ValueUnion,
+
+        pub fn init(val: anytype) ?Self {
+            if (@TypeOf(val) == bool) {
+                return Self{
+                    .val = ValueUnion{ .boolean = val },
+                    .vType = ValueType.BOOL,
+                };
+            } else if (@TypeOf(val) == f64) {
+                return Self{
+                    .val = ValueUnion{ .number = val },
+                    .vType = ValueType.NUMBER,
+                };
+            } else if (@TypeOf(val) == object.Object()) {
+                return Self{
+                    .val = ValueUnion{ .object = val },
+                    .vType = ValueType.OBJECT,
+                };
+            }
+
+            return null;
+        }
 
         pub fn initNumber(num: f64) Self {
             return Self{
@@ -93,6 +116,13 @@ pub fn Value() type {
             return Self{
                 .val = ValueUnion{ .number = 0 },
                 .vType = ValueType.NIL,
+            };
+        }
+
+        pub fn initObj(obj: *object.Object()) Self {
+            return Self{
+                .val = ValueUnion{ .object = obj },
+                .vType = ValueType.OBJECT,
             };
         }
 
@@ -219,6 +249,18 @@ pub fn xorOp(a: Value(), b: Value(), _: ?OpCode) !Value() {
 }
 
 pub fn eqOp(a: Value(), b: Value(), ins: ?OpCode) !Value() {
+    if ((a.vType == ValueType.OBJECT and b.vType != ValueType.OBJECT) or
+        (a.vType != ValueType.OBJECT and b.vType == ValueType.OBJECT))
+    {
+        if (Value().init(false)) |val| {
+            return val;
+        }
+    } else if (a.vType == ValueType.OBJECT and b.vType == ValueType.OBJECT) {
+        if (a.val.object.objType == object.ObjectType.STRING) {
+            return Value().initBool(a.val.object.isEqual(b.val.object));
+        }
+    }
+
     var aVal: f64 = 0.0;
     var bVal: f64 = 0.0;
 
@@ -306,6 +348,13 @@ pub fn constantInstruction(name: []const u8, c: *chunk.Chunk(), offset: usize) C
         if (constant.vType == ValueType.NUMBER) {
             const num = constant.val.number;
             std.debug.print("{s} = {x} ({d})\n", .{ name, num, num });
+        } else if (constant.vType == ValueType.OBJECT) {
+            const obj = constant.val.object;
+
+            if (obj.objType == object.ObjectType.STRING) {
+                const str = obj.val.string.chars;
+                std.debug.print("{s} = \"{s}\"\n", .{ name, str });
+            }
         }
 
         return offset + 2;
