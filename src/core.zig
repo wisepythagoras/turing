@@ -152,6 +152,8 @@ pub fn Value() type {
                 std.debug.print("{s}\n", .{valToPrint});
             } else if (self.vType == ValueType.NIL) {
                 std.debug.print("nil\n", .{});
+            } else if (self.vType == ValueType.OBJECT) {
+                std.debug.print("{s}\n", .{self.toString()});
             }
         }
 
