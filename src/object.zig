@@ -40,6 +40,15 @@ pub fn Object() type {
 
             return false;
         }
+
+        /// Converts the value object to a string value.
+        pub fn toString(self: Self) []const u8 {
+            if (self.objType == ObjectType.STRING) {
+                return self.val.string.chars;
+            }
+
+            return "";
+        }
     };
 }
 

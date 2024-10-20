@@ -66,6 +66,7 @@ pub const ValueUnion = union {
     number: f64,
     boolean: bool,
     object: *object.Object(),
+    bytes: [8]u8,
 };
 
 pub fn Value() type {
@@ -153,6 +154,35 @@ pub fn Value() type {
                 std.debug.print("nil\n", .{});
             }
         }
+
+        pub fn toString(self: Self) []const u8 {
+            if (self.vType == ValueType.OBJECT) {
+                return self.val.object.toString();
+            }
+
+            if (self.vType == ValueType.BOOL) {
+                return if (self.val.boolean) "true" else "false";
+            }
+
+            var buf: [256]u8 = undefined;
+            const str = std.fmt.bufPrint(&buf, "{}", .{self.val.number}) catch {
+                return "";
+            };
+
+            return str;
+        }
+
+        pub fn toBytes(self: Self) []const u8 {
+            if (self.vType == ValueType.OBJECT) {
+                return self.val.object.toString();
+            }
+
+            if (self.vType == ValueType.BOOL) {
+                return [_]u8{if (self.val.boolean) 1 else 0};
+            }
+
+            return self.val.bytes;
+        }
     };
 }
 
@@ -172,14 +202,45 @@ pub const CompilerError = error{
     UninitializedStack,
     InvalidOperation,
     ExpectExpression,
+    MemoryError,
 };
 
 pub fn addOp(a: Value(), b: Value(), _: ?OpCode) !Value() {
     if (a.vType != ValueType.NUMBER or b.vType != ValueType.NUMBER) {
-        return CompilerError.RuntimeError;
+        if ((a.vType == ValueType.OBJECT and a.val.object.objType != object.ObjectType.STRING) or
+            (b.vType == ValueType.OBJECT and b.val.object.objType != object.ObjectType.STRING))
+        {
+            return CompilerError.RuntimeError;
+        }
+
+        // return CompilerError.RuntimeError;
     }
 
-    return Value().initNumber(a.val.number + b.val.number);
+    if (a.vType == ValueType.NUMBER and b.vType == ValueType.NUMBER) {
+        return Value().initNumber(a.val.number + b.val.number);
+    }
+
+    const aStr = a.toString();
+    const bStr = b.toString();
+
+    var buf: [256]u8 = undefined;
+    const str = std.fmt.bufPrint(&buf, "{s}{s}", .{ aStr, bStr }) catch {
+        return CompilerError.RuntimeError;
+    };
+
+    const strObj = object.String().init(str);
+
+    if (object.Object().init(strObj)) |obj| {
+        const memory = std.heap.page_allocator;
+        const o = memory.create(object.Object()) catch {
+            return CompilerError.MemoryError;
+        };
+        o.* = obj;
+
+        return Value().initObj(o);
+    }
+
+    return Value().initNil();
 }
 
 pub fn subOp(a: Value(), b: Value(), _: ?OpCode) !Value() {
