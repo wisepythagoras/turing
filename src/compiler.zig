@@ -12,13 +12,15 @@ pub fn Compiler() type {
         source: []u8,
         chunk: *chunk.Chunk(),
         parser: parser.Parser(),
+        verbose: bool,
 
-        pub fn init(source: []u8, c: *chunk.Chunk()) Self {
-            const p = parser.Parser().init(c, source);
+        pub fn init(source: []u8, c: *chunk.Chunk(), verbose: bool) Self {
+            const p = parser.Parser().init(c, source, verbose);
             return Self{
                 .source = source,
                 .chunk = c,
                 .parser = p,
+                .verbose = verbose,
             };
         }
 
@@ -43,10 +45,13 @@ pub fn Compiler() type {
                     }
 
                     const tokenStr = try t.toString(self.source);
-                    std.debug.print("{?} <= {s}\n", .{
-                        t.tokenType,
-                        tokenStr,
-                    });
+
+                    if (self.verbose) {
+                        std.debug.print("{?} <= {s}\n", .{
+                            t.tokenType,
+                            tokenStr,
+                        });
+                    }
                 } else |err| {
                     std.debug.print("ERROR: line {d} / pos {d}\n", .{
                         self.parser.getScanner().line,
@@ -82,7 +87,9 @@ pub fn Compiler() type {
         /// Compiles and returns a chunk that's ready for the VM to run. To just dump every scanned
         /// token, run `scanAllTokens`.
         pub fn compile(self: *Self) !*chunk.Chunk() {
-            std.debug.print("compile()\n", .{});
+            if (self.verbose) {
+                std.debug.print("compile()\n", .{});
+            }
 
             if (self.parser.advance()) |t| {
                 _ = t;

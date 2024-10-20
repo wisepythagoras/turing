@@ -13,6 +13,7 @@ pub fn main() !void {
     // https://github.com/Hejsil/zig-clap
     const params = comptime clap.parseParamsComptime(
         \\-h, --help             Display the help message.
+        \\-v, --verbose          Show debug messages.
         \\<str>...
         \\
     );
@@ -26,6 +27,8 @@ pub fn main() !void {
         return err;
     };
     defer res.deinit();
+
+    const verbose = res.args.verbose != 0;
 
     if (res.args.help != 0) {
         // const stdOut = std.io.getStdOut();
@@ -43,11 +46,7 @@ pub fn main() !void {
     var myVm = try vm.VM().init(false);
 
     if (utils.readFile(entry)) |source| {
-        var comp = compiler.Compiler().init(source, myVm.chunk);
-
-        // _ = try comp.scanAllTokens();
-
-        // std.debug.print("----\n", .{});
+        var comp = compiler.Compiler().init(source, myVm.chunk, verbose);
 
         // To see every parsed token: scanAllTokens.
         if (comp.compile()) |_| {

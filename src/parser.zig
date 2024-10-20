@@ -108,9 +108,10 @@ pub fn Parser() type {
         chunk: *chunk.Chunk(),
         source: []u8,
         scanner: scanner.Scanner(),
+        verbose: bool,
 
         /// Creates a new instance of the parser. This should be used only by the compiler.
-        pub fn init(c: *chunk.Chunk(), source: []u8) Self {
+        pub fn init(c: *chunk.Chunk(), source: []u8, verbose: bool) Self {
             const newScanner = scanner.Scanner().init(source);
 
             return Self{
@@ -119,6 +120,7 @@ pub fn Parser() type {
                 .chunk = c,
                 .source = source,
                 .scanner = newScanner,
+                .verbose = verbose,
             };
         }
 
@@ -149,7 +151,10 @@ pub fn Parser() type {
         }
 
         fn number(self: *Self) !void {
-            std.debug.print("number() - {?}, {?}\n", .{ self.previous, self.current });
+            if (self.verbose) {
+                std.debug.print("number() - {?}, {?}\n", .{ self.previous, self.current });
+            }
+
             if (self.previous) |prev| {
                 const numStr = try prev.toString(self.source);
 
@@ -163,6 +168,10 @@ pub fn Parser() type {
         }
 
         fn unary(self: *Self) !void {
+            if (self.verbose) {
+                std.debug.print("unary() - {?}, {?}\n", .{ self.previous, self.current });
+            }
+
             if (self.previous) |previous| {
                 // The operator has been consumed and is stored in the previous token.
                 const operatorType = previous.tokenType;
@@ -185,7 +194,9 @@ pub fn Parser() type {
         }
 
         fn literal(self: *Self) !void {
-            std.debug.print("literal() {?}\n", .{self.previous});
+            if (self.verbose) {
+                std.debug.print("literal() {?}\n", .{self.previous});
+            }
 
             if (self.previous) |prev| {
                 return switch (prev.tokenType) {
@@ -198,6 +209,10 @@ pub fn Parser() type {
         }
 
         fn binary(self: *Self) !void {
+            if (self.verbose) {
+                std.debug.print("binary() - {?}, {?}\n", .{ self.previous, self.current });
+            }
+
             if (self.previous) |previous| {
                 const operatorType = previous.tokenType;
                 const rule = try operatorType.getRule();
@@ -228,7 +243,10 @@ pub fn Parser() type {
         }
 
         pub fn expression(self: *Self) core.CompilerError!void {
-            std.debug.print("expression() - {?}, {?}\n", .{ self.previous, self.current });
+            if (self.verbose) {
+                std.debug.print("expression() - {?}, {?}\n", .{ self.previous, self.current });
+            }
+
             return self.parsePrecedence(Precedence.ASSIGNMENT);
         }
 
@@ -237,7 +255,10 @@ pub fn Parser() type {
         }
 
         fn grouping(self: *Self) !void {
-            std.debug.print("grouping() - {?}, {?}\n", .{ self.previous, self.current });
+            if (self.verbose) {
+                std.debug.print("grouping() - {?}, {?}\n", .{ self.previous, self.current });
+            }
+
             try self.expression();
 
             if (self.consume(token.TokenType.RIGHT_PAREN)) |_| {
@@ -271,7 +292,9 @@ pub fn Parser() type {
         }
 
         fn parsePrecedence(self: *Self, prec: Precedence) core.CompilerError!void {
-            std.debug.print("parsePrecedence() - {?}, {?}, {?}\n", .{ prec, self.previous, self.current });
+            if (self.verbose) {
+                std.debug.print("parsePrecedence() - {?}, {?}, {?}\n", .{ prec, self.previous, self.current });
+            }
 
             // First we have to parse the prefix expression by reading the next token and
             // get the rule right after. This will give us the prefix operation.
@@ -305,7 +328,6 @@ pub fn Parser() type {
                         return core.CompilerError.CompileError;
                     };
                 } else if (prefixRule == OperationType.UNARY) {
-                    std.debug.print("unary() - {?}, {?}\n", .{ self.previous, self.current });
                     self.unary() catch |err| {
                         std.debug.print("ERROR: unary(): {}\n", .{err});
                         return core.CompilerError.CompileError;
@@ -335,7 +357,9 @@ pub fn Parser() type {
                     var currentTokenRule = try currentToken.tokenType.getRule();
 
                     while (prec.toUsize() <= currentTokenRule[3].toUsize()) {
-                        std.debug.print("prec <= currentTokenPrec {?}\n", .{currentToken.tokenType});
+                        if (self.verbose) {
+                            std.debug.print("prec <= currentTokenPrec {?}\n", .{currentToken.tokenType});
+                        }
 
                         const newToken = self.advance() catch |err| {
                             std.debug.print("ERROR: {}\n", .{err});
@@ -349,7 +373,6 @@ pub fn Parser() type {
                         const influxRule: OperationType = currentTokenRule[2];
 
                         if (influxRule == OperationType.BINARY) {
-                            std.debug.print("binary() - {?}, {?}\n", .{ self.previous, self.current });
                             self.binary() catch |err| {
                                 std.debug.print("ERROR: {}\n", .{err});
                                 return core.CompilerError.CompileError;
@@ -365,17 +388,23 @@ pub fn Parser() type {
         }
 
         pub fn advance(self: *Self) !token.Token() {
-            std.debug.print("advance() - {?}, {?}\n", .{ self.previous, self.current });
+            if (self.verbose) {
+                std.debug.print("advance() - {?}, {?}\n", .{ self.previous, self.current });
+            }
+
             self.previous = self.current;
 
             while (true) {
                 if (self.scanner.scanToken()) |t| {
                     self.current = t;
                     const tokenStr = try t.toString(self.source);
-                    std.debug.print("\t{?} <= {s} adv\n", .{
-                        t.tokenType,
-                        tokenStr,
-                    });
+
+                    if (self.verbose) {
+                        std.debug.print("\t{?} <= {s} adv\n", .{
+                            t.tokenType,
+                            tokenStr,
+                        });
+                    }
 
                     if (t.tokenType != token.TokenType.ERROR) {
                         return t;
@@ -393,7 +422,10 @@ pub fn Parser() type {
         /// TODO: maybe add a message here?
         pub fn consume(self: *Self, tokenType: token.TokenType) !token.Token() {
             if (self.current) |current| {
-                std.debug.print("> {} = {} - {}\n", .{ current.tokenType, tokenType, self.scanner.pos });
+                if (self.verbose) {
+                    std.debug.print("> {} = {} - {}\n", .{ current.tokenType, tokenType, self.scanner.pos });
+                }
+
                 if (current.tokenType == tokenType) {
                     return self.advance();
                 } else {
