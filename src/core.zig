@@ -214,8 +214,6 @@ pub fn addOp(a: Value(), b: Value(), _: ?OpCode) !Value() {
         {
             return CompilerError.RuntimeError;
         }
-
-        // return CompilerError.RuntimeError;
     }
 
     if (a.vType == ValueType.NUMBER and b.vType == ValueType.NUMBER) {
@@ -224,16 +222,18 @@ pub fn addOp(a: Value(), b: Value(), _: ?OpCode) !Value() {
 
     const aStr = a.toString();
     const bStr = b.toString();
+    const memory = std.heap.page_allocator;
 
-    var buf: [256]u8 = undefined;
-    const str = std.fmt.bufPrint(&buf, "{s}{s}", .{ aStr, bStr }) catch {
-        return CompilerError.RuntimeError;
+    const buf = memory.alloc(u8, aStr.len + bStr.len) catch {
+        return CompilerError.MemoryError;
     };
 
+    const str = std.fmt.bufPrint(buf, "{s}{s}", .{ aStr, bStr }) catch {
+        return CompilerError.RuntimeError;
+    };
     const strObj = object.String().init(str);
 
     if (object.Object().init(strObj)) |obj| {
-        const memory = std.heap.page_allocator;
         const o = memory.create(object.Object()) catch {
             return CompilerError.MemoryError;
         };
