@@ -147,6 +147,17 @@ pub fn Value() type {
             return self.vType == ValueType.BOOL;
         }
 
+        pub fn destroy(self: Self) bool {
+            if (self.vType == ValueType.OBJECT) {
+                const memory = std.heap.page_allocator;
+                memory.destroy(self.val.object);
+
+                return true;
+            }
+
+            return false;
+        }
+
         pub fn print(self: Self) void {
             if (self.vType == ValueType.NUMBER) {
                 std.debug.print("{d:.6}\n", .{self.val.number});
@@ -231,6 +242,8 @@ pub fn addOp(a: Value(), b: Value(), _: ?OpCode) !Value() {
 
     const aStr = a.toString();
     const bStr = b.toString();
+    _ = a.destroy();
+    _ = b.destroy();
     const memory = std.heap.page_allocator;
 
     const buf = memory.alloc(u8, aStr.len + bStr.len) catch {
