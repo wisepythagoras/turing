@@ -60,18 +60,6 @@ pub fn main() !void {
     }
 
     var ck = myVm.chunk;
-    // // var c2 = chunk.Chunk().init(std.heap.page_allocator);
-    // try ck.writeOpCode(core.OpCode.CONSTANT, 1);
-    // try ck.addConstant(core.Value().initNumber(14.7391));
-    // try ck.writeOpCode(core.OpCode.CONSTANT, 2);
-    // try ck.addConstant(core.Value().initNumber(123.321));
-    // try ck.writeOpCode(core.OpCode.NEG, 3);
-    // try ck.writeOpCode(core.OpCode.ADD, 4);
-    // try ck.writeOpCode(core.OpCode.CONSTANT, 5);
-    // try ck.addConstant(core.Value().initNumber(-2));
-    // try ck.writeOpCode(core.OpCode.MUL, 6);
-    // try ck.writeOpCode(core.OpCode.RETURN, 7);
-
     try ck.disassemble();
     try myVm.run();
 
