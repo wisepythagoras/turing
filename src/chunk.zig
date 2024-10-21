@@ -88,6 +88,19 @@ pub fn Chunk() type {
             self.values.items[idx] = constant;
         }
 
+        pub fn toBytes(self: *Self) core.CompilerError![]const u8 {
+            var offset: usize = 0;
+
+            while (offset < self.code.items.len) {
+                if (instructionToBytes(self, &offset)) |bytes| {
+                    // TODO: Implement
+                    _ = bytes;
+                } else |err| {
+                    return err;
+                }
+            }
+        }
+
         /// Disassembles the chunk byte-by-byte.
         pub fn disassemble(self: *Self) core.CompilerError!void {
             var offset: usize = 0;
@@ -105,6 +118,22 @@ pub fn Chunk() type {
             //     //
             // }
         }
+    };
+}
+
+fn instructionToBytes(chunk: *Chunk(), offset: *usize) core.CompilerError![]const u8 {
+    const instruction = chunk.code.items[offset.*];
+    const opCode = instruction[0];
+
+    return switch (opCode) {
+        .RETURN => opCode.toBytes(),
+        .CONSTANT => {
+            return core.constToBytes(chunk, offset);
+        },
+        .CONSTANT_16 => "",
+        .NEG, .ADD, .MUL, .DIV, .SUB, .XOR, .MOD, .POW, .AND, .NOT, .EQ, .NE, .GT, .GE, .LT, .LE => {
+            return opCode.toBytes();
+        },
     };
 }
 

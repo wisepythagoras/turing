@@ -428,6 +428,12 @@ pub fn booleanInstruction(name: []const u8, c: *chunk.Chunk(), offset: usize) Co
     }
 }
 
+pub fn constToBytes(c: *chunk.Chunk(), offset: *usize) CompilerError![]const u8 {
+    const val = try readValue(c, offset.*);
+    offset.* += 1;
+    return val.toBytes();
+}
+
 pub fn constantInstruction(name: []const u8, c: *chunk.Chunk(), offset: usize) CompilerError!usize {
     if (readValue(c, offset)) |constant| {
         if (constant.vType == ValueType.NUMBER) {
