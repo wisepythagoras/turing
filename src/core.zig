@@ -431,10 +431,33 @@ pub fn booleanInstruction(name: []const u8, c: *chunk.Chunk(), offset: usize) Co
     }
 }
 
-pub fn constToBytes(c: *chunk.Chunk(), offset: *usize) CompilerError![]const u8 {
+pub fn constToBytes(c: *chunk.Chunk(), opCode: OpCode, offset: *usize) CompilerError![]const u8 {
     const val = try readValue(c, offset.*);
     offset.* += 2;
-    return val.toBytes();
+
+    const valBytes = val.toBytes();
+    const memory = std.heap.page_allocator;
+    const res = memory.alloc(u8, valBytes.len + 3) catch |err| {
+        std.debug.print("ERROR: {?}\n", .{err});
+        return CompilerError.MemoryError;
+    };
+    const opCodeBytes = opCode.toBytes() catch |err| {
+        std.debug.print("ERROR: {?}\n", .{err});
+        return CompilerError.MemoryError;
+    };
+
+    res[0] = opCodeBytes[0];
+    res[1] = @as(u8, @intFromEnum(val.vType));
+    var i: usize = 2;
+
+    for (valBytes) |b| {
+        res[i] = b;
+        i += 1;
+    }
+
+    res[i] = 0;
+
+    return res;
 }
 
 pub fn constantInstruction(name: []const u8, c: *chunk.Chunk(), offset: usize) CompilerError!usize {

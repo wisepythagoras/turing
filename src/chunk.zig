@@ -102,7 +102,7 @@ pub fn Chunk() type {
 
             while (offset.* < self.code.items.len) {
                 if (instructionToBytes(self, offset)) |bytes| {
-                    std.debug.print("{d} - {d} - {d}\n", .{ offset.*, bytes.len, res.len });
+                    std.debug.print("{any}\n", .{bytes});
                     len = len + bytes.len;
                     res = memory.realloc(res, len) catch |err| {
                         std.debug.print("ERROR: {?}\n", .{err});
@@ -111,12 +111,13 @@ pub fn Chunk() type {
 
                     for (bytes) |b| {
                         res[i] = b;
-                        i += 0;
+                        i += 1;
                     }
                 } else |err| {
                     return err;
                 }
             }
+            std.debug.print("{any}\n", .{res});
 
             return res;
         }
@@ -155,7 +156,7 @@ fn instructionToBytes(chunk: *Chunk(), offset: *usize) core.CompilerError![]cons
             return retRes;
         },
         .CONSTANT => {
-            return core.constToBytes(chunk, offset);
+            return core.constToBytes(chunk, opCode, offset);
         },
         .CONSTANT_16 => {
             offset.* += 2;
