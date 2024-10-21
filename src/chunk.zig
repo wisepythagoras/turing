@@ -89,16 +89,36 @@ pub fn Chunk() type {
         }
 
         pub fn toBytes(self: *Self) core.CompilerError![]const u8 {
-            var offset: usize = 0;
+            var offsetVal: usize = 0;
+            const offset = &offsetVal;
+            const memory = std.heap.page_allocator;
+            var res = memory.alloc(u8, 0) catch |err| {
+                std.debug.print("ERROR: {?}\n", .{err});
+                return core.CompilerError.MemoryError;
+            };
 
-            while (offset < self.code.items.len) {
-                if (instructionToBytes(self, &offset)) |bytes| {
-                    // TODO: Implement
-                    _ = bytes;
+            var i: usize = 0;
+            var len: usize = 0;
+
+            while (offset.* < self.code.items.len) {
+                if (instructionToBytes(self, offset)) |bytes| {
+                    std.debug.print("{d} - {d} - {d}\n", .{ offset.*, bytes.len, res.len });
+                    len = len + bytes.len;
+                    res = memory.realloc(res, len) catch |err| {
+                        std.debug.print("ERROR: {?}\n", .{err});
+                        return core.CompilerError.MemoryError;
+                    };
+
+                    for (bytes) |b| {
+                        res[i] = b;
+                        i += 0;
+                    }
                 } else |err| {
                     return err;
                 }
             }
+
+            return res;
         }
 
         /// Disassembles the chunk byte-by-byte.
@@ -126,13 +146,28 @@ fn instructionToBytes(chunk: *Chunk(), offset: *usize) core.CompilerError![]cons
     const opCode = instruction[0];
 
     return switch (opCode) {
-        .RETURN => opCode.toBytes(),
+        .RETURN => {
+            const retRes = opCode.toBytes() catch |err| {
+                std.debug.print("ERROR: {?}\n", .{err});
+                return core.CompilerError.MemoryError;
+            };
+            offset.* += 1;
+            return retRes;
+        },
         .CONSTANT => {
             return core.constToBytes(chunk, offset);
         },
-        .CONSTANT_16 => "",
-        .NEG, .ADD, .MUL, .DIV, .SUB, .XOR, .MOD, .POW, .AND, .NOT, .EQ, .NE, .GT, .GE, .LT, .LE => {
-            return opCode.toBytes();
+        .CONSTANT_16 => {
+            offset.* += 2;
+            return "";
+        },
+        .NEG, .ADD, .MUL, .DIV, .SUB, .XOR, .MOD, .POW, .AND, .NOT, .EQ, .NE, .GT, .GE, .LT, .LE, .FALSE, .TRUE, .NIL => {
+            const opRes = opCode.toBytes() catch |err| {
+                std.debug.print("ERROR: {?}\n", .{err});
+                return core.CompilerError.MemoryError;
+            };
+            offset.* += 1;
+            return opRes;
         },
     };
 }

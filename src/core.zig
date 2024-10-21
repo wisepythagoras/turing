@@ -43,7 +43,7 @@ pub const OpCode = enum(u8) {
     pub fn toBytes(self: Self) ![]const u8 {
         const memory = std.heap.page_allocator;
         const buf = try memory.alloc(u8, 1);
-        buf[0] = @as(u8, self);
+        buf[0] = @as(u8, @intFromEnum(self));
 
         return buf;
     }
@@ -199,11 +199,14 @@ pub fn Value() type {
                 return self.val.object.toString();
             }
 
+            var res: [1]u8 = undefined;
+
             if (self.vType == ValueType.BOOL) {
-                return [_]u8{if (self.val.boolean) 1 else 0};
+                res[0] = if (self.val.boolean) 1 else 0;
+                return &res;
             }
 
-            return self.val.bytes;
+            return &self.val.bytes;
         }
     };
 }
@@ -430,7 +433,7 @@ pub fn booleanInstruction(name: []const u8, c: *chunk.Chunk(), offset: usize) Co
 
 pub fn constToBytes(c: *chunk.Chunk(), offset: *usize) CompilerError![]const u8 {
     const val = try readValue(c, offset.*);
-    offset.* += 1;
+    offset.* += 2;
     return val.toBytes();
 }
 

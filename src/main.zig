@@ -13,6 +13,7 @@ pub fn main() !void {
     // https://github.com/Hejsil/zig-clap
     const params = comptime clap.parseParamsComptime(
         \\-h, --help             Display the help message.
+        \\-b, --bin              Generate a binary file.
         \\-v, --verbose          Show debug messages.
         \\<str>...
         \\
@@ -60,7 +61,19 @@ pub fn main() !void {
 
     var ck = myVm.chunk;
     try ck.disassemble();
-    try myVm.run();
+
+    if (res.args.bin != 0) {
+        const bytes = try ck.toBytes();
+
+        const file = try std.fs.cwd().createFile(
+            "bin.out",
+            .{ .read = true },
+        );
+        defer file.close();
+        _ = try file.writeAll(bytes);
+    } else {
+        try myVm.run();
+    }
 
     defer myVm.destroy();
 }
