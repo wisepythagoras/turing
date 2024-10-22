@@ -1,6 +1,7 @@
 const std = @import("std");
 const chunk = @import("chunk.zig");
 const object = @import("object.zig");
+const utils = @import("utils.zig");
 
 pub const OpCode = enum(u8) {
     const Self = @This();
@@ -50,7 +51,6 @@ pub const OpCode = enum(u8) {
 
     pub fn fromU8(byte: u8) !OpCode {
         return std.meta.intToEnum(@This(), byte);
-        // return @as(OpCode, @enumFromInt(byte));
     }
 };
 
@@ -206,7 +206,9 @@ pub fn Value() type {
                 return &res;
             }
 
-            return &self.val.bytes;
+            const floatBytes: [8]u8 = @bitCast(self.val.number);
+
+            return &floatBytes;
         }
     };
 }
