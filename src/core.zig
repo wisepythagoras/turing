@@ -147,6 +147,14 @@ pub fn Value() type {
             return self.vType == ValueType.BOOL;
         }
 
+        pub fn isString(self: Self) bool {
+            if (self.vType != ValueType.OBJECT) {
+                return false;
+            }
+
+            return self.val.object.objType == object.ObjectType.STRING;
+        }
+
         pub fn destroy(self: Self) bool {
             if (self.vType == ValueType.OBJECT) {
                 const memory = std.heap.page_allocator;
@@ -389,9 +397,9 @@ pub fn isFalsey(a: Value()) bool {
     const isNil = a.vType == ValueType.NIL;
     const isZero = a.vType == ValueType.NUMBER and a.val.number == @as(f64, 0);
     const isFalse = a.vType == ValueType.BOOL and !a.val.boolean;
-    // TODO: If a string is empty then it's falsey.
+    const isEmptyString = a.isString() and a.val.object.val.string.len == 0;
 
-    return isNil or isZero or isFalse;
+    return isNil or isZero or isFalse or isEmptyString;
 }
 
 pub fn readValue(c: *chunk.Chunk(), offset: usize) CompilerError!Value() {

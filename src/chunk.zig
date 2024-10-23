@@ -13,6 +13,9 @@ pub fn Chunk() type {
         code: std.ArrayList(CodeTuple),
         values: std.ArrayList(core.Value()),
 
+        // TODO: Keep a linked list of all objects for the purposes of garbage collection.
+        // https://pedropark99.github.io/zig-book/Chapters/09-data-structures.html#linked-lists
+
         /// Initialize the new Chunk.
         pub fn init(allocator: std.mem.Allocator) Self {
             const code = std.ArrayList(CodeTuple).init(allocator);
