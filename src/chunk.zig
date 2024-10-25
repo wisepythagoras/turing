@@ -165,7 +165,7 @@ fn instructionToBytes(chunk: *Chunk(), offset: *usize) core.CompilerError![]cons
             offset.* += 2;
             return "";
         },
-        .NEG, .ADD, .MUL, .DIV, .SUB, .XOR, .MOD, .POW, .AND, .NOT, .EQ, .NE, .GT, .GE, .LT, .LE, .FALSE, .TRUE, .NIL => {
+        .NEG, .ADD, .MUL, .DIV, .SUB, .XOR, .MOD, .POW, .AND, .NOT, .EQ, .NE, .GT, .GE, .LT, .LE, .FALSE, .TRUE, .NIL, .OUT => {
             const opRes = opCode.toBytes() catch |err| {
                 std.debug.print("ERROR: {?}\n", .{err});
                 return core.CompilerError.MemoryError;
@@ -195,7 +195,7 @@ fn disassembleInstruction(chunk: *Chunk(), offset: usize) core.CompilerError!usi
             return core.constantInstruction(opCodeStr, chunk, offset);
         },
         .CONSTANT_16 => core.constant16Instruction(opCodeStr, chunk, offset),
-        .NEG, .ADD, .MUL, .DIV, .SUB, .XOR, .MOD, .POW, .AND, .NOT, .EQ, .NE, .GT, .GE, .LT, .LE => {
+        .NEG, .ADD, .MUL, .DIV, .SUB, .XOR, .MOD, .POW, .AND, .NOT, .EQ, .NE, .GT, .GE, .LT, .LE, .OUT => {
             return core.simpleInstruction(opCodeStr, offset);
         },
         .FALSE, .TRUE => {

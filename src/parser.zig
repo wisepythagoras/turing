@@ -43,7 +43,7 @@ pub const Rule = struct {
     Precedence,
 };
 
-pub const ParseRules: [45]Rule = [45]Rule{
+pub const ParseRules: [46]Rule = [46]Rule{
     .{ token.TokenType.LEFT_PAREN, OperationType.GROUPING, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.RIGHT_PAREN, OperationType.NONE, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.LEFT_BRACE, OperationType.NONE, OperationType.NONE, Precedence.NONE },
@@ -93,6 +93,7 @@ pub const ParseRules: [45]Rule = [45]Rule{
     .{ token.TokenType.VAR, OperationType.NONE, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.CONST, OperationType.NONE, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.NIL, OperationType.LITERAL, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.PRINT, OperationType.NONE, OperationType.NONE, Precedence.NONE },
 
     // Misc
     .{ token.TokenType.ERROR, OperationType.NONE, OperationType.NONE, Precedence.NONE },
@@ -248,6 +249,45 @@ pub fn Parser() type {
             }
 
             return self.parsePrecedence(Precedence.ASSIGNMENT);
+        }
+
+        pub fn declaration(self: *Self) core.CompilerError!void {
+            return self.statement();
+        }
+
+        fn printStatement(self: *Self) core.CompilerError!void {
+            _ = self.consume(token.TokenType.LEFT_PAREN) catch |err| {
+                std.debug.print("Expected '(' after 'print'. {?}\n", .{err});
+                return core.CompilerError.CompileError;
+            };
+
+            try self.expression();
+
+            _ = self.consume(token.TokenType.RIGHT_PAREN) catch |err| {
+                std.debug.print("Expected ')' after value or expression. {?}\n", .{err});
+                return core.CompilerError.CompileError;
+            };
+
+            _ = self.consume(token.TokenType.SEMICOLON) catch |err| {
+                std.debug.print("Expected ';' after statement. {?}\n", .{err});
+                return core.CompilerError.CompileError;
+            };
+
+            self.emit(core.OpCode.OUT) catch |err| {
+                std.debug.print("ERROR: {?}\n", .{err});
+                return core.CompilerError.CompileError;
+            };
+        }
+
+        fn statement(self: *Self) core.CompilerError!void {
+            const isPrintStatement = self.match(token.TokenType.PRINT) catch |err| {
+                std.debug.print("ERROR: {?}\n", .{err});
+                return core.CompilerError.RuntimeError;
+            };
+
+            if (isPrintStatement) {
+                try self.printStatement();
+            }
         }
 
         fn empty(self: *Self) !void {
@@ -434,6 +474,34 @@ pub fn Parser() type {
             }
 
             return core.CompilerError.UninitializedStack;
+        }
+
+        /// Check if the current token is of a specific type.
+        pub fn check(self: *Self, tokenType: token.TokenType) !bool {
+            if (self.verbose) {
+                std.debug.print("check({?}) - {?}, {?}\n", .{ tokenType, self.previous, self.current });
+            }
+
+            if (self.current) |curr| {
+                return curr.tokenType == tokenType;
+            }
+
+            return core.CompilerError.UninitializedStack;
+        }
+
+        /// Match the current token to the token type and then advance.
+        pub fn match(self: *Self, tokenType: token.TokenType) !bool {
+            if (self.verbose) {
+                std.debug.print("match({?}) - {?}, {?}\n", .{ tokenType, self.previous, self.current });
+            }
+
+            if (!try self.check(tokenType)) {
+                return false;
+            }
+
+            _ = try self.advance();
+
+            return true;
         }
     };
 }

@@ -8,11 +8,11 @@ pub fn VM() type {
 
         chunk: *chunk.Chunk(),
         stack: std.ArrayList(core.Value()),
+        verbose: bool,
 
         /// Creates a new VM instance. The `destroy` function should be run in order to free
         /// up memory. `defer myVm.destroy()` is possible.
         pub fn init(verbose: bool) !Self {
-            _ = verbose;
             // TODO: To be used to print the stack trace and disassemble as we run through bytecode.
             const allocator = std.heap.page_allocator;
 
@@ -27,6 +27,7 @@ pub fn VM() type {
                 return Self{
                     .chunk = memory,
                     .stack = stack,
+                    .verbose = verbose,
                 };
             } else |err| {
                 return err;
@@ -58,7 +59,10 @@ pub fn VM() type {
                     .CONSTANT => blk: {
                         if (core.readValue(self.chunk, offset)) |constant| {
                             offset += 2;
-                            constant.print();
+
+                            if (self.verbose) {
+                                constant.print();
+                            }
 
                             self.push(constant) catch |err| {
                                 std.debug.print("ERROR: {?}\n", .{err});
@@ -277,6 +281,15 @@ pub fn VM() type {
 
                         break :blk core.InterpretResults.CONTINUE;
                     },
+                    .OUT => blk: {
+                        if (self.pop()) |val| {
+                            val.print();
+                        }
+
+                        offset += 1;
+
+                        break :blk core.InterpretResults.CONTINUE;
+                    },
                     .RETURN => core.InterpretResults.OK,
                 };
 
@@ -306,7 +319,10 @@ pub fn VM() type {
                         std.debug.print("ERROR: {?}\n", .{err});
                         return core.InterpretResults.RUNTIME_ERROR;
                     };
-                    newValue.print();
+
+                    if (self.verbose) {
+                        newValue.print();
+                    }
 
                     return core.InterpretResults.CONTINUE;
                 }

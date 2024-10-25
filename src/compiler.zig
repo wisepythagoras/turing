@@ -94,13 +94,17 @@ pub fn Compiler() type {
             if (self.parser.advance()) |t| {
                 _ = t;
 
-                try self.parser.expression();
+                // try self.parser.expression();
 
-                if (self.parser.consume(token.TokenType.EOF)) |_| {
-                    // return self.chunk;
-                } else |err| {
-                    return err;
+                while (!try self.parser.match(token.TokenType.EOF)) {
+                    try self.parser.declaration();
                 }
+
+                // if (self.parser.consume(token.TokenType.EOF)) |_| {
+                //     // return self.chunk;
+                // } else |err| {
+                //     return err;
+                // }
             } else |err| {
                 return err;
             }

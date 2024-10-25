@@ -199,8 +199,6 @@ pub fn Scanner() type {
                         newTokenType = token.TokenType.FUNCTION;
                     } else if (str.len == 4 and utils.strcomp(str, "this")) {
                         newTokenType = token.TokenType.THIS;
-                    } else if (str.len == 3 and utils.strcomp(str, "nil")) {
-                        newTokenType = token.TokenType.NIL;
                     } else if (str.len == 4 and utils.strcomp(str, "super")) {
                         newTokenType = token.TokenType.SUPER;
                     } else if (str.len == 5 and utils.strcomp(str, "const")) {
@@ -211,6 +209,8 @@ pub fn Scanner() type {
                         newTokenType = token.TokenType.RETURN;
                     } else if (str.len == 6 and utils.strcomp(str, "struct")) {
                         newTokenType = token.TokenType.STRUCT;
+                    } else if (str.len == 5 and utils.strcomp(str, "print")) {
+                        newTokenType = token.TokenType.PRINT;
                     }
 
                     // TODO: Add everything here.

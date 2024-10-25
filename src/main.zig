@@ -14,6 +14,7 @@ pub fn main() !void {
     const params = comptime clap.parseParamsComptime(
         \\-h, --help             Display the help message.
         \\-b, --bin              Generate a binary file.
+        \\-d, --disassemble      Disassemble the chunk.
         \\-v, --verbose          Show debug messages.
         \\<str>...
         \\
@@ -44,23 +45,31 @@ pub fn main() !void {
         entry = res.positionals[0];
     }
 
-    var myVm = try vm.VM().init(false);
+    var myVm = try vm.VM().init(verbose);
 
     if (utils.readFile(entry)) |source| {
         var comp = compiler.Compiler().init(source, myVm.chunk, verbose);
 
         // To see every parsed token: scanAllTokens.
         if (comp.compile()) |_| {
-            std.debug.print("Success\n", .{});
+            if (verbose) {
+                std.debug.print("Program compiled successfully\n", .{});
+            }
         } else |err| {
             std.debug.print("ERROR: compile(): {?}\n", .{err});
+            return;
         }
     } else |err| {
         std.debug.print("{?}\n", .{err});
     }
 
     var ck = myVm.chunk;
-    try ck.disassemble();
+
+    if (res.args.disassemble != 0) {
+        std.debug.print("Disassembling chunk ---\n", .{});
+        try ck.disassemble();
+        std.debug.print("-----------------------\n", .{});
+    }
 
     if (res.args.bin != 0) {
         const bytes = try ck.toBytes();

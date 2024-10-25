@@ -55,6 +55,7 @@ pub const TokenType = enum(u8) {
     VAR,
     CONST,
     NIL,
+    PRINT,
 
     // Misc.
     ERROR,
@@ -77,7 +78,7 @@ pub const TokenType = enum(u8) {
     }
 };
 
-const tokenSizes: [45]usize = [45]usize{
+const tokenSizes: [46]usize = [46]usize{
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     2, 2, 2, 2, 2,
     0, 0, 0, // The literals, because they're dynamic
@@ -92,6 +93,7 @@ const tokenSizes: [45]usize = [45]usize{
     4, // This
     3, 4, // Var (let) and const
     3, // Nil
+    5, // Print
     0,
     0,
 };
