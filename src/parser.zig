@@ -252,7 +252,41 @@ pub fn Parser() type {
         }
 
         pub fn declaration(self: *Self) core.CompilerError!void {
-            return self.statement();
+            return self.statement() catch |err| {
+                self.synchronize() catch |err2| {
+                    std.debug.print("ERROR: {?}\n", .{err2});
+                    return core.CompilerError.CompileError;
+                };
+
+                return err;
+            };
+        }
+
+        fn synchronize(self: *Self) !void {
+            var curr: token.Token() = undefined;
+
+            if (self.current) |c| {
+                curr = c;
+
+                while (curr.tokenType != token.TokenType.EOF) {
+                    if (self.previous) |prev| {
+                        if (prev.tokenType == token.TokenType.SEMICOLON) {
+                            return;
+                        }
+                    }
+
+                    const shouldExit = switch (curr.tokenType) {
+                        .STRUCT, .FUNCTION, .VAR, .CONST, .FOR, .IF, .WHILE, .PRINT, .RETURN => true,
+                        else => false,
+                    };
+
+                    if (shouldExit) {
+                        return;
+                    }
+
+                    _ = try self.advance();
+                }
+            }
         }
 
         fn expressionStatement(self: *Self) core.CompilerError!void {
