@@ -41,6 +41,28 @@ pub fn Object() type {
             return false;
         }
 
+        /// Returns the bytes that comprise this object.
+        pub fn toBytes(self: Self) ![]const u8 {
+            const memory = std.heap.page_allocator;
+
+            if (self.objType == ObjectType.STRING) {
+                const buf = try memory.alloc(u8, self.val.string.len + 1);
+                buf[0] = @as(u8, @intFromEnum(self.objType));
+
+                const str = self.toString();
+                var i: usize = 1;
+
+                for (str) |char| {
+                    buf[i] = char;
+                    i += 1;
+                }
+
+                return buf;
+            }
+
+            return "";
+        }
+
         /// Converts the value object to a string value.
         pub fn toString(self: Self) []const u8 {
             if (self.objType == ObjectType.STRING) {

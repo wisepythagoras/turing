@@ -205,7 +205,9 @@ pub fn Value() type {
         /// Convert the value to a byte array.
         pub fn toBytes(self: Self) []const u8 {
             if (self.vType == ValueType.OBJECT) {
-                return self.val.object.toString();
+                return self.val.object.toBytes() catch {
+                    return "";
+                };
             }
 
             var res: [1]u8 = undefined;
