@@ -255,6 +255,19 @@ pub fn Parser() type {
             return self.statement();
         }
 
+        fn expressionStatement(self: *Self) core.CompilerError!void {
+            try self.expression();
+            _ = self.consume(token.TokenType.SEMICOLON) catch |err| {
+                std.debug.print("Expected ';' after expression. {?}\n", .{err});
+                return core.CompilerError.CompileError;
+            };
+
+            self.emit(core.OpCode.POP) catch |err| {
+                std.debug.print("ERROR: {?}\n", .{err});
+                return core.CompilerError.CompileError;
+            };
+        }
+
         fn printStatement(self: *Self) core.CompilerError!void {
             _ = self.consume(token.TokenType.LEFT_PAREN) catch |err| {
                 std.debug.print("Expected '(' after 'print'. {?}\n", .{err});
@@ -287,6 +300,8 @@ pub fn Parser() type {
 
             if (isPrintStatement) {
                 try self.printStatement();
+            } else {
+                try self.expressionStatement();
             }
         }
 

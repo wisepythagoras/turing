@@ -290,6 +290,11 @@ pub fn VM() type {
 
                         break :blk core.InterpretResults.CONTINUE;
                     },
+                    .POP => blk: {
+                        _ = self.pop();
+                        offset += 1;
+                        break :blk core.InterpretResults.CONTINUE;
+                    },
                     .RETURN => core.InterpretResults.OK,
                 };
 

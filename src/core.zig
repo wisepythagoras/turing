@@ -29,6 +29,7 @@ pub const OpCode = enum(u8) {
     LT, // Less than
     LE, // Less or equal
     OUT,
+    POP,
 
     // https://ziglearn.org/chapter-2/#formatting
     pub fn toString(self: Self) []const u8 {
