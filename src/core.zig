@@ -170,7 +170,7 @@ pub fn Value() type {
 
         pub fn print(self: Self) void {
             if (self.vType == ValueType.NUMBER) {
-                std.debug.print("{d:.6}\n", .{self.val.number});
+                std.debug.print("{d:.10}\n", .{self.val.number});
             } else if (self.vType == ValueType.BOOL) {
                 var valToPrint: []const u8 = "true";
 
