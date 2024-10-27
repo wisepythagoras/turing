@@ -106,8 +106,28 @@ pub fn VM() type {
                         }
                     },
                     .GETG => blk: {
-                        offset += 1;
-                        break :blk core.InterpretResults.OK;
+                        if (core.readValue(self.chunk, offset)) |varName| {
+                            offset += 2;
+
+                            if (!varName.isString()) {
+                                break :blk core.InterpretResults.RUNTIME_ERROR;
+                            }
+
+                            if (self.globals.get(varName.toString())) |value| {
+                                self.push(value) catch |err| {
+                                    std.debug.print("ERROR: {?}\n", .{err});
+                                    break :blk core.InterpretResults.RUNTIME_ERROR;
+                                };
+                            } else {
+                                std.debug.print("ERROR: {s} not defined\n", .{varName.toString()});
+                                break :blk core.InterpretResults.RUNTIME_ERROR;
+                            }
+
+                            break :blk core.InterpretResults.CONTINUE;
+                        } else |err| {
+                            std.debug.print("ERROR: {?}\n", .{err});
+                            break :blk core.InterpretResults.RUNTIME_ERROR;
+                        }
                     },
                     .NEG => blk: {
                         const optionalConstant = self.pop();

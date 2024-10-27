@@ -455,7 +455,6 @@ pub fn Parser() type {
         }
 
         fn namedVariable(self: *Self, t: token.Token()) !void {
-            //if (self.previous) |t| {
             const str = self.source[(t.pos)..(t.pos + t.size)];
             const strObj = object.String().init(str);
 
@@ -471,7 +470,6 @@ pub fn Parser() type {
                 try self.emit(core.OpCode.GETG);
                 try self.chunk.emitConstant(value);
             }
-            //}
         }
 
         fn variable(self: *Self) !void {
