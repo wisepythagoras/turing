@@ -62,8 +62,24 @@ pub fn Chunk() type {
             }
         }
 
-        pub fn addConstant(self: *Self, constant: core.Value()) !void {
+        pub fn addConstant(self: *Self, constant: core.Value()) !usize {
             if (self.values.append(constant)) {
+                return self.values.items.len;
+            } else |err| {
+                return err;
+            }
+        }
+
+        // pub fn makeConstant(self: *Self, constant: core.Value()) !usize {
+        //     if (self.addConstant(constant)) |constant| {
+        //         ???
+        //     } else |err| {
+        //         return err;
+        //     }
+        // }
+
+        pub fn emitConstant(self: *Self, constant: core.Value()) !void {
+            if (self.addConstant(constant)) |_| {
                 const pos: u16 = @as(u16, @intCast(self.values.items.len)) - 1;
 
                 if (pos <= 255) {

@@ -76,7 +76,7 @@ pub fn Compiler() type {
         /// Emits the necessary bytecode to represent a constant.
         pub fn emitConstant(self: *Self, value: core.Value()) !void {
             try self.emit(core.OpCode.CONSTANT);
-            try self.chunk.addConstant(value);
+            try self.chunk.emitConstant(value);
         }
 
         /// Simple return function which emits the return opcode.

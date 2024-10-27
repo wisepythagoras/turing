@@ -143,7 +143,7 @@ pub fn Parser() type {
         /// Emits the necessary bytecode to represent a constant.
         pub fn emitConstant(self: *Self, value: core.Value()) !void {
             try self.emit(core.OpCode.CONSTANT);
-            try self.chunk.addConstant(value);
+            try self.chunk.emitConstant(value);
         }
 
         /// Simple return function which emits the return opcode.
@@ -251,7 +251,7 @@ pub fn Parser() type {
             return self.parsePrecedence(Precedence.ASSIGNMENT);
         }
 
-        fn consumeVar(self: *Self) core.CompilerError!void {
+        fn consumeVar(self: *Self) core.CompilerError!core.Value() {
             const t = self.consume(token.TokenType.IDENTIFIER) catch |err| {
                 std.debug.print("ERROR: {?}\n", .{err});
                 return core.CompilerError.CompileError;
@@ -261,21 +261,24 @@ pub fn Parser() type {
 
             if (object.Object().init(strObj)) |obj| {
                 const memory = std.heap.page_allocator;
-                const o = try memory.create(object.Object());
-                o.* = obj;
-                // const o = @as(*object.Object(), @ptrCast(@constCast(&obj)));
-
-                self.emitConstant(core.Value().initObj(o)) catch |err| {
-                    std.debug.print("ERROR: string(): {?}\n", .{err});
-                    return err;
+                const o = memory.create(object.Object()) catch |err| {
+                    std.debug.print("ERROR: {?}\n", .{err});
+                    return core.CompilerError.MemoryError;
                 };
+                o.* = obj;
 
-                return;
+                return core.Value().initObj(o);
             }
+
+            return core.CompilerError.InvalidOperation;
         }
 
         fn varDeclaration(self: *Self) core.CompilerError!void {
-            _ = self;
+            const globalVal = self.consumeVar() catch |err| {
+                return err;
+            };
+
+            _ = globalVal;
         }
 
         pub fn declaration(self: *Self) core.CompilerError!void {
