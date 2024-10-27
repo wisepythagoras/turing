@@ -412,6 +412,7 @@ pub fn readValue(c: *chunk.Chunk(), offset: usize) CompilerError!Value() {
         return CompilerError.InvalidMemoryLookup;
     }
 
+    // std.debug.print("{any}\n", .{c.code.items});
     const idx: u8 = @intFromEnum(c.code.items[offset + 1][0]);
     return c.values.items[idx];
 }

@@ -296,7 +296,7 @@ pub fn VM() type {
                         break :blk core.InterpretResults.CONTINUE;
                     },
                     .DEFG => blk: {
-                        offset += 1;
+                        offset += 2;
                         break :blk core.InterpretResults.CONTINUE;
                     },
                     .RETURN => core.InterpretResults.OK,

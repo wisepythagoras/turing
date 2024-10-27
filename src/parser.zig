@@ -146,10 +146,11 @@ pub fn Parser() type {
             try self.chunk.emitConstant(value);
         }
 
-        // pub fn defineVariable(self: *Self) !void {
-        //     try self.emit(core.OpCode.CONSTANT);
-        //     try self.chunk.emitConstant(value);
-        // }
+        /// Emits the necessary bytecode to represent the variable declaration.
+        pub fn defineVariable(self: *Self, value: core.Value()) !void {
+            try self.emit(core.OpCode.DEFG);
+            try self.chunk.emitConstant(value);
+        }
 
         /// Simple return function which emits the return opcode.
         pub fn end(self: *Self) !void {
@@ -283,8 +284,6 @@ pub fn Parser() type {
                 return err;
             };
 
-            _ = globalVal;
-
             const isEqual = self.match(token.TokenType.EQUAL) catch |err| {
                 std.debug.print("ERROR: {?}\n", .{err});
                 return core.CompilerError.CompileError;
@@ -304,6 +303,11 @@ pub fn Parser() type {
 
             _ = self.consume(token.TokenType.SEMICOLON) catch |err| {
                 std.debug.print("Expected ';' after variable declaration. {?}\n", .{err});
+                return core.CompilerError.CompileError;
+            };
+
+            self.defineVariable(globalVal) catch |err| {
+                std.debug.print("ERROR: varDeclaration(): {?}\n", .{err});
                 return core.CompilerError.CompileError;
             };
         }
