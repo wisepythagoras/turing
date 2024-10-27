@@ -258,7 +258,7 @@ pub fn Parser() type {
             return self.parsePrecedence(Precedence.ASSIGNMENT);
         }
 
-        fn consumeVar(self: *Self) core.CompilerError!core.Value() {
+        fn parseVariable(self: *Self) core.CompilerError!core.Value() {
             _ = self.consume(token.TokenType.IDENTIFIER) catch |err| {
                 std.debug.print("ERROR: Expect variable name. {?}\n", .{err});
                 return core.CompilerError.CompileError;
@@ -284,7 +284,7 @@ pub fn Parser() type {
         }
 
         fn varDeclaration(self: *Self) core.CompilerError!void {
-            const globalVal = self.consumeVar() catch |err| {
+            const globalVal = self.parseVariable() catch |err| {
                 return err;
             };
 

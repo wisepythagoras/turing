@@ -147,8 +147,6 @@ pub fn VM() type {
                                 break :blk core.InterpretResults.RUNTIME_ERROR;
                             };
 
-                            // TODO: Remove the print from here.
-                            constant.print();
                             offset += 1;
 
                             break :blk core.InterpretResults.CONTINUE;
@@ -168,8 +166,6 @@ pub fn VM() type {
                                 break :blk core.InterpretResults.RUNTIME_ERROR;
                             };
 
-                            // TODO: Remove the print from here.
-                            newVal.print();
                             offset += 1;
 
                             break :blk core.InterpretResults.CONTINUE;

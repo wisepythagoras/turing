@@ -1,1 +1,1 @@
-!!nil;
+print(!!nil);
