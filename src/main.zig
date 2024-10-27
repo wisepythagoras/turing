@@ -33,9 +33,10 @@ pub fn main() !void {
     const verbose = res.args.verbose != 0;
 
     if (res.args.help != 0) {
-        // const stdOut = std.io.getStdOut();
-        // try clap.help(stdOut, clap.Help, &params, clap.HelpOptions{});{
-        std.debug.print("--help\n", .{});
+        var list = std.ArrayList(u8).init(gpa.allocator());
+        defer list.deinit();
+        try clap.help(list.writer(), clap.Help, &params, clap.HelpOptions{});
+        std.debug.print("{s}\n", .{list.items});
         std.process.exit(0);
     }
 
