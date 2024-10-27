@@ -251,14 +251,49 @@ pub fn Parser() type {
             return self.parsePrecedence(Precedence.ASSIGNMENT);
         }
 
-        pub fn declaration(self: *Self) core.CompilerError!void {
-            return self.statement() catch |err| {
-                self.synchronize() catch |err2| {
-                    std.debug.print("ERROR: {?}\n", .{err2});
-                    return core.CompilerError.CompileError;
+        fn consumeVar(self: *Self) core.CompilerError!void {
+            const t = self.consume(token.TokenType.IDENTIFIER) catch |err| {
+                std.debug.print("ERROR: {?}\n", .{err});
+                return core.CompilerError.CompileError;
+            };
+            const str = self.source[(t.pos)..(t.pos + t.size)];
+            const strObj = object.String().init(str);
+
+            if (object.Object().init(strObj)) |obj| {
+                const memory = std.heap.page_allocator;
+                const o = try memory.create(object.Object());
+                o.* = obj;
+                // const o = @as(*object.Object(), @ptrCast(@constCast(&obj)));
+
+                self.emitConstant(core.Value().initObj(o)) catch |err| {
+                    std.debug.print("ERROR: string(): {?}\n", .{err});
+                    return err;
                 };
 
-                return err;
+                return;
+            }
+        }
+
+        fn varDeclaration(self: *Self) core.CompilerError!void {
+            _ = self;
+        }
+
+        pub fn declaration(self: *Self) core.CompilerError!void {
+            if (self.match(token.TokenType.VAR)) {
+                self.varDeclaration() catch |err| {
+                    std.debug.print("ERROR: {?}\n", .{err});
+                    return err;
+                };
+            } else {
+                self.statement() catch |err| {
+                    std.debug.print("ERROR: {?}\n", .{err});
+                    return err;
+                };
+            }
+
+            self.synchronize() catch |err| {
+                std.debug.print("ERROR: {?}\n", .{err});
+                return core.CompilerError.CompileError;
             };
         }
 
