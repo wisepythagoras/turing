@@ -258,22 +258,25 @@ pub fn Parser() type {
         }
 
         fn consumeVar(self: *Self) core.CompilerError!core.Value() {
-            const t = self.consume(token.TokenType.IDENTIFIER) catch |err| {
+            _ = self.consume(token.TokenType.IDENTIFIER) catch |err| {
                 std.debug.print("ERROR: Expect variable name. {?}\n", .{err});
                 return core.CompilerError.CompileError;
             };
-            const str = self.source[(t.pos)..(t.pos + t.size)];
-            const strObj = object.String().init(str);
 
-            if (object.Object().init(strObj)) |obj| {
-                const memory = std.heap.page_allocator;
-                const o = memory.create(object.Object()) catch |err| {
-                    std.debug.print("ERROR: {?}\n", .{err});
-                    return core.CompilerError.MemoryError;
-                };
-                o.* = obj;
+            if (self.previous) |t| {
+                const str = self.source[(t.pos)..(t.pos + t.size)];
+                const strObj = object.String().init(str);
 
-                return core.Value().initObj(o);
+                if (object.Object().init(strObj)) |obj| {
+                    const memory = std.heap.page_allocator;
+                    const o = memory.create(object.Object()) catch |err| {
+                        std.debug.print("ERROR: {?}\n", .{err});
+                        return core.CompilerError.MemoryError;
+                    };
+                    o.* = obj;
+
+                    return core.Value().initObj(o);
+                }
             }
 
             return core.CompilerError.InvalidOperation;
