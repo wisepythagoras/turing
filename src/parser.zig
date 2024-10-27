@@ -279,7 +279,12 @@ pub fn Parser() type {
         }
 
         pub fn declaration(self: *Self) core.CompilerError!void {
-            if (self.match(token.TokenType.VAR)) {
+            const isVar = self.match(token.TokenType.VAR) catch |err| {
+                std.debug.print("ERROR: {?}\n", .{err});
+                return core.CompilerError.CompileError;
+            };
+
+            if (isVar) {
                 self.varDeclaration() catch |err| {
                     std.debug.print("ERROR: {?}\n", .{err});
                     return err;
@@ -372,10 +377,6 @@ pub fn Parser() type {
             } else {
                 try self.expressionStatement();
             }
-        }
-
-        fn empty(self: *Self) !void {
-            _ = self;
         }
 
         fn grouping(self: *Self) !void {
