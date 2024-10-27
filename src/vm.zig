@@ -9,6 +9,7 @@ pub fn VM() type {
         chunk: *chunk.Chunk(),
         stack: std.ArrayList(core.Value()),
         verbose: bool,
+        globals: std.StringHashMap(core.Value()),
 
         /// Creates a new VM instance. The `destroy` function should be run in order to free
         /// up memory. `defer myVm.destroy()` is possible.
@@ -28,6 +29,7 @@ pub fn VM() type {
                     .chunk = memory,
                     .stack = stack,
                     .verbose = verbose,
+                    .globals = std.StringHashMap(core.Value()).init(allocator),
                 };
             } else |err| {
                 return err;
@@ -79,6 +81,29 @@ pub fn VM() type {
                         // TODO: Implement!
                         offset += 1;
                         break :blk core.InterpretResults.CONTINUE;
+                    },
+                    .DEFG => blk: {
+                        if (core.readValue(self.chunk, offset)) |varName| {
+                            offset += 2;
+
+                            if (!varName.isString()) {
+                                break :blk core.InterpretResults.RUNTIME_ERROR;
+                            }
+
+                            if (self.pop()) |val| {
+                                self.globals.put(varName.toString(), val) catch |err| {
+                                    std.debug.print("ERROR: {?}\n", .{err});
+                                    break :blk core.InterpretResults.COMPILE_ERROR;
+                                };
+                            } else {
+                                break :blk core.InterpretResults.COMPILE_ERROR;
+                            }
+
+                            break :blk core.InterpretResults.CONTINUE;
+                        } else |err| {
+                            std.debug.print("ERROR: {?}\n", .{err});
+                            break :blk core.InterpretResults.RUNTIME_ERROR;
+                        }
                     },
                     .NEG => blk: {
                         const optionalConstant = self.pop();
@@ -293,10 +318,6 @@ pub fn VM() type {
                     .POP => blk: {
                         _ = self.pop();
                         offset += 1;
-                        break :blk core.InterpretResults.CONTINUE;
-                    },
-                    .DEFG => blk: {
-                        offset += 2;
                         break :blk core.InterpretResults.CONTINUE;
                     },
                     .RETURN => core.InterpretResults.OK,
