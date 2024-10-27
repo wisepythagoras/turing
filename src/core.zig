@@ -28,8 +28,9 @@ pub const OpCode = enum(u8) {
     GE, // Greater or equal
     LT, // Less than
     LE, // Less or equal
-    OUT,
-    POP,
+    OUT, // Print to the screen
+    POP, // Remove the last value from the stack
+    DEFG, // Define a global variable
 
     // https://ziglearn.org/chapter-2/#formatting
     pub fn toString(self: Self) []const u8 {

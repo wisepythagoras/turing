@@ -146,6 +146,11 @@ pub fn Parser() type {
             try self.chunk.emitConstant(value);
         }
 
+        // pub fn defineVariable(self: *Self) !void {
+        //     try self.emit(core.OpCode.CONSTANT);
+        //     try self.chunk.emitConstant(value);
+        // }
+
         /// Simple return function which emits the return opcode.
         pub fn end(self: *Self) !void {
             return self.emit(core.OpCode.RETURN);
@@ -253,7 +258,7 @@ pub fn Parser() type {
 
         fn consumeVar(self: *Self) core.CompilerError!core.Value() {
             const t = self.consume(token.TokenType.IDENTIFIER) catch |err| {
-                std.debug.print("ERROR: {?}\n", .{err});
+                std.debug.print("ERROR: Expect variable name. {?}\n", .{err});
                 return core.CompilerError.CompileError;
             };
             const str = self.source[(t.pos)..(t.pos + t.size)];
@@ -279,6 +284,28 @@ pub fn Parser() type {
             };
 
             _ = globalVal;
+
+            const isEqual = self.match(token.TokenType.EQUAL) catch |err| {
+                std.debug.print("ERROR: {?}\n", .{err});
+                return core.CompilerError.CompileError;
+            };
+
+            if (isEqual) {
+                self.expression() catch |err| {
+                    std.debug.print("ERROR: {?}\n", .{err});
+                    return core.CompilerError.CompileError;
+                };
+            } else {
+                self.emit(core.OpCode.NIL) catch |err| {
+                    std.debug.print("ERROR: {?}\n", .{err});
+                    return core.CompilerError.CompileError;
+                };
+            }
+
+            _ = self.consume(token.TokenType.SEMICOLON) catch |err| {
+                std.debug.print("Expected ';' after variable declaration. {?}\n", .{err});
+                return core.CompilerError.CompileError;
+            };
         }
 
         pub fn declaration(self: *Self) core.CompilerError!void {

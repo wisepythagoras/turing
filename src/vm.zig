@@ -295,6 +295,10 @@ pub fn VM() type {
                         offset += 1;
                         break :blk core.InterpretResults.CONTINUE;
                     },
+                    .DEFG => blk: {
+                        offset += 1;
+                        break :blk core.InterpretResults.CONTINUE;
+                    },
                     .RETURN => core.InterpretResults.OK,
                 };
 

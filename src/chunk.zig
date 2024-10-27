@@ -165,6 +165,10 @@ fn instructionToBytes(chunk: *Chunk(), offset: *usize) core.CompilerError![]cons
     const instruction = chunk.code.items[offset.*];
     const opCode = instruction[0];
 
+    // TODO: chunk.values needs to be converted to bytes, instead of reading the value and
+    // putting it in place. This way, when run, the code could access those constants that
+    // are on the stack.
+
     return switch (opCode) {
         .RETURN => {
             const retRes = opCode.toBytes() catch |err| {
@@ -181,7 +185,7 @@ fn instructionToBytes(chunk: *Chunk(), offset: *usize) core.CompilerError![]cons
             offset.* += 2;
             return "";
         },
-        .NEG, .ADD, .MUL, .DIV, .SUB, .XOR, .MOD, .POW, .AND, .NOT, .EQ, .NE, .GT, .GE, .LT, .LE, .FALSE, .TRUE, .NIL, .OUT, .POP => {
+        .NEG, .ADD, .MUL, .DIV, .SUB, .XOR, .MOD, .POW, .AND, .NOT, .EQ, .NE, .GT, .GE, .LT, .LE, .FALSE, .TRUE, .NIL, .OUT, .POP, .DEFG => {
             const opRes = opCode.toBytes() catch |err| {
                 std.debug.print("ERROR: {?}\n", .{err});
                 return core.CompilerError.MemoryError;
@@ -211,7 +215,7 @@ fn disassembleInstruction(chunk: *Chunk(), offset: usize) core.CompilerError!usi
             return core.constantInstruction(opCodeStr, chunk, offset);
         },
         .CONSTANT_16 => core.constant16Instruction(opCodeStr, chunk, offset),
-        .NEG, .ADD, .MUL, .DIV, .SUB, .XOR, .MOD, .POW, .AND, .NOT, .EQ, .NE, .GT, .GE, .LT, .LE, .OUT, .POP => {
+        .NEG, .ADD, .MUL, .DIV, .SUB, .XOR, .MOD, .POW, .AND, .NOT, .EQ, .NE, .GT, .GE, .LT, .LE, .OUT, .POP, .DEFG => {
             return core.simpleInstruction(opCodeStr, offset);
         },
         .FALSE, .TRUE => {
