@@ -105,6 +105,10 @@ pub fn VM() type {
                             break :blk core.InterpretResults.RUNTIME_ERROR;
                         }
                     },
+                    .GETG => blk: {
+                        offset += 1;
+                        break :blk core.InterpretResults.OK;
+                    },
                     .NEG => blk: {
                         const optionalConstant = self.pop();
 

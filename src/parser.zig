@@ -34,6 +34,7 @@ pub const OperationType = enum(u8) {
     NUMBER,
     LITERAL,
     STRING,
+    VARIABLE,
 };
 
 pub const Rule = struct {
@@ -72,7 +73,7 @@ pub const ParseRules: [46]Rule = [46]Rule{
     .{ token.TokenType.STAR_STAR, OperationType.NONE, OperationType.BINARY, Precedence.FACTOR },
 
     // Literals
-    .{ token.TokenType.IDENTIFIER, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.IDENTIFIER, OperationType.VARIABLE, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.STRING, OperationType.STRING, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.NUMBER, OperationType.NUMBER, OperationType.NONE, Precedence.NONE },
 
@@ -453,6 +454,32 @@ pub fn Parser() type {
             return core.CompilerError.UninitializedStack;
         }
 
+        fn namedVariable(self: *Self, t: token.Token()) !void {
+            //if (self.previous) |t| {
+            const str = self.source[(t.pos)..(t.pos + t.size)];
+            const strObj = object.String().init(str);
+
+            if (object.Object().init(strObj)) |obj| {
+                const memory = std.heap.page_allocator;
+                const o = memory.create(object.Object()) catch |err| {
+                    std.debug.print("ERROR: {?}\n", .{err});
+                    return core.CompilerError.MemoryError;
+                };
+                o.* = obj;
+
+                const value = core.Value().initObj(o);
+                try self.emit(core.OpCode.GETG);
+                try self.chunk.emitConstant(value);
+            }
+            //}
+        }
+
+        fn variable(self: *Self) !void {
+            if (self.previous) |prev| {
+                try self.namedVariable(prev);
+            }
+        }
+
         fn parsePrecedence(self: *Self, prec: Precedence) core.CompilerError!void {
             if (self.verbose) {
                 std.debug.print("parsePrecedence() - {?}, {?}, {?}\n", .{ prec, self.previous, self.current });
@@ -507,6 +534,11 @@ pub fn Parser() type {
                 } else if (prefixRule == OperationType.STRING) {
                     self.string() catch |err| {
                         std.debug.print("ERROR: string(): {}\n", .{err});
+                        return core.CompilerError.CompileError;
+                    };
+                } else if (prefixRule == OperationType.VARIABLE) {
+                    self.variable() catch |err| {
+                        std.debug.print("ERROR: variable(): {}\n", .{err});
                         return core.CompilerError.CompileError;
                     };
                 }
