@@ -503,12 +503,7 @@ pub fn constToBytes(c: *chunk.Chunk(), opCode: OpCode, offset: *usize) CompilerE
     _ = try readValue(c, offset.*);
     offset.* += 2;
 
-    // const valBytes = try val.toBytes();
     const memory = std.heap.page_allocator;
-    // const res = memory.alloc(u8, valBytes.len + 3) catch |err| {
-    //     std.debug.print("ERROR: {?}\n", .{err});
-    //     return CompilerError.MemoryError;
-    // };
     const res = memory.alloc(u8, 2) catch |err| {
         std.debug.print("ERROR: {?}\n", .{err});
         return CompilerError.MemoryError;
@@ -520,15 +515,6 @@ pub fn constToBytes(c: *chunk.Chunk(), opCode: OpCode, offset: *usize) CompilerE
 
     res[0] = opCodeBytes[0];
     res[1] = @as(u8, @intCast(offset.*));
-    // res[1] = @as(u8, @intFromEnum(val.vType));
-    // var i: usize = 2;
-
-    // for (valBytes) |b| {
-    //     res[i] = b;
-    //     i += 1;
-    // }
-
-    // res[i] = 0;
 
     return res;
 }
