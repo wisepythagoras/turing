@@ -206,23 +206,40 @@ pub fn Value() type {
         }
 
         /// Convert the value to a byte array.
-        pub fn toBytes(self: Self) []const u8 {
+        pub fn toBytes(self: Self) ![]const u8 {
             if (self.vType == ValueType.OBJECT) {
-                return self.val.object.toBytes() catch {
-                    return "";
+                return self.val.object.toBytes() catch |err| {
+                    std.debug.print("ERROR: {?}\n", .{err});
+                    return CompilerError.MemoryError; // TODO: Handle this better.
                 };
             }
 
-            var res: [1]u8 = undefined;
+            const memory = std.heap.page_allocator;
 
             if (self.vType == ValueType.BOOL) {
+                const res = memory.alloc(u8, 1) catch |err| {
+                    std.debug.print("ERROR: {?}\n", .{err});
+                    return CompilerError.MemoryError;
+                };
+
                 res[0] = if (self.val.boolean) 1 else 0;
-                return &res;
+                return res;
             }
 
-            const floatBytes: [8]u8 = @bitCast(self.val.number);
+            const res = memory.alloc(u8, 8) catch |err| {
+                std.debug.print("ERROR: {?}\n", .{err});
+                return CompilerError.MemoryError;
+            };
 
-            return &floatBytes;
+            const floatBytes: [8]u8 = @bitCast(self.val.number);
+            var i: usize = 0;
+
+            for (floatBytes) |b| {
+                res[i] = b;
+                i += 1;
+            }
+
+            return res;
         }
     };
 }
@@ -448,13 +465,51 @@ pub fn booleanInstruction(name: []const u8, c: *chunk.Chunk(), offset: usize) Co
     }
 }
 
+pub fn valuesToBytes(c: *chunk.Chunk()) CompilerError![]const u8 {
+    const memory = std.heap.page_allocator;
+    var res = memory.alloc(u8, 0) catch |err| {
+        std.debug.print("ERROR: {?}\n", .{err});
+        return CompilerError.MemoryError;
+    };
+
+    var i: usize = 0;
+    var len: usize = 0;
+
+    for (c.values.items) |value| {
+        const val = try value.toBytes();
+        len = len + val.len + 2;
+
+        res = memory.realloc(res, len) catch |err| {
+            std.debug.print("ERROR: {?}\n", .{err});
+            return CompilerError.MemoryError;
+        };
+
+        res[i] = @as(u8, @intFromEnum(value.vType));
+        i += 1;
+
+        for (val) |b| {
+            res[i] = b;
+            i += 1;
+        }
+
+        res[i] = 0;
+        i += 1;
+    }
+
+    return res;
+}
+
 pub fn constToBytes(c: *chunk.Chunk(), opCode: OpCode, offset: *usize) CompilerError![]const u8 {
-    const val = try readValue(c, offset.*);
+    _ = try readValue(c, offset.*);
     offset.* += 2;
 
-    const valBytes = val.toBytes();
+    // const valBytes = try val.toBytes();
     const memory = std.heap.page_allocator;
-    const res = memory.alloc(u8, valBytes.len + 3) catch |err| {
+    // const res = memory.alloc(u8, valBytes.len + 3) catch |err| {
+    //     std.debug.print("ERROR: {?}\n", .{err});
+    //     return CompilerError.MemoryError;
+    // };
+    const res = memory.alloc(u8, 2) catch |err| {
         std.debug.print("ERROR: {?}\n", .{err});
         return CompilerError.MemoryError;
     };
@@ -464,15 +519,16 @@ pub fn constToBytes(c: *chunk.Chunk(), opCode: OpCode, offset: *usize) CompilerE
     };
 
     res[0] = opCodeBytes[0];
-    res[1] = @as(u8, @intFromEnum(val.vType));
-    var i: usize = 2;
+    res[1] = @as(u8, @intCast(offset.*));
+    // res[1] = @as(u8, @intFromEnum(val.vType));
+    // var i: usize = 2;
 
-    for (valBytes) |b| {
-        res[i] = b;
-        i += 1;
-    }
+    // for (valBytes) |b| {
+    //     res[i] = b;
+    //     i += 1;
+    // }
 
-    res[i] = 0;
+    // res[i] = 0;
 
     return res;
 }

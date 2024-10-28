@@ -111,17 +111,27 @@ pub fn Chunk() type {
             var offsetVal: usize = 0;
             const offset = &offsetVal;
             const memory = std.heap.page_allocator;
-            var res = memory.alloc(u8, 0) catch |err| {
+            const valuesBytes = try core.valuesToBytes(self);
+            var res = memory.alloc(u8, valuesBytes.len + 1) catch |err| {
                 std.debug.print("ERROR: {?}\n", .{err});
                 return core.CompilerError.MemoryError;
             };
 
             var i: usize = 0;
-            var len: usize = 0;
+
+            for (valuesBytes) |b| {
+                res[i] = b;
+                i += 1;
+            }
+
+            res[i] = 99;
+            i += 1;
+
+            var len: usize = res.len;
 
             while (offset.* < self.code.items.len) {
                 if (instructionToBytes(self, offset)) |bytes| {
-                    std.debug.print("{any}\n", .{bytes});
+                    // std.debug.print("{any}\n", .{bytes});
                     len = len + bytes.len;
                     res = memory.realloc(res, len) catch |err| {
                         std.debug.print("ERROR: {?}\n", .{err});
