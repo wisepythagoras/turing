@@ -425,13 +425,17 @@ pub fn isFalsey(a: Value()) bool {
     return isNil or isZero or isFalse or isEmptyString;
 }
 
-pub fn readValue(c: *chunk.Chunk(), offset: usize) CompilerError!Value() {
+pub fn readValueIdx(c: *chunk.Chunk(), offset: usize) CompilerError!u8 {
     if (offset + 1 > c.code.items.len) {
         return CompilerError.InvalidMemoryLookup;
     }
 
-    // std.debug.print("{any}\n", .{c.code.items});
     const idx: u8 = @intFromEnum(c.code.items[offset + 1][0]);
+    return idx;
+}
+
+pub fn readValue(c: *chunk.Chunk(), offset: usize) CompilerError!Value() {
+    const idx = try readValueIdx(c, offset);
     return c.values.items[idx];
 }
 
@@ -500,7 +504,7 @@ pub fn valuesToBytes(c: *chunk.Chunk()) CompilerError![]const u8 {
 }
 
 pub fn constToBytes(c: *chunk.Chunk(), opCode: OpCode, offset: *usize) CompilerError![]const u8 {
-    _ = try readValue(c, offset.*);
+    const idx = try readValueIdx(c, offset.*);
     offset.* += 2;
 
     const memory = std.heap.page_allocator;
@@ -514,7 +518,7 @@ pub fn constToBytes(c: *chunk.Chunk(), opCode: OpCode, offset: *usize) CompilerE
     };
 
     res[0] = opCodeBytes[0];
-    res[1] = @as(u8, @intCast(offset.*));
+    res[1] = idx;
 
     return res;
 }
