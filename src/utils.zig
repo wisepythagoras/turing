@@ -1,4 +1,6 @@
 const std = @import("std");
+const core = @import("core.zig");
+const object = @import("object.zig");
 
 /// Read a source file.
 pub fn readFile(fName: []const u8) ![]u8 {
@@ -44,4 +46,19 @@ pub fn isAlphaNum(char: u8) bool {
 /// Compares two strings. Shorthand for `std.mem.eql`.
 pub fn strcomp(a: []const u8, b: []const u8) bool {
     return std.mem.eql(u8, a, b);
+}
+
+/// Convert a u8 array to an object value.
+pub fn strToObject(str: []const u8) !core.Value() {
+    const strObj = object.String().init(str);
+
+    if (object.Object().init(strObj)) |obj| {
+        const memory = std.heap.page_allocator;
+        const o = try memory.create(object.Object());
+        o.* = obj;
+
+        return core.Value().initObj(o);
+    }
+
+    return core.CompilerError.RuntimeError;
 }

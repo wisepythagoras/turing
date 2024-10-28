@@ -2,4 +2,4 @@ let test = 123;
 print(test + 7);
 
 let test2 = !nil;
-print(test2);
+print(test2 + '_test');

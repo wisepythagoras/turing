@@ -4,6 +4,7 @@ const chunk = @import("chunk.zig");
 const core = @import("core.zig");
 const scanner = @import("scanner.zig");
 const object = @import("object.zig");
+const utils = @import("utils.zig");
 
 pub const Precedence = enum(u8) {
     const Self = @This();
@@ -266,23 +267,18 @@ pub fn Parser() type {
 
             if (self.previous) |t| {
                 const str = self.source[(t.pos)..(t.pos + t.size)];
-                const strObj = object.String().init(str);
 
-                if (object.Object().init(strObj)) |obj| {
-                    const memory = std.heap.page_allocator;
-                    const o = memory.create(object.Object()) catch |err| {
-                        std.debug.print("ERROR: {?}\n", .{err});
-                        return core.CompilerError.MemoryError;
-                    };
-                    o.* = obj;
-
-                    return core.Value().initObj(o);
-                }
+                return utils.strToObject(str) catch |err| {
+                    std.debug.print("ERROR: {?}\n", .{err});
+                    return core.CompilerError.MemoryError;
+                };
             }
 
             return core.CompilerError.InvalidOperation;
         }
 
+        /// A variable declaration looks something like this: `let myVar = expression;`.
+        /// TODO: Handle constants as well.
         fn varDeclaration(self: *Self) core.CompilerError!void {
             const globalVal = self.parseVariable() catch |err| {
                 return err;
@@ -316,6 +312,7 @@ pub fn Parser() type {
             };
         }
 
+        /// Handle declarations of any kind, such as variables or just statements.
         pub fn declaration(self: *Self) core.CompilerError!void {
             const isVar = self.match(token.TokenType.VAR) catch |err| {
                 std.debug.print("ERROR: {?}\n", .{err});
@@ -456,28 +453,24 @@ pub fn Parser() type {
 
         fn namedVariable(self: *Self, t: token.Token()) !void {
             const str = self.source[(t.pos)..(t.pos + t.size)];
-            const strObj = object.String().init(str);
-
-            if (object.Object().init(strObj)) |obj| {
-                const memory = std.heap.page_allocator;
-                const o = memory.create(object.Object()) catch |err| {
-                    std.debug.print("ERROR: {?}\n", .{err});
-                    return core.CompilerError.MemoryError;
-                };
-                o.* = obj;
-
-                const value = core.Value().initObj(o);
-                try self.emit(core.OpCode.GETG);
-                try self.chunk.emitConstant(value);
-            }
+            const value = utils.strToObject(str) catch |err| {
+                std.debug.print("ERROR: {?}\n", .{err});
+                return core.CompilerError.MemoryError;
+            };
+            try self.emit(core.OpCode.GETG);
+            try self.chunk.emitConstant(value);
         }
 
+        /// Handle the variable declaration.
         fn variable(self: *Self) !void {
             if (self.previous) |prev| {
                 try self.namedVariable(prev);
             }
         }
 
+        /// Parse an expression taking precedence in consideration. So, for example, `1 + 2 * 3` will
+        /// evaluate `2 * 3` before `1 + 6`. And it works in a similar way with grouping (expressions
+        /// within a parenthesis).
         fn parsePrecedence(self: *Self, prec: Precedence) core.CompilerError!void {
             if (self.verbose) {
                 std.debug.print("parsePrecedence() - {?}, {?}, {?}\n", .{ prec, self.previous, self.current });
