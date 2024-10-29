@@ -1,67 +1,8 @@
 const std = @import("std");
 const chunk = @import("chunk.zig");
 const object = @import("object.zig");
+const opcode = @import("opcode.zig");
 const utils = @import("utils.zig");
-
-pub const OpCode = enum(u8) {
-    const Self = @This();
-
-    RETURN,
-    CONSTANT,
-    CONSTANT_16,
-    NEG,
-    ADD,
-    SUB,
-    DIV,
-    MUL,
-    MOD,
-    NIL,
-    TRUE,
-    FALSE,
-    XOR,
-    POW,
-    AND,
-    NOT,
-    EQ, // Equal
-    NE, // Not equal
-    GT, // Greater than
-    GE, // Greater or equal
-    LT, // Less than
-    LE, // Less or equal
-    OUT, // Print to the screen
-    POP, // Remove the last value from the stack
-    DEFG, // Define a global variable
-    GETG, // Get a global variable
-    SETG, // Set the value of a global variable
-
-    // https://ziglearn.org/chapter-2/#formatting
-    pub fn toString(self: Self) []const u8 {
-        const allocator = std.heap.page_allocator;
-
-        if (std.fmt.allocPrint(allocator, "{?}", .{self})) |string| {
-            return string;
-        } else |err| {
-            std.debug.print("{?}\n", .{err});
-            return "";
-        }
-    }
-
-    pub fn toBytes(self: Self) ![]const u8 {
-        const memory = std.heap.page_allocator;
-        const buf = try memory.alloc(u8, 1);
-        buf[0] = @as(u8, @intFromEnum(self));
-
-        return buf;
-    }
-
-    pub fn fromU8(byte: u8) !OpCode {
-        return std.meta.intToEnum(@This(), byte);
-    }
-
-    pub fn toU8(self: Self) u8 {
-        return @as(u8, @intFromEnum(self));
-    }
-};
 
 pub const InterpretResults = enum(u8) {
     OK,
@@ -255,7 +196,7 @@ pub fn Value() type {
     };
 }
 
-pub const OperationFn = *const fn (Value(), Value(), ?OpCode) CompilerError!Value();
+pub const OperationFn = *const fn (Value(), Value(), ?opcode.OpCode) CompilerError!Value();
 pub const CompilerError = error{
     CompileError,
     RuntimeError,
@@ -274,7 +215,7 @@ pub const CompilerError = error{
     MemoryError,
 };
 
-pub fn addOp(a: Value(), b: Value(), _: ?OpCode) !Value() {
+pub fn addOp(a: Value(), b: Value(), _: ?opcode.OpCode) !Value() {
     if (a.vType != ValueType.NUMBER or b.vType != ValueType.NUMBER) {
         if ((a.vType == ValueType.OBJECT and a.val.object.objType != object.ObjectType.STRING) or
             (b.vType == ValueType.OBJECT and b.val.object.objType != object.ObjectType.STRING))
@@ -314,7 +255,7 @@ pub fn addOp(a: Value(), b: Value(), _: ?OpCode) !Value() {
     return Value().initNil();
 }
 
-pub fn subOp(a: Value(), b: Value(), _: ?OpCode) !Value() {
+pub fn subOp(a: Value(), b: Value(), _: ?opcode.OpCode) !Value() {
     if (a.vType != ValueType.NUMBER or b.vType != ValueType.NUMBER) {
         return CompilerError.RuntimeError;
     }
@@ -322,7 +263,7 @@ pub fn subOp(a: Value(), b: Value(), _: ?OpCode) !Value() {
     return Value().initNumber(a.val.number - b.val.number);
 }
 
-pub fn mulOp(a: Value(), b: Value(), _: ?OpCode) !Value() {
+pub fn mulOp(a: Value(), b: Value(), _: ?opcode.OpCode) !Value() {
     if (a.vType != ValueType.NUMBER or b.vType != ValueType.NUMBER) {
         return CompilerError.RuntimeError;
     }
@@ -330,7 +271,7 @@ pub fn mulOp(a: Value(), b: Value(), _: ?OpCode) !Value() {
     return Value().initNumber(a.val.number * b.val.number);
 }
 
-pub fn divOp(a: Value(), b: Value(), _: ?OpCode) !Value() {
+pub fn divOp(a: Value(), b: Value(), _: ?opcode.OpCode) !Value() {
     if (a.vType != ValueType.NUMBER or b.vType != ValueType.NUMBER) {
         return CompilerError.RuntimeError;
     }
@@ -338,7 +279,7 @@ pub fn divOp(a: Value(), b: Value(), _: ?OpCode) !Value() {
     return Value().initNumber(a.val.number / b.val.number);
 }
 
-pub fn modOp(a: Value(), b: Value(), _: ?OpCode) !Value() {
+pub fn modOp(a: Value(), b: Value(), _: ?opcode.OpCode) !Value() {
     if (a.vType != ValueType.NUMBER or b.vType != ValueType.NUMBER) {
         return CompilerError.RuntimeError;
     }
@@ -346,7 +287,7 @@ pub fn modOp(a: Value(), b: Value(), _: ?OpCode) !Value() {
     return Value().initNumber(a.val.number % b.val.number);
 }
 
-pub fn powOp(a: Value(), b: Value(), _: ?OpCode) !Value() {
+pub fn powOp(a: Value(), b: Value(), _: ?opcode.OpCode) !Value() {
     if (a.vType != ValueType.NUMBER or b.vType != ValueType.NUMBER) {
         return CompilerError.RuntimeError;
     }
@@ -356,7 +297,7 @@ pub fn powOp(a: Value(), b: Value(), _: ?OpCode) !Value() {
     return Value().initNumber(res);
 }
 
-pub fn andOp(a: Value(), b: Value(), _: ?OpCode) !Value() {
+pub fn andOp(a: Value(), b: Value(), _: ?opcode.OpCode) !Value() {
     if (a.vType != ValueType.NUMBER or b.vType != ValueType.NUMBER) {
         return CompilerError.RuntimeError;
     }
@@ -368,7 +309,7 @@ pub fn andOp(a: Value(), b: Value(), _: ?OpCode) !Value() {
     return Value().initNumber(res);
 }
 
-pub fn xorOp(a: Value(), b: Value(), _: ?OpCode) !Value() {
+pub fn xorOp(a: Value(), b: Value(), _: ?opcode.OpCode) !Value() {
     if (a.vType != ValueType.NUMBER or b.vType != ValueType.NUMBER) {
         return CompilerError.RuntimeError;
     }
@@ -380,7 +321,7 @@ pub fn xorOp(a: Value(), b: Value(), _: ?OpCode) !Value() {
     return Value().initNumber(res);
 }
 
-pub fn eqOp(a: Value(), b: Value(), ins: ?OpCode) !Value() {
+pub fn eqOp(a: Value(), b: Value(), ins: ?opcode.OpCode) !Value() {
     if ((a.vType == ValueType.OBJECT and b.vType != ValueType.OBJECT) or
         (a.vType != ValueType.OBJECT and b.vType == ValueType.OBJECT))
     {
@@ -409,17 +350,17 @@ pub fn eqOp(a: Value(), b: Value(), ins: ?OpCode) !Value() {
     }
 
     if (ins) |instruction| {
-        if (instruction == OpCode.EQ) {
+        if (instruction == opcode.OpCode.EQ) {
             return Value().initBool(aVal == bVal);
-        } else if (instruction == OpCode.NE) {
+        } else if (instruction == opcode.OpCode.NE) {
             return Value().initBool(aVal != bVal);
-        } else if (instruction == OpCode.GT) {
+        } else if (instruction == opcode.OpCode.GT) {
             return Value().initBool(aVal > bVal);
-        } else if (instruction == OpCode.GE) {
+        } else if (instruction == opcode.OpCode.GE) {
             return Value().initBool(aVal >= bVal);
-        } else if (instruction == OpCode.LT) {
+        } else if (instruction == opcode.OpCode.LT) {
             return Value().initBool(aVal < bVal);
-        } else if (instruction == OpCode.LE) {
+        } else if (instruction == opcode.OpCode.LE) {
             return Value().initBool(aVal <= bVal);
         }
     }
@@ -514,7 +455,7 @@ pub fn valuesToBytes(c: *chunk.Chunk()) CompilerError![]const u8 {
     return res;
 }
 
-pub fn constToBytes(c: *chunk.Chunk(), opCode: OpCode, offset: *usize) CompilerError![]const u8 {
+pub fn constToBytes(c: *chunk.Chunk(), opCode: opcode.OpCode, offset: *usize) CompilerError![]const u8 {
     const idx = try readValueIdx(c, offset.*);
     offset.* += 2;
 

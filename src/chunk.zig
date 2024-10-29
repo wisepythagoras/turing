@@ -1,9 +1,10 @@
 const std = @import("std");
 const core = @import("core.zig");
 const object = @import("object.zig");
+const opcode = @import("opcode.zig");
 const utils = @import("utils.zig");
 
-const CodeTuple = std.meta.Tuple(&.{ core.OpCode, usize });
+const CodeTuple = std.meta.Tuple(&.{ opcode.OpCode, usize });
 
 /// Creates a new chunk, which essentially represents a single bytecode instruction
 /// group.
@@ -38,12 +39,12 @@ pub fn Chunk() type {
         }
 
         /// Writes a single opcode to the chunk.
-        pub fn writeOpCode(self: *Self, opCode: core.OpCode, line: usize) !void {
-            if (opCode == core.OpCode.CONSTANT) {
+        pub fn writeOpCode(self: *Self, opCode: opcode.OpCode, line: usize) !void {
+            if (opCode == opcode.OpCode.CONSTANT) {
                 const pos: u16 = @as(u16, @intCast(self.values.items.len));
 
                 if (pos >= 255) {
-                    return self.code.append(.{ core.OpCode.CONSTANT_16, line });
+                    return self.code.append(.{ opcode.OpCode.CONSTANT_16, line });
                 }
             }
 
@@ -52,7 +53,7 @@ pub fn Chunk() type {
 
         /// Converts a byte to an opcode and writes it to the chunk.
         pub fn writeByte(self: *Self, byte: u8, line: usize) !void {
-            const opCode = @as(core.OpCode, @enumFromInt(byte));
+            const opCode = @as(opcode.OpCode, @enumFromInt(byte));
             try self.writeOpCode(opCode, line);
         }
 
@@ -289,7 +290,7 @@ pub fn Chunk() type {
                     }
 
                     switch (b) {
-                        core.OpCode.CONSTANT.toU8() => blk: {
+                        opcode.OpCode.CONSTANT.toU8() => blk: {
                             // TODO: We should somehow handle the size of the values array. If there are more than 255
                             // constants we want to allocate two bytes (or more) for the constants.
 
@@ -297,15 +298,15 @@ pub fn Chunk() type {
                                 std.debug.print("CONSTANT {d}\n", .{bytes[i + 1]});
                             }
 
-                            try self.writeOpCode(core.OpCode.CONSTANT, 0);
+                            try self.writeOpCode(opcode.OpCode.CONSTANT, 0);
                             try self.writeByte(bytes[i + 1], 0);
 
                             i += 1;
 
                             break :blk;
                         },
-                        core.OpCode.DEFG.toU8(), core.OpCode.GETG.toU8(), core.OpCode.SETG.toU8() => blk: {
-                            const opCode = try core.OpCode.fromU8(b);
+                        opcode.OpCode.DEFG.toU8(), opcode.OpCode.GETG.toU8(), opcode.OpCode.SETG.toU8() => blk: {
+                            const opCode = try opcode.OpCode.fromU8(b);
 
                             if (self.verbose) {
                                 std.debug.print("{any} {d}\n", .{ opCode, bytes[i + 1] });
@@ -319,7 +320,7 @@ pub fn Chunk() type {
                             break :blk;
                         },
                         else => blk: {
-                            const opCode = core.OpCode.fromU8(b) catch |err| {
+                            const opCode = opcode.OpCode.fromU8(b) catch |err| {
                                 std.debug.print("ERROR: Unrecognized opcode \"{d}\". {?}\n", .{ b, err });
                                 break :blk;
                             };

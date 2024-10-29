@@ -4,6 +4,7 @@ const chunk = @import("chunk.zig");
 const core = @import("core.zig");
 const scanner = @import("scanner.zig");
 const object = @import("object.zig");
+const opcode = @import("opcode.zig");
 const utils = @import("utils.zig");
 
 pub const Precedence = enum(u8) {
@@ -133,30 +134,30 @@ pub fn Parser() type {
 
         /// Emits a pice of bytecode.
         pub fn emitByte(self: *Self, byte: u8) !void {
-            const opCode = try core.OpCode.fromU8(byte);
+            const opCode = try opcode.OpCode.fromU8(byte);
             return self.chunk.writeOpCode(opCode, self.getScanner().line);
         }
 
         /// Emits an opcode of bytecode.
-        pub fn emit(self: *Self, opCode: core.OpCode) !void {
+        pub fn emit(self: *Self, opCode: opcode.OpCode) !void {
             return self.chunk.writeOpCode(opCode, self.getScanner().line);
         }
 
         /// Emits the necessary bytecode to represent a constant.
         pub fn emitConstant(self: *Self, value: core.Value()) !void {
-            try self.emit(core.OpCode.CONSTANT);
+            try self.emit(opcode.OpCode.CONSTANT);
             try self.chunk.emitConstant(value);
         }
 
         /// Emits the necessary bytecode to represent the variable declaration.
         pub fn defineVariable(self: *Self, value: core.Value()) !void {
-            try self.emit(core.OpCode.DEFG);
+            try self.emit(opcode.OpCode.DEFG);
             try self.chunk.emitConstant(value);
         }
 
         /// Simple return function which emits the return opcode.
         pub fn end(self: *Self) !void {
-            return self.emit(core.OpCode.RETURN);
+            return self.emit(opcode.OpCode.RETURN);
         }
 
         fn number(self: *Self, canAssign: bool) !void {
@@ -197,8 +198,8 @@ pub fn Parser() type {
                 // We should emit the opcode for the operation last, since we only want to push the number
                 // onto the stack and then run the command on it.
                 switch (operatorType) {
-                    .MINUS => return self.emit(core.OpCode.NEG),
-                    .BANG => return self.emit(core.OpCode.NOT),
+                    .MINUS => return self.emit(opcode.OpCode.NEG),
+                    .BANG => return self.emit(opcode.OpCode.NOT),
                     else => return,
                 }
             }
@@ -215,9 +216,9 @@ pub fn Parser() type {
 
             if (self.previous) |prev| {
                 return switch (prev.tokenType) {
-                    .FALSE => self.emit(core.OpCode.FALSE),
-                    .TRUE => self.emit(core.OpCode.TRUE),
-                    .NIL => self.emit(core.OpCode.NIL),
+                    .FALSE => self.emit(opcode.OpCode.FALSE),
+                    .TRUE => self.emit(opcode.OpCode.TRUE),
+                    .NIL => self.emit(opcode.OpCode.NIL),
                     else => core.CompilerError.InvalidOperation,
                 };
             }
@@ -238,20 +239,20 @@ pub fn Parser() type {
                 try self.parsePrecedence(newPrec);
 
                 return switch (operatorType) {
-                    .PLUS => self.emit(core.OpCode.ADD),
-                    .MINUS => self.emit(core.OpCode.SUB),
-                    .STAR => self.emit(core.OpCode.MUL),
-                    .SLASH => self.emit(core.OpCode.DIV),
-                    .CARET => self.emit(core.OpCode.XOR),
-                    .PERCENT => self.emit(core.OpCode.MOD),
-                    .STAR_STAR => self.emit(core.OpCode.POW),
-                    .AMPERSAND => self.emit(core.OpCode.AND),
-                    .DOUBLE_EQUAL => self.emit(core.OpCode.EQ),
-                    .BANG_EQUAL => self.emit(core.OpCode.NE),
-                    .GREATER_THAN => self.emit(core.OpCode.GT),
-                    .GREATER_EQUAL_THAN => self.emit(core.OpCode.GE),
-                    .LESS_THAN => self.emit(core.OpCode.LT),
-                    .LESS_EQUAL_THAN => self.emit(core.OpCode.LE),
+                    .PLUS => self.emit(opcode.OpCode.ADD),
+                    .MINUS => self.emit(opcode.OpCode.SUB),
+                    .STAR => self.emit(opcode.OpCode.MUL),
+                    .SLASH => self.emit(opcode.OpCode.DIV),
+                    .CARET => self.emit(opcode.OpCode.XOR),
+                    .PERCENT => self.emit(opcode.OpCode.MOD),
+                    .STAR_STAR => self.emit(opcode.OpCode.POW),
+                    .AMPERSAND => self.emit(opcode.OpCode.AND),
+                    .DOUBLE_EQUAL => self.emit(opcode.OpCode.EQ),
+                    .BANG_EQUAL => self.emit(opcode.OpCode.NE),
+                    .GREATER_THAN => self.emit(opcode.OpCode.GT),
+                    .GREATER_EQUAL_THAN => self.emit(opcode.OpCode.GE),
+                    .LESS_THAN => self.emit(opcode.OpCode.LT),
+                    .LESS_EQUAL_THAN => self.emit(opcode.OpCode.LE),
                     else => core.CompilerError.InvalidOperation,
                 };
             }
@@ -303,7 +304,7 @@ pub fn Parser() type {
                     return core.CompilerError.CompileError;
                 };
             } else {
-                self.emit(core.OpCode.NIL) catch |err| {
+                self.emit(opcode.OpCode.NIL) catch |err| {
                     std.debug.print("ERROR: {?}\n", .{err});
                     return core.CompilerError.CompileError;
                 };
@@ -379,7 +380,7 @@ pub fn Parser() type {
                 return core.CompilerError.CompileError;
             };
 
-            self.emit(core.OpCode.POP) catch |err| {
+            self.emit(opcode.OpCode.POP) catch |err| {
                 std.debug.print("ERROR: {?}\n", .{err});
                 return core.CompilerError.CompileError;
             };
@@ -403,7 +404,7 @@ pub fn Parser() type {
                 return core.CompilerError.CompileError;
             };
 
-            self.emit(core.OpCode.OUT) catch |err| {
+            self.emit(opcode.OpCode.OUT) catch |err| {
                 std.debug.print("ERROR: {?}\n", .{err});
                 return core.CompilerError.CompileError;
             };
@@ -476,10 +477,10 @@ pub fn Parser() type {
                 if (isEqual) {
                     try self.expression();
 
-                    try self.emit(core.OpCode.SETG);
+                    try self.emit(opcode.OpCode.SETG);
                     try self.chunk.emitConstant(value);
                 } else {
-                    try self.emit(core.OpCode.GETG);
+                    try self.emit(opcode.OpCode.GETG);
                     try self.chunk.emitConstant(value);
                 }
             } else |err| {

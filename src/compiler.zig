@@ -4,6 +4,7 @@ const token = @import("token.zig");
 const parser = @import("parser.zig");
 const chunk = @import("chunk.zig");
 const core = @import("core.zig");
+const opcode = @import("opcode.zig");
 
 pub fn Compiler() type {
     return struct {
@@ -64,24 +65,24 @@ pub fn Compiler() type {
 
         /// Emits a pice of bytecode.
         pub fn emitByte(self: *Self, byte: u8) !void {
-            const opCode = try core.OpCode.fromU8(byte);
+            const opCode = try opcode.OpCode.fromU8(byte);
             return self.chunk.writeOpCode(opCode, self.parser.getScanner().line);
         }
 
         /// Emits an opcode of bytecode.
-        pub fn emit(self: *Self, opCode: core.OpCode) !void {
+        pub fn emit(self: *Self, opCode: opcode.OpCode) !void {
             return self.chunk.writeOpCode(opCode, self.parser.getScanner().line);
         }
 
         /// Emits the necessary bytecode to represent a constant.
         pub fn emitConstant(self: *Self, value: core.Value()) !void {
-            try self.emit(core.OpCode.CONSTANT);
+            try self.emit(opcode.OpCode.CONSTANT);
             try self.chunk.emitConstant(value);
         }
 
         /// Simple return function which emits the return opcode.
         pub fn end(self: *Self) !void {
-            return self.emit(core.OpCode.RETURN);
+            return self.emit(opcode.OpCode.RETURN);
         }
 
         /// Compiles and returns a chunk that's ready for the VM to run. To just dump every scanned

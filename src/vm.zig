@@ -1,6 +1,7 @@
 const std = @import("std");
 const chunk = @import("chunk.zig");
 const core = @import("core.zig");
+const opcode = @import("opcode.zig");
 
 pub fn VM() type {
     return struct {
@@ -385,7 +386,7 @@ pub fn VM() type {
             }
         }
 
-        pub fn operation(self: *Self, op: core.OperationFn, ins: ?core.OpCode) core.InterpretResults {
+        pub fn operation(self: *Self, op: core.OperationFn, ins: ?opcode.OpCode) core.InterpretResults {
             const bOptional = self.pop();
 
             if (bOptional) |b| {
