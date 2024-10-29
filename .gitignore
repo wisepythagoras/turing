@@ -1,4 +1,2 @@
 zig-*
-*.tur
 .zig-cache/
-*.lb
