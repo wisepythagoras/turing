@@ -56,6 +56,10 @@ pub const OpCode = enum(u8) {
     pub fn fromU8(byte: u8) !OpCode {
         return std.meta.intToEnum(@This(), byte);
     }
+
+    pub fn toU8(self: Self) u8 {
+        return @as(u8, @intFromEnum(self));
+    }
 };
 
 pub const InterpretResults = enum(u8) {
@@ -68,10 +72,16 @@ pub const InterpretResults = enum(u8) {
 };
 
 pub const ValueType = enum(u8) {
+    const Self = @This();
+
     NIL,
     BOOL,
     NUMBER,
     OBJECT,
+
+    pub fn toU8(self: Self) u8 {
+        return @as(u8, @intFromEnum(self));
+    }
 };
 
 pub const ValueUnion = union {

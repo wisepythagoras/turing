@@ -18,12 +18,11 @@ pub fn VM() type {
             const allocator = std.heap.page_allocator;
 
             if (allocator.create(chunk.Chunk())) |memory| {
-                const newChunk = chunk.Chunk().init(allocator);
+                const newChunk = chunk.Chunk().init(allocator, verbose);
                 memory.* = newChunk;
                 const stack = std.ArrayList(core.Value()).init(
                     allocator,
                 );
-                // defer stack.deinit();
 
                 return Self{
                     .chunk = memory,
@@ -387,8 +386,10 @@ pub fn VM() type {
             );
         }
 
-        pub fn destroy(self: Self) void {
+        pub fn destroy(self: *Self) void {
             self.chunk.destroy();
+            self.globals.deinit();
+            self.stack.deinit();
             std.heap.page_allocator.destroy(self.chunk);
         }
     };

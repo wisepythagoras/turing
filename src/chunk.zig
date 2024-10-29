@@ -1,5 +1,7 @@
 const std = @import("std");
 const core = @import("core.zig");
+const object = @import("object.zig");
+const utils = @import("utils.zig");
 
 const CodeTuple = std.meta.Tuple(&.{ core.OpCode, usize });
 
@@ -12,18 +14,20 @@ pub fn Chunk() type {
 
         code: std.ArrayList(CodeTuple),
         values: std.ArrayList(core.Value()),
+        verbose: bool,
 
         // TODO: Keep a linked list of all objects for the purposes of garbage collection.
         // https://pedropark99.github.io/zig-book/Chapters/09-data-structures.html#linked-lists
 
         /// Initialize the new Chunk.
-        pub fn init(allocator: std.mem.Allocator) Self {
+        pub fn init(allocator: std.mem.Allocator, verbose: bool) Self {
             const code = std.ArrayList(CodeTuple).init(allocator);
             const values = std.ArrayList(core.Value()).init(allocator);
 
             return Self{
                 .code = code,
                 .values = values,
+                .verbose = verbose,
             };
         }
 
@@ -146,7 +150,8 @@ pub fn Chunk() type {
                     return err;
                 }
             }
-            std.debug.print("{any}\n", .{res});
+
+            // std.debug.print("{any}\n", .{res});
 
             return res;
         }
@@ -168,16 +173,181 @@ pub fn Chunk() type {
             //     //
             // }
         }
+
+        /// Load raw bytes as bytecode into the current chunk. The bytecode that's loaded can then be
+        /// run in the VM.
+        ///
+        /// TODO: Add specs for this.
+        pub fn loadBytecode(self: *Self, bytes: []const u8) !void {
+            var isCode = false;
+            var i: usize = 0;
+
+            if (self.verbose) {
+                std.debug.print("{any}\n", .{bytes});
+            }
+
+            const memory = std.heap.page_allocator;
+
+            while (i < bytes.len) {
+                const b = bytes[i];
+
+                if (!isCode) {
+                    switch (b) {
+                        core.ValueType.NIL.toU8() => blk: {
+                            std.debug.print("NILL NOT YET IMPLEMENTED\n", .{});
+                            break :blk;
+                        },
+                        core.ValueType.BOOL.toU8() => blk: {
+                            std.debug.print("BOOL NOT YET IMPLEMENTED\n", .{});
+                            break :blk;
+                        },
+                        core.ValueType.NUMBER.toU8() => blk: {
+                            if (self.verbose) {
+                                std.debug.print("Parsing number\n", .{});
+                            }
+
+                            var j: usize = i + 1;
+                            var result: [8]u8 = undefined;
+
+                            while (j <= i + 8) {
+                                result[j - i - 1] = bytes[j];
+                                j += 1;
+                            }
+
+                            const num: f64 = @as(f64, @bitCast(result));
+
+                            if (bytes[j] != 0) {
+                                std.debug.print("Unexpected byte \"{d}\"\n", .{b});
+                                // TODO: Handle errors.
+                                return;
+                            }
+
+                            i = j;
+
+                            _ = try self.addConstant(core.Value().initNumber(num));
+
+                            if (self.verbose) {
+                                std.debug.print("  Added number {d} (next byte {d})\n", .{ num, bytes[i + 1] });
+                            }
+
+                            break :blk;
+                        },
+                        core.ValueType.OBJECT.toU8() => blk: {
+                            if (self.verbose) {
+                                std.debug.print("Parsing object\n", .{});
+                            }
+
+                            const objType = try object.ObjectType.fromU8(bytes[i + 1]);
+                            var j = i + 2;
+
+                            if (objType == object.ObjectType.STRING) {
+                                var str = try memory.alloc(u8, 0);
+                                var len: usize = 0;
+
+                                while (j < bytes.len) {
+                                    const strByte = bytes[j];
+
+                                    if (strByte == 0) {
+                                        // This is the end of the string.
+                                        break;
+                                    } else {
+                                        len += 1;
+                                        str = try memory.realloc(str, len);
+                                        str[len - 1] = strByte;
+                                    }
+
+                                    j += 1;
+                                }
+
+                                i = j;
+
+                                const val = try utils.strToObject(str);
+                                _ = try self.addConstant(val);
+
+                                if (self.verbose) {
+                                    std.debug.print("  Added string \"{s}\" (next byte {d})\n", .{ str, bytes[i + 1] });
+                                }
+                            } else {
+                                std.debug.print("Unexpected object type \"{any}\"\n", .{objType});
+                                // TODO: Handle errors.
+                                return;
+                            }
+
+                            break :blk;
+                        },
+                        99 => blk: {
+                            // This is the byte that signifies that the constants section
+                            // has been traversed and the next section contains the code.
+                            isCode = true;
+
+                            if (self.verbose) {
+                                std.debug.print("Reading code block\n", .{});
+                            }
+
+                            break :blk;
+                        },
+                        else => {
+                            std.debug.print("ERROR: Unrecognized byte \"{d}\"\n", .{b});
+                            // TODO: Handle errors.
+                        },
+                    }
+                } else {
+                    if (self.verbose) {
+                        std.debug.print("Byte {d} ({d})\n", .{ b, i });
+                    }
+
+                    switch (b) {
+                        core.OpCode.CONSTANT.toU8() => blk: {
+                            // TODO: We should somehow handle the size of the values array. If there are more than 255
+                            // constants we want to allocate two bytes (or more) for the constants.
+
+                            if (self.verbose) {
+                                std.debug.print("CONSTANT {d}\n", .{bytes[i + 1]});
+                            }
+
+                            try self.writeOpCode(core.OpCode.CONSTANT, 0);
+                            try self.writeByte(bytes[i + 1], 0);
+
+                            i += 1;
+
+                            break :blk;
+                        },
+                        core.OpCode.DEFG.toU8(), core.OpCode.GETG.toU8() => blk: {
+                            const opCode = try core.OpCode.fromU8(b);
+
+                            if (self.verbose) {
+                                std.debug.print("{any} {d}\n", .{ opCode, bytes[i + 1] });
+                            }
+
+                            try self.writeOpCode(opCode, 0);
+                            try self.writeByte(bytes[i + 1], 0);
+
+                            i += 1;
+
+                            break :blk;
+                        },
+                        else => blk: {
+                            const opCode = core.OpCode.fromU8(b) catch |err| {
+                                std.debug.print("ERROR: Unrecognized opcode \"{d}\". {?}\n", .{ b, err });
+                                break :blk;
+                            };
+
+                            try self.writeOpCode(opCode, 0);
+
+                            // TODO: Handle errors.
+                        },
+                    }
+                }
+
+                i += 1;
+            }
+        }
     };
 }
 
 fn instructionToBytes(chunk: *Chunk(), offset: *usize) core.CompilerError![]const u8 {
     const instruction = chunk.code.items[offset.*];
     const opCode = instruction[0];
-
-    // TODO: chunk.values needs to be converted to bytes, instead of reading the value and
-    // putting it in place. This way, when run, the code could access those constants that
-    // are on the stack.
 
     return switch (opCode) {
         .RETURN => {

@@ -1,3 +1,8 @@
+!false;
+
+let testBool = true;
+print(!testBool);
+
 let test = 123;
 print(test + 7);
 

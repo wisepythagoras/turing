@@ -2,6 +2,10 @@ const std = @import("std");
 
 pub const ObjectType = enum(u8) {
     STRING,
+
+    pub fn fromU8(byte: u8) !ObjectType {
+        return std.meta.intToEnum(@This(), byte);
+    }
 };
 
 pub const ObjectValueUnion = union {

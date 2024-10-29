@@ -62,3 +62,14 @@ pub fn strToObject(str: []const u8) !core.Value() {
 
     return core.CompilerError.RuntimeError;
 }
+
+/// Concatenate two strings (`[]const u8`).
+pub fn concatStrs(a: []const u8, b: []const u8) []const u8 {
+    const memory = std.heap.page_allocator;
+    var result = memory.alloc(u8, a.len + b.len) catch unreachable;
+
+    std.mem.copyForwards(u8, result[0..a.len], a);
+    std.mem.copyForwards(u8, result[a.len..], b);
+
+    return result;
+}

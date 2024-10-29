@@ -49,16 +49,23 @@ pub fn main() !void {
     var myVm = try vm.VM().init(verbose);
 
     if (utils.readFile(entry)) |source| {
-        var comp = compiler.Compiler().init(source, myVm.chunk, verbose);
+        if (std.mem.eql(u8, std.fs.path.extension(entry), ".lb")) {
+            myVm.chunk.loadBytecode(source) catch |err| {
+                std.debug.print("ERROR: Loading bytecode {?}\n", .{err});
+                std.process.exit(1);
+            };
+        } else {
+            var comp = compiler.Compiler().init(source, myVm.chunk, verbose);
 
-        // To see every parsed token: scanAllTokens.
-        if (comp.compile()) |_| {
-            if (verbose) {
-                std.debug.print("Program compiled successfully\n", .{});
+            // To see every parsed token: scanAllTokens.
+            if (comp.compile()) |_| {
+                if (verbose) {
+                    std.debug.print("Program compiled successfully\n", .{});
+                }
+            } else |err| {
+                std.debug.print("ERROR: compile(): {?}\n", .{err});
+                return;
             }
-        } else |err| {
-            std.debug.print("ERROR: compile(): {?}\n", .{err});
-            return;
         }
     } else |err| {
         std.debug.print("{?}\n", .{err});
@@ -74,12 +81,17 @@ pub fn main() !void {
 
     if (res.args.bin != 0) {
         const bytes = try ck.toBytes();
+        const fileName = std.fs.path.stem(entry);
+        const binaryFileName = utils.concatStrs(fileName, ".lb");
 
+        // The new file that's created should have the `.lb` extension.
         const file = try std.fs.cwd().createFile(
-            "bin.out",
+            binaryFileName,
             .{ .read = true },
         );
         defer file.close();
+
+        // Here we dump all of the chunk's bytes into the target binary file.
         _ = try file.writeAll(bytes);
     } else {
         try myVm.run();
