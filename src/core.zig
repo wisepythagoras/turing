@@ -32,6 +32,7 @@ pub const OpCode = enum(u8) {
     POP, // Remove the last value from the stack
     DEFG, // Define a global variable
     GETG, // Get a global variable
+    SETG, // Set the value of a global variable
 
     // https://ziglearn.org/chapter-2/#formatting
     pub fn toString(self: Self) []const u8 {

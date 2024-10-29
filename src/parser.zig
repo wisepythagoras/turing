@@ -159,7 +159,9 @@ pub fn Parser() type {
             return self.emit(core.OpCode.RETURN);
         }
 
-        fn number(self: *Self) !void {
+        fn number(self: *Self, canAssign: bool) !void {
+            _ = canAssign;
+
             if (self.verbose) {
                 std.debug.print("number() - {?}, {?}\n", .{ self.previous, self.current });
             }
@@ -176,7 +178,9 @@ pub fn Parser() type {
             }
         }
 
-        fn unary(self: *Self) !void {
+        fn unary(self: *Self, canAssign: bool) !void {
+            _ = canAssign;
+
             if (self.verbose) {
                 std.debug.print("unary() - {?}, {?}\n", .{ self.previous, self.current });
             }
@@ -202,7 +206,9 @@ pub fn Parser() type {
             return core.CompilerError.UninitializedStack;
         }
 
-        fn literal(self: *Self) !void {
+        fn literal(self: *Self, canAssign: bool) !void {
+            _ = canAssign;
+
             if (self.verbose) {
                 std.debug.print("literal() {?}\n", .{self.previous});
             }
@@ -217,7 +223,9 @@ pub fn Parser() type {
             }
         }
 
-        fn binary(self: *Self) !void {
+        fn binary(self: *Self, canAssign: bool) !void {
+            _ = canAssign;
+
             if (self.verbose) {
                 std.debug.print("binary() - {?}, {?}\n", .{ self.previous, self.current });
             }
@@ -414,7 +422,9 @@ pub fn Parser() type {
             }
         }
 
-        fn grouping(self: *Self) !void {
+        fn grouping(self: *Self, canAssign: bool) !void {
+            _ = canAssign;
+
             if (self.verbose) {
                 std.debug.print("grouping() - {?}, {?}\n", .{ self.previous, self.current });
             }
@@ -428,7 +438,9 @@ pub fn Parser() type {
             }
         }
 
-        fn string(self: *Self) !void {
+        fn string(self: *Self, canAssign: bool) !void {
+            _ = canAssign;
+
             if (self.previous) |prev| {
                 const str = self.source[(prev.pos)..(prev.pos + prev.size)];
                 const strObj = object.String().init(str);
@@ -451,20 +463,34 @@ pub fn Parser() type {
             return core.CompilerError.UninitializedStack;
         }
 
-        fn namedVariable(self: *Self, t: token.Token()) !void {
+        fn namedVariable(self: *Self, t: token.Token(), canAssign: bool) !void {
+            _ = canAssign;
+
             const str = self.source[(t.pos)..(t.pos + t.size)];
             const value = utils.strToObject(str) catch |err| {
                 std.debug.print("ERROR: {?}\n", .{err});
                 return core.CompilerError.MemoryError;
             };
-            try self.emit(core.OpCode.GETG);
-            try self.chunk.emitConstant(value);
+
+            if (self.match(token.TokenType.EQUAL)) |isEqual| {
+                if (isEqual) {
+                    try self.expression();
+
+                    try self.emit(core.OpCode.SETG);
+                    try self.chunk.emitConstant(value);
+                } else {
+                    try self.emit(core.OpCode.GETG);
+                    try self.chunk.emitConstant(value);
+                }
+            } else |err| {
+                return err;
+            }
         }
 
         /// Handle the variable declaration.
-        fn variable(self: *Self) !void {
+        fn variable(self: *Self, canAssign: bool) !void {
             if (self.previous) |prev| {
-                try self.namedVariable(prev);
+                try self.namedVariable(prev, canAssign);
             }
         }
 
@@ -502,33 +528,35 @@ pub fn Parser() type {
                     return core.CompilerError.ExpectExpression;
                 }
 
+                const canAssign = prec.toUsize() <= Precedence.ASSIGNMENT.toUsize();
+
                 if (prefixRule == OperationType.GROUPING) {
-                    self.grouping() catch |err| {
+                    self.grouping(canAssign) catch |err| {
                         std.debug.print("ERROR: grouping(): {}\n", .{err});
                         return core.CompilerError.CompileError;
                     };
                 } else if (prefixRule == OperationType.UNARY) {
-                    self.unary() catch |err| {
+                    self.unary(canAssign) catch |err| {
                         std.debug.print("ERROR: unary(): {}\n", .{err});
                         return core.CompilerError.CompileError;
                     };
                 } else if (prefixRule == OperationType.NUMBER) {
-                    self.number() catch |err| {
+                    self.number(canAssign) catch |err| {
                         std.debug.print("ERROR: number(): {}\n", .{err});
                         return core.CompilerError.CompileError;
                     };
                 } else if (prefixRule == OperationType.LITERAL) {
-                    self.literal() catch |err| {
+                    self.literal(canAssign) catch |err| {
                         std.debug.print("ERROR: literal(): {}\n", .{err});
                         return core.CompilerError.CompileError;
                     };
                 } else if (prefixRule == OperationType.STRING) {
-                    self.string() catch |err| {
+                    self.string(canAssign) catch |err| {
                         std.debug.print("ERROR: string(): {}\n", .{err});
                         return core.CompilerError.CompileError;
                     };
                 } else if (prefixRule == OperationType.VARIABLE) {
-                    self.variable() catch |err| {
+                    self.variable(canAssign) catch |err| {
                         std.debug.print("ERROR: variable(): {}\n", .{err});
                         return core.CompilerError.CompileError;
                     };
@@ -558,7 +586,7 @@ pub fn Parser() type {
                         const influxRule: OperationType = currentTokenRule[2];
 
                         if (influxRule == OperationType.BINARY) {
-                            self.binary() catch |err| {
+                            self.binary(canAssign) catch |err| {
                                 std.debug.print("ERROR: {}\n", .{err});
                                 return core.CompilerError.CompileError;
                             };
@@ -567,6 +595,16 @@ pub fn Parser() type {
                         if (self.current) |ct| {
                             currentTokenRule = try ct.tokenType.getRule();
                         }
+                    }
+
+                    if (self.match(token.TokenType.EQUAL)) |isEqual| {
+                        if (isEqual and canAssign) {
+                            std.debug.print("ERROR: Cannot assign at {d}:{d}\n", .{ self.scanner.line, self.scanner.pos });
+                            return core.CompilerError.UnexpectedToken;
+                        }
+                    } else |err| {
+                        std.debug.print("ERROR: {?}\n", .{err});
+                        return core.CompilerError.CompileError;
                     }
                 }
             }

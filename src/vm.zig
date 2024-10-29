@@ -35,18 +35,23 @@ pub fn VM() type {
             }
         }
 
+        /// Add a value onto the stack.
         pub fn push(self: *Self, constant: core.Value()) !void {
             try self.stack.append(constant);
         }
 
+        /// Get and remove the last value on the stack.
         pub fn pop(self: *Self) ?core.Value() {
-            const node = self.stack.pop();
+            return self.stack.pop();
+        }
 
-            // if (node == null) {
-            //     return null;
-            // }
+        /// Get the last value on the stack, without removing it from it.
+        pub fn peek(self: *Self) ?core.Value() {
+            if (self.stack.items.len == 0) {
+                return null;
+            }
 
-            return node;
+            return self.stack.items[self.stack.items.len - 1];
         }
 
         /// Runs the bytecode in the chunk.
@@ -118,7 +123,37 @@ pub fn VM() type {
                                     break :blk core.InterpretResults.RUNTIME_ERROR;
                                 };
                             } else {
-                                std.debug.print("ERROR: {s} not defined\n", .{varName.toString()});
+                                std.debug.print("ERROR: \"{s}\" is not defined\n", .{varName.toString()});
+                                break :blk core.InterpretResults.RUNTIME_ERROR;
+                            }
+
+                            break :blk core.InterpretResults.CONTINUE;
+                        } else |err| {
+                            std.debug.print("ERROR: {?}\n", .{err});
+                            break :blk core.InterpretResults.RUNTIME_ERROR;
+                        }
+                    },
+                    .SETG => blk: {
+                        if (core.readValue(self.chunk, offset)) |varName| {
+                            offset += 2;
+
+                            if (!varName.isString()) {
+                                break :blk core.InterpretResults.RUNTIME_ERROR;
+                            }
+
+                            if (self.globals.get(varName.toString())) |value| {
+                                _ = value; // TODO: Check here if it's a constant in the future.
+
+                                if (self.peek()) |val| {
+                                    self.globals.put(varName.toString(), val) catch |err| {
+                                        std.debug.print("ERROR: {?}\n", .{err});
+                                        break :blk core.InterpretResults.COMPILE_ERROR;
+                                    };
+                                } else {
+                                    break :blk core.InterpretResults.COMPILE_ERROR;
+                                }
+                            } else {
+                                std.debug.print("ERROR: \"{s}\" is not defined\n", .{varName.toString()});
                                 break :blk core.InterpretResults.RUNTIME_ERROR;
                             }
 

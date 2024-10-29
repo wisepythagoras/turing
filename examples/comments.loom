@@ -1,0 +1,5 @@
+let test = 1;
+test = 2; # This is a comment
+   # Another
+# This is another comment
+print(test);

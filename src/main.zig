@@ -94,7 +94,9 @@ pub fn main() !void {
         // Here we dump all of the chunk's bytes into the target binary file.
         _ = try file.writeAll(bytes);
     } else {
-        try myVm.run();
+        myVm.run() catch |err| {
+            std.debug.print("There was an error running \"{s}\": {?}\n", .{ entry, err });
+        };
     }
 
     defer myVm.destroy();

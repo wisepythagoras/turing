@@ -8,3 +8,7 @@ print(test + 7);
 
 let test2 = !nil;
 print(test2 + '_test');
+
+test2 = false;
+print(test2);
+print(!test2);

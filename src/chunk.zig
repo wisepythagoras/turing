@@ -74,14 +74,6 @@ pub fn Chunk() type {
             }
         }
 
-        // pub fn makeConstant(self: *Self, constant: core.Value()) !usize {
-        //     if (self.addConstant(constant)) |constant| {
-        //         ???
-        //     } else |err| {
-        //         return err;
-        //     }
-        // }
-
         pub fn emitConstant(self: *Self, constant: core.Value()) !void {
             if (self.addConstant(constant)) |_| {
                 const pos: u16 = @as(u16, @intCast(self.values.items.len)) - 1;
@@ -312,7 +304,7 @@ pub fn Chunk() type {
 
                             break :blk;
                         },
-                        core.OpCode.DEFG.toU8(), core.OpCode.GETG.toU8() => blk: {
+                        core.OpCode.DEFG.toU8(), core.OpCode.GETG.toU8(), core.OpCode.SETG.toU8() => blk: {
                             const opCode = try core.OpCode.fromU8(b);
 
                             if (self.verbose) {
@@ -358,7 +350,7 @@ fn instructionToBytes(chunk: *Chunk(), offset: *usize) core.CompilerError![]cons
             offset.* += 1;
             return retRes;
         },
-        .CONSTANT, .DEFG, .GETG => {
+        .CONSTANT, .DEFG, .GETG, .SETG => {
             return core.constToBytes(chunk, opCode, offset);
         },
         .CONSTANT_16 => {
@@ -391,7 +383,7 @@ fn disassembleInstruction(chunk: *Chunk(), offset: usize) core.CompilerError!usi
 
     return switch (opCode) {
         .RETURN => core.returnInstruction(opCodeStr, offset),
-        .CONSTANT, .DEFG, .GETG => {
+        .CONSTANT, .DEFG, .GETG, .SETG => {
             return core.constantInstruction(opCodeStr, chunk, offset);
         },
         .CONSTANT_16 => core.constant16Instruction(opCodeStr, chunk, offset),

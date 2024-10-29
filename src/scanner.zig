@@ -128,8 +128,9 @@ pub fn Scanner() type {
             }
 
             // This is a single-line comment.
-            if (self.source[self.pos] == '#') {
+            while (self.source[self.pos] == '#') {
                 self.skipToNewLine();
+                self.skipWhitespace();
             }
 
             // Here we check for a string.
@@ -250,6 +251,7 @@ pub fn Scanner() type {
             };
 
             if (newToken.tokenType == token.TokenType.ERROR) {
+                std.debug.print("c: {c} p: {c}\n", .{ self.source[pos], self.source[pos - 1] });
                 return core.CompilerError.UnknownToken;
             } else if (newToken.tokenType == token.TokenType.LEFT_PAREN) {
                 self.parenLevel += 1;
