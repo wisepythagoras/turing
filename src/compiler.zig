@@ -5,6 +5,7 @@ const parser = @import("parser.zig");
 const chunk = @import("chunk.zig");
 const core = @import("core.zig");
 const opcode = @import("opcode.zig");
+const local = @import("local.zig");
 
 pub fn Compiler() type {
     return struct {
@@ -13,14 +14,22 @@ pub fn Compiler() type {
         source: []u8,
         chunk: *chunk.Chunk(),
         parser: parser.Parser(),
+        locals: std.ArrayList(local.Local()),
+        localCount: usize,
+        scopeDepth: usize,
         verbose: bool,
 
         pub fn init(source: []u8, c: *chunk.Chunk(), verbose: bool) Self {
             const p = parser.Parser().init(c, source, verbose);
+            const locals = std.ArrayList(local.Local()).init(std.heap.page_allocator);
+
             return Self{
                 .source = source,
                 .chunk = c,
                 .parser = p,
+                .locals = locals,
+                .localCount = 0,
+                .scopeDepth = 0,
                 .verbose = verbose,
             };
         }
