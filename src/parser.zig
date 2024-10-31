@@ -5,6 +5,8 @@ const core = @import("core.zig");
 const scanner = @import("scanner.zig");
 const object = @import("object.zig");
 const opcode = @import("opcode.zig");
+const compiler = @import("compiler.zig");
+const local = @import("local.zig");
 const utils = @import("utils.zig");
 
 pub const Precedence = enum(u8) {
@@ -112,6 +114,7 @@ pub fn Parser() type {
         chunk: *chunk.Chunk(),
         source: []u8,
         scanner: scanner.Scanner(),
+        compiler: *compiler.Compiler(),
         verbose: bool,
 
         /// Creates a new instance of the parser. This should be used only by the compiler.
@@ -124,8 +127,13 @@ pub fn Parser() type {
                 .chunk = c,
                 .source = source,
                 .scanner = newScanner,
+                .compiler = undefined,
                 .verbose = verbose,
             };
+        }
+
+        pub fn setCompiler(self: *Self, comp: *compiler.Compiler()) void {
+            self.compiler = comp;
         }
 
         pub fn getScanner(self: *Self) *scanner.Scanner() {
@@ -268,6 +276,15 @@ pub fn Parser() type {
             return self.parsePrecedence(Precedence.ASSIGNMENT);
         }
 
+        fn declareVariable(self: *Self, name: *token.Token()) !void {
+            const localVar = local.Local().new(name, self.compiler.scopeDepth);
+            self.compiler.locals.append(localVar) catch |err| {
+                std.debug.print("ERROR: {?}\n", .{err});
+                return core.CompilerError.CompileError;
+            };
+            self.compiler.localCount += 1;
+        }
+
         fn parseVariable(self: *Self) core.CompilerError!core.Value() {
             _ = self.consume(token.TokenType.IDENTIFIER) catch |err| {
                 std.debug.print("ERROR: Expect variable name. {?}\n", .{err});
@@ -276,6 +293,22 @@ pub fn Parser() type {
 
             if (self.previous) |t| {
                 const str = self.source[(t.pos)..(t.pos + t.size)];
+
+                if (self.compiler.scopeDepth > 0) {
+                    const memory = std.heap.page_allocator;
+                    const tokenPtr = memory.create(token.Token()) catch |err| {
+                        std.debug.print("ERROR: {?}\n", .{err});
+                        return core.CompilerError.MemoryError;
+                    };
+
+                    tokenPtr.* = t;
+                    try self.declareVariable(tokenPtr);
+
+                    // For local variables we don't care to store the variable name. So we just need
+                    // to return a dummy value here, which is nil in our case, since we don't care
+                    // about it.
+                    return core.Value().initNil();
+                }
 
                 return utils.strToObject(str) catch |err| {
                     std.debug.print("ERROR: {?}\n", .{err});
@@ -289,7 +322,7 @@ pub fn Parser() type {
         /// A variable declaration looks something like this: `let myVar = expression;`.
         /// TODO: Handle constants as well.
         fn varDeclaration(self: *Self) core.CompilerError!void {
-            const globalVal = self.parseVariable() catch |err| {
+            const v = self.parseVariable() catch |err| {
                 return err;
             };
 
@@ -315,10 +348,17 @@ pub fn Parser() type {
                 return core.CompilerError.CompileError;
             };
 
-            self.defineVariable(globalVal) catch |err| {
-                std.debug.print("ERROR: varDeclaration(): {?}\n", .{err});
-                return core.CompilerError.CompileError;
-            };
+            // The code below should only be run for global variables. We create them out of the
+            // current state of the VM. The VM will execute the code for the variable's creation
+            // and the value will be on the stack. That's also where we have our locals allocated.
+            // So basically we don't need to do anything else. The temporary value on the stack
+            // becomes the local variable.
+            if (self.compiler.scopeDepth == 0) {
+                self.defineVariable(v) catch |err| {
+                    std.debug.print("ERROR: varDeclaration(): {?}\n", .{err});
+                    return core.CompilerError.CompileError;
+                };
+            }
         }
 
         /// Handle declarations of any kind, such as variables or just statements.
@@ -410,14 +450,33 @@ pub fn Parser() type {
             };
         }
 
+        fn block(self: *Self) core.CompilerError!void {
+            while (!try self.check(token.TokenType.RIGHT_BRACE) and !try self.check(token.TokenType.EOF)) {
+                try self.declaration();
+            }
+
+            _ = self.consume(token.TokenType.RIGHT_BRACE) catch |err| {
+                std.debug.print("ERROR: Expected '{c}' to close the block. {?}\n", .{ '}', err });
+                return err;
+            };
+        }
+
         fn statement(self: *Self) core.CompilerError!void {
             const isPrintStatement = self.match(token.TokenType.PRINT) catch |err| {
+                std.debug.print("ERROR: {?}\n", .{err});
+                return core.CompilerError.RuntimeError;
+            };
+            const isLeftBrace = self.match(token.TokenType.LEFT_BRACE) catch |err| {
                 std.debug.print("ERROR: {?}\n", .{err});
                 return core.CompilerError.RuntimeError;
             };
 
             if (isPrintStatement) {
                 try self.printStatement();
+            } else if (isLeftBrace) {
+                self.compiler.beginScope();
+                try self.block();
+                self.compiler.endScope();
             } else {
                 try self.expressionStatement();
             }
@@ -651,7 +710,10 @@ pub fn Parser() type {
                 }
 
                 if (current.tokenType == tokenType) {
-                    return self.advance();
+                    return self.advance() catch |err| {
+                        std.debug.print("ERROR: {?}\n", .{err});
+                        return core.CompilerError.CompileError;
+                    };
                 } else {
                     return core.CompilerError.UnexpectedToken;
                 }

@@ -144,7 +144,9 @@ pub fn Chunk() type {
                 }
             }
 
-            // std.debug.print("{any}\n", .{res});
+            if (self.verbose) {
+                std.debug.print("{any}\n", .{res});
+            }
 
             return res;
         }

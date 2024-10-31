@@ -55,7 +55,11 @@ pub fn main() !void {
                 std.process.exit(1);
             };
         } else {
-            var comp = compiler.Compiler().init(source, myVm.chunk, verbose);
+            var comp = compiler.Compiler().init(source, myVm.chunk, verbose) catch |err| {
+                std.debug.print("ERROR: {?}\n", .{err});
+                std.process.exit(1);
+            };
+            comp.parser.setCompiler(&comp);
 
             // To see every parsed token: scanAllTokens.
             if (comp.compile()) |_| {

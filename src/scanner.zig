@@ -264,7 +264,7 @@ pub fn Scanner() type {
             } else if (newToken.tokenType == token.TokenType.LEFT_BRACE) {
                 self.braceLevel += 1;
             } else if (newToken.tokenType == token.TokenType.RIGHT_BRACE) {
-                if (self.parenLevel == 0) {
+                if (self.braceLevel == 0) {
                     return core.CompilerError.InvalidBlock;
                 }
 

@@ -19,9 +19,10 @@ pub fn Compiler() type {
         scopeDepth: usize,
         verbose: bool,
 
-        pub fn init(source: []u8, c: *chunk.Chunk(), verbose: bool) Self {
+        pub fn init(source: []u8, c: *chunk.Chunk(), verbose: bool) !Self {
+            const memory = std.heap.page_allocator;
             const p = parser.Parser().init(c, source, verbose);
-            const locals = std.ArrayList(local.Local()).init(std.heap.page_allocator);
+            const locals = std.ArrayList(local.Local()).init(memory);
 
             return Self{
                 .source = source,
@@ -94,6 +95,16 @@ pub fn Compiler() type {
             return self.emit(opcode.OpCode.RETURN);
         }
 
+        /// Increase the scope depth.
+        pub fn beginScope(self: *Self) void {
+            self.scopeDepth += 1;
+        }
+
+        /// Decrease the scope depth.
+        pub fn endScope(self: *Self) void {
+            self.scopeDepth -= 1;
+        }
+
         /// Compiles and returns a chunk that's ready for the VM to run. To just dump every scanned
         /// token, run `scanAllTokens`.
         pub fn compile(self: *Self) !*chunk.Chunk() {
@@ -104,17 +115,9 @@ pub fn Compiler() type {
             if (self.parser.advance()) |t| {
                 _ = t;
 
-                // try self.parser.expression();
-
                 while (!try self.parser.match(token.TokenType.EOF)) {
                     try self.parser.declaration();
                 }
-
-                // if (self.parser.consume(token.TokenType.EOF)) |_| {
-                //     // return self.chunk;
-                // } else |err| {
-                //     return err;
-                // }
             } else |err| {
                 return err;
             }
