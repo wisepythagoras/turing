@@ -15,12 +15,15 @@ test2 = false;
 print(test2);
 
 {
+    print('Outer block --');
     let a = 1;
     let b = 2;
     print(a);
 
     {
-        let a = 3;
+        let a = a + b;
+        a = a + 4;
+        print('Inner block --');
         print(a);
         print(a + b);
     }

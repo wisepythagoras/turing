@@ -277,9 +277,10 @@ pub fn Parser() type {
         }
 
         fn declareVariable(self: *Self, name: *token.Token()) !void {
-            const localVar = local.Local().new(name, self.compiler.scopeDepth);
+            const localVar = local.Local().new(name, 0);
 
             for (0..self.compiler.localCount) |index| {
+                // TODO: Maybe there's a logic issue here, but I'm too tired to understand it.
                 const i = (self.compiler.localCount - 1) - index;
                 const l = self.compiler.locals.items[i];
 
@@ -375,6 +376,8 @@ pub fn Parser() type {
                     std.debug.print("ERROR: varDeclaration(): {?}\n", .{err});
                     return core.CompilerError.CompileError;
                 };
+            } else {
+                try self.compiler.markLastLocalVarInitialized();
             }
         }
 

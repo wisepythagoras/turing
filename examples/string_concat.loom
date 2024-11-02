@@ -1,2 +1,2 @@
-let newString = "Hello, " + "world!";
+let newString = 'Hello, ' + 'world!';
 print(newString);

@@ -117,12 +117,22 @@ pub fn Compiler() type {
                 const i = (self.localCount - 1) - index;
                 const lv = self.locals.items[i];
 
-                if (name.equals(lv.name, self.source)) {
+                if (name.equals(lv.name, self.source) and lv.depth > 0) {
                     return i;
                 }
             }
 
             return null;
+        }
+
+        /// We mark the last variable added to the `locals` array as initialized by setting the
+        /// `depth` field to the `scopeDepth`.
+        pub fn markLastLocalVarInitialized(self: *Self) !void {
+            if (self.localCount == 0) {
+                return core.CompilerError.UninitializedStack;
+            }
+
+            self.locals.items[self.localCount - 1].depth = self.scopeDepth;
         }
 
         /// Compiles and returns a chunk that's ready for the VM to run. To just dump every scanned

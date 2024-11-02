@@ -14,5 +14,10 @@ pub fn Local() type {
                 .depth = depth,
             };
         }
+
+        /// Setter for the depth field.
+        pub fn setDepth(self: *Self, depth: usize) void {
+            self.depth = depth;
+        }
     };
 }
