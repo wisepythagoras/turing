@@ -493,7 +493,10 @@ pub fn Parser() type {
             } else if (isLeftBrace) {
                 self.compiler.beginScope();
                 try self.block();
-                self.compiler.endScope();
+                self.compiler.endScope() catch |err| {
+                    std.debug.print("ERROR: {?}\n", .{err});
+                    return core.CompilerError.CompileError;
+                };
             } else {
                 try self.expressionStatement();
             }

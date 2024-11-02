@@ -101,8 +101,14 @@ pub fn Compiler() type {
         }
 
         /// Decrease the scope depth.
-        pub fn endScope(self: *Self) void {
+        pub fn endScope(self: *Self) !void {
             self.scopeDepth -= 1;
+
+            while (self.localCount > 0 and self.locals.getLast().depth > self.scopeDepth) {
+                try self.emit(opcode.OpCode.POP);
+                _ = self.locals.pop();
+                self.localCount -= 1;
+            }
         }
 
         /// Compiles and returns a chunk that's ready for the VM to run. To just dump every scanned
