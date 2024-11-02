@@ -111,6 +111,20 @@ pub fn Compiler() type {
             }
         }
 
+        /// Resolve a local variable by its name.
+        pub fn resolveLocalVar(self: *Self, name: *token.Token()) ?usize {
+            for (0..self.localCount) |index| {
+                const i = (self.localCount - 1) - index;
+                const lv = self.locals.items[i];
+
+                if (name.equals(lv.name, self.source)) {
+                    return i;
+                }
+            }
+
+            return null;
+        }
+
         /// Compiles and returns a chunk that's ready for the VM to run. To just dump every scanned
         /// token, run `scanAllTokens`.
         pub fn compile(self: *Self) !*chunk.Chunk() {

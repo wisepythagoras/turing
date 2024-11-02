@@ -353,7 +353,7 @@ fn instructionToBytes(chunk: *Chunk(), offset: *usize) core.CompilerError![]cons
             offset.* += 1;
             return retRes;
         },
-        .CONSTANT, .DEFG, .GETG, .SETG => {
+        .CONSTANT, .DEFG, .GETG, .SETG, .GETL, .SETL => {
             return core.constToBytes(chunk, opCode, offset);
         },
         .CONSTANT_16 => {
@@ -386,7 +386,7 @@ fn disassembleInstruction(chunk: *Chunk(), offset: usize) core.CompilerError!usi
 
     return switch (opCode) {
         .RETURN => core.returnInstruction(opCodeStr, offset),
-        .CONSTANT, .DEFG, .GETG, .SETG => {
+        .CONSTANT, .DEFG, .GETG, .SETG, .GETL, .SETL => {
             return core.constantInstruction(opCodeStr, chunk, offset);
         },
         .CONSTANT_16 => core.constant16Instruction(opCodeStr, chunk, offset),

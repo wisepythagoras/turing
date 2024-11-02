@@ -30,6 +30,8 @@ pub const OpCode = enum(u8) {
     DEFG, // Define a global variable
     GETG, // Get a global variable
     SETG, // Set the value of a global variable
+    GETL, // Get a local variable
+    SETL, // Set a local variable
 
     // https://ziglearn.org/chapter-2/#formatting
     pub fn toString(self: Self) []const u8 {

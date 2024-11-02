@@ -544,22 +544,41 @@ pub fn Parser() type {
         }
 
         fn namedVariable(self: *Self, t: token.Token(), canAssign: bool) !void {
-            _ = canAssign;
+            var getOp: opcode.OpCode = undefined;
+            var setOp: opcode.OpCode = undefined;
+            var value: core.Value() = undefined;
 
-            const str = self.source[(t.pos)..(t.pos + t.size)];
-            const value = utils.strToObject(str) catch |err| {
+            const memory = std.heap.page_allocator;
+            const tokenPtr = memory.create(token.Token()) catch |err| {
                 std.debug.print("ERROR: {?}\n", .{err});
                 return core.CompilerError.MemoryError;
             };
+            tokenPtr.* = t;
+
+            if (self.compiler.resolveLocalVar(tokenPtr)) |idx| {
+                getOp = opcode.OpCode.GETL;
+                setOp = opcode.OpCode.SETL;
+                value = core.Value().initNumber(@as(f64, @floatFromInt(idx)));
+                memory.destroy(tokenPtr);
+            } else {
+                getOp = opcode.OpCode.GETG;
+                setOp = opcode.OpCode.SETG;
+
+                const str = self.source[(t.pos)..(t.pos + t.size)];
+                value = utils.strToObject(str) catch |err| {
+                    std.debug.print("ERROR: {?}\n", .{err});
+                    return core.CompilerError.MemoryError;
+                };
+            }
 
             if (self.match(token.TokenType.EQUAL)) |isEqual| {
-                if (isEqual) {
+                if (canAssign and isEqual) {
                     try self.expression();
 
-                    try self.emit(opcode.OpCode.SETG);
+                    try self.emit(setOp);
                     try self.chunk.emitConstant(value);
                 } else {
-                    try self.emit(opcode.OpCode.GETG);
+                    try self.emit(getOp);
                     try self.chunk.emitConstant(value);
                 }
             } else |err| {

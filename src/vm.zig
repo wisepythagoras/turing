@@ -164,6 +164,48 @@ pub fn VM() type {
                             break :blk core.InterpretResults.RUNTIME_ERROR;
                         }
                     },
+                    .GETL => blk: {
+                        if (core.readValue(self.chunk, offset)) |slot| {
+                            offset += 2;
+
+                            if (!slot.isNumber()) {
+                                std.debug.print("ERROR: Memory corruption\n", .{});
+                                break :blk core.InterpretResults.RUNTIME_ERROR;
+                            }
+
+                            self.push(self.stack.items[@as(usize, @intFromFloat(slot.val.number))]) catch |err| {
+                                std.debug.print("ERROR: Memory corruption: {?}\n", .{err});
+                                break :blk core.InterpretResults.RUNTIME_ERROR;
+                            };
+                        } else |err| {
+                            std.debug.print("ERROR: unspecified variable error. {?}\n", .{err});
+                            break :blk core.InterpretResults.RUNTIME_ERROR;
+                        }
+
+                        break :blk core.InterpretResults.CONTINUE;
+                    },
+                    .SETL => blk: {
+                        if (core.readValue(self.chunk, offset)) |slot| {
+                            offset += 2;
+
+                            if (!slot.isNumber()) {
+                                std.debug.print("ERROR: Memory corruption\n", .{});
+                                break :blk core.InterpretResults.RUNTIME_ERROR;
+                            }
+
+                            if (self.peek()) |val| {
+                                self.stack.items[@as(usize, @intFromFloat(slot.val.number))] = val;
+                            } else {
+                                std.debug.print("ERROR: Memory corruption. No value\n", .{});
+                                break :blk core.InterpretResults.RUNTIME_ERROR;
+                            }
+                        } else |err| {
+                            std.debug.print("ERROR: unspecified variable error. {?}\n", .{err});
+                            break :blk core.InterpretResults.RUNTIME_ERROR;
+                        }
+
+                        break :blk core.InterpretResults.CONTINUE;
+                    },
                     .NEG => blk: {
                         const optionalConstant = self.pop();
 

@@ -17,9 +17,12 @@ print(test2);
 {
     let a = 1;
     let b = 2;
+    print(a);
 
     {
         let a = 3;
+        print(a);
+        print(a + b);
     }
 
     print(!test2);
