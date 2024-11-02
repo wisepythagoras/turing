@@ -1,6 +1,7 @@
 const std = @import("std");
 const parser = @import("parser.zig");
 const core = @import("core.zig");
+const utils = @import("utils.zig");
 
 pub const TokenType = enum(u8) {
     const Self = @This();
@@ -117,6 +118,16 @@ pub fn Token() type {
             };
         }
 
+        pub fn equals(self: Self, t: *Token(), source: []const u8) bool {
+            if (self.size != t.size) {
+                return false;
+            }
+
+            const strA = source[(t.pos)..(t.pos + t.size)];
+            const strB = source[(self.pos)..(self.pos + self.size)];
+            return utils.strcomp(strA, strB);
+        }
+
         pub fn initWithSize(t: TokenType, pos: usize, size: usize) Self {
             return Self{
                 .tokenType = t,
@@ -124,6 +135,10 @@ pub fn Token() type {
                 // .line = line,
                 .size = size,
             };
+        }
+
+        pub fn toStringSimple(self: Self, source: []const u8) []const u8 {
+            return source[(self.pos)..(self.pos + self.size)];
         }
 
         pub fn toString(self: Self, source: []u8) ![]u8 {

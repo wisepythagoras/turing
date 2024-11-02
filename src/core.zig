@@ -213,6 +213,7 @@ pub const CompilerError = error{
     InvalidOperation,
     ExpectExpression,
     MemoryError,
+    Redeclaration,
 };
 
 pub fn addOp(a: Value(), b: Value(), _: ?opcode.OpCode) !Value() {

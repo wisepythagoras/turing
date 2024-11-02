@@ -278,6 +278,23 @@ pub fn Parser() type {
 
         fn declareVariable(self: *Self, name: *token.Token()) !void {
             const localVar = local.Local().new(name, self.compiler.scopeDepth);
+
+            for (0..self.compiler.localCount) |index| {
+                const i = (self.compiler.localCount - 1) - index;
+                const l = self.compiler.locals.items[i];
+
+                if (l.depth != -1 and l.depth < self.compiler.scopeDepth) {
+                    break;
+                }
+
+                // This code should return an error only if we encounter the redeclaration of a variable
+                // in the local scope.
+                if (l.name.equals(name, self.source)) {
+                    std.debug.print("ERROR: Redeclaration of local variable \"{s}\"\n", .{name.toStringSimple(self.source)});
+                    return core.CompilerError.Redeclaration;
+                }
+            }
+
             self.compiler.locals.append(localVar) catch |err| {
                 std.debug.print("ERROR: {?}\n", .{err});
                 return core.CompilerError.CompileError;
