@@ -9,7 +9,7 @@ print(test);
 
     {
         let test3 = 'abcde';
-        print(test3);
+        print(test3 + 'fghijk');
     }
 
     #print('hello');

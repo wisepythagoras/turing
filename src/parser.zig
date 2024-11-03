@@ -391,20 +391,26 @@ pub fn Parser() type {
             if (isVar) {
                 self.varDeclaration() catch |err| {
                     std.debug.print("ERROR: {?}\n", .{err});
+
+                    self.synchronize() catch |syncErr| {
+                        std.debug.print("ERROR: {?}\n", .{syncErr});
+                        return core.CompilerError.CompileError;
+                    };
+
                     return err;
                 };
             } else {
                 self.statement() catch |err| {
                     std.debug.print("ERROR: {?}\n", .{err});
+
+                    self.synchronize() catch |syncErr| {
+                        std.debug.print("ERROR: {?}\n", .{syncErr});
+                        return core.CompilerError.CompileError;
+                    };
+
                     return err;
                 };
             }
-
-            // TODO: Implement panic mode.
-            // self.synchronize() catch |err| {
-            //     std.debug.print("ERROR: {?}\n", .{err});
-            //     return core.CompilerError.CompileError;
-            // };
         }
 
         fn synchronize(self: *Self) !void {
