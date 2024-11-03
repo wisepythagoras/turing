@@ -400,13 +400,18 @@ pub fn Parser() type {
                 };
             }
 
-            self.synchronize() catch |err| {
-                std.debug.print("ERROR: {?}\n", .{err});
-                return core.CompilerError.CompileError;
-            };
+            // TODO: Implement panic mode.
+            // self.synchronize() catch |err| {
+            //     std.debug.print("ERROR: {?}\n", .{err});
+            //     return core.CompilerError.CompileError;
+            // };
         }
 
         fn synchronize(self: *Self) !void {
+            if (self.verbose) {
+                std.debug.print("synchronize()\n", .{});
+            }
+
             var curr: token.Token() = undefined;
 
             if (self.current) |c| {
@@ -428,7 +433,9 @@ pub fn Parser() type {
                         return;
                     }
 
-                    _ = try self.advance();
+                    std.debug.print("-> {any}\n", .{curr});
+
+                    curr = try self.advance();
                 }
             }
         }
@@ -732,7 +739,7 @@ pub fn Parser() type {
                         });
                     }
 
-                    if (t.tokenType != token.TokenType.ERROR) {
+                    if (t.tokenType != token.TokenType.ERROR or t.tokenType == token.TokenType.EOF) {
                         return t;
                     }
 
