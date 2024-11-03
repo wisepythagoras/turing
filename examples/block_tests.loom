@@ -1,0 +1,16 @@
+let test = 'abc';
+
+print(test);
+
+
+{
+    let test2 = 'abcd';
+    print(test2);
+
+    {
+        let test3 = 'abcde';
+        print(test3);
+    }
+
+    #print('hello');
+}
