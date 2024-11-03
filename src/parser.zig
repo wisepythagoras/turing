@@ -561,6 +561,7 @@ pub fn Parser() type {
             if (self.compiler.resolveLocalVar(tokenPtr)) |idx| {
                 getOp = opcode.OpCode.GETL;
                 setOp = opcode.OpCode.SETL;
+
                 value = core.Value().initNumber(@as(f64, @floatFromInt(idx)));
                 memory.destroy(tokenPtr);
             } else {

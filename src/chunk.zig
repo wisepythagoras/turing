@@ -4,7 +4,7 @@ const object = @import("object.zig");
 const opcode = @import("opcode.zig");
 const utils = @import("utils.zig");
 
-const CodeTuple = std.meta.Tuple(&.{ opcode.OpCode, usize });
+const CodeTuple = std.meta.Tuple(&.{ u8, usize });
 
 /// Creates a new chunk, which essentially represents a single bytecode instruction
 /// group.
@@ -44,17 +44,18 @@ pub fn Chunk() type {
                 const pos: u16 = @as(u16, @intCast(self.values.items.len));
 
                 if (pos >= 255) {
-                    return self.code.append(.{ opcode.OpCode.CONSTANT_16, line });
+                    return self.code.append(.{ opcode.OpCode.CONSTANT_16.toU8(), line });
                 }
             }
 
-            return self.code.append(.{ opCode, line });
+            return self.code.append(.{ opCode.toU8(), line });
         }
 
         /// Converts a byte to an opcode and writes it to the chunk.
         pub fn writeByte(self: *Self, byte: u8, line: usize) !void {
-            const opCode = @as(opcode.OpCode, @enumFromInt(byte));
-            try self.writeOpCode(opCode, line);
+            // const opCode = @as(opcode.OpCode, @enumFromInt(byte));
+            // try self.writeOpCode(byte, line);
+            return self.code.append(.{ byte, line });
         }
 
         pub fn print(self: Self) void {
@@ -342,7 +343,7 @@ pub fn Chunk() type {
 
 fn instructionToBytes(chunk: *Chunk(), offset: *usize) core.CompilerError![]const u8 {
     const instruction = chunk.code.items[offset.*];
-    const opCode = instruction[0];
+    const opCode = @as(opcode.OpCode, @enumFromInt(instruction[0]));
 
     return switch (opCode) {
         .RETURN => {
@@ -381,7 +382,7 @@ fn disassembleInstruction(chunk: *Chunk(), offset: usize) core.CompilerError!usi
         std.debug.print("    : ", .{});
     }
 
-    const opCode = instruction[0];
+    const opCode = @as(opcode.OpCode, @enumFromInt(instruction[0]));
     const opCodeStr = opCode.toString();
 
     return switch (opCode) {

@@ -383,7 +383,7 @@ pub fn readValueIdx(c: *chunk.Chunk(), offset: usize) CompilerError!u8 {
         return CompilerError.InvalidMemoryLookup;
     }
 
-    const idx: u8 = @intFromEnum(c.code.items[offset + 1][0]);
+    const idx: u8 = c.code.items[offset + 1][0];
     return idx;
 }
 
@@ -497,8 +497,8 @@ pub fn constantInstruction(name: []const u8, c: *chunk.Chunk(), offset: usize) C
 }
 
 pub fn constant16Instruction(name: []const u8, c: *chunk.Chunk(), offset: usize) usize {
-    const idxB: u16 = @intFromEnum(c.code.items[offset + 1][0]);
-    const idxA: u16 = @intFromEnum(c.code.items[offset + 2][0]);
+    const idxB: u16 = c.code.items[offset + 1][0];
+    const idxA: u16 = c.code.items[offset + 2][0];
     const idx: u16 = (idxB << 8) | idxA;
 
     const constant: Value() = c.values.items[idx];

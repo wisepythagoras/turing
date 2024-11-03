@@ -63,7 +63,7 @@ pub fn VM() type {
                 const byte = self.chunk.code.items[offset][0];
 
                 const result = switch (byte) {
-                    .CONSTANT => blk: {
+                    opcode.OpCode.CONSTANT.toU8() => blk: {
                         if (core.readValue(self.chunk, offset)) |constant| {
                             offset += 2;
 
@@ -82,12 +82,12 @@ pub fn VM() type {
                             break :blk core.InterpretResults.RUNTIME_ERROR;
                         }
                     },
-                    .CONSTANT_16 => blk: {
+                    opcode.OpCode.CONSTANT_16.toU8() => blk: {
                         // TODO: Implement!
                         offset += 1;
                         break :blk core.InterpretResults.CONTINUE;
                     },
-                    .DEFG => blk: {
+                    opcode.OpCode.DEFG.toU8() => blk: {
                         if (core.readValue(self.chunk, offset)) |varName| {
                             offset += 2;
 
@@ -110,7 +110,7 @@ pub fn VM() type {
                             break :blk core.InterpretResults.RUNTIME_ERROR;
                         }
                     },
-                    .GETG => blk: {
+                    opcode.OpCode.GETG.toU8() => blk: {
                         if (core.readValue(self.chunk, offset)) |varName| {
                             offset += 2;
 
@@ -134,7 +134,7 @@ pub fn VM() type {
                             break :blk core.InterpretResults.RUNTIME_ERROR;
                         }
                     },
-                    .SETG => blk: {
+                    opcode.OpCode.SETG.toU8() => blk: {
                         if (core.readValue(self.chunk, offset)) |varName| {
                             offset += 2;
 
@@ -164,7 +164,7 @@ pub fn VM() type {
                             break :blk core.InterpretResults.RUNTIME_ERROR;
                         }
                     },
-                    .GETL => blk: {
+                    opcode.OpCode.GETL.toU8() => blk: {
                         if (core.readValue(self.chunk, offset)) |slot| {
                             offset += 2;
 
@@ -184,7 +184,7 @@ pub fn VM() type {
 
                         break :blk core.InterpretResults.CONTINUE;
                     },
-                    .SETL => blk: {
+                    opcode.OpCode.SETL.toU8() => blk: {
                         if (core.readValue(self.chunk, offset)) |slot| {
                             offset += 2;
 
@@ -206,7 +206,7 @@ pub fn VM() type {
 
                         break :blk core.InterpretResults.CONTINUE;
                     },
-                    .NEG => blk: {
+                    opcode.OpCode.NEG.toU8() => blk: {
                         const optionalConstant = self.pop();
 
                         if (optionalConstant) |eConstant| {
@@ -231,7 +231,7 @@ pub fn VM() type {
 
                         break :blk core.InterpretResults.RUNTIME_ERROR;
                     },
-                    .NOT => blk: {
+                    opcode.OpCode.NOT.toU8() => blk: {
                         const optionalConstant = self.pop();
 
                         if (optionalConstant) |constant| {
@@ -250,7 +250,7 @@ pub fn VM() type {
 
                         break :blk core.InterpretResults.RUNTIME_ERROR;
                     },
-                    .ADD => blk: {
+                    opcode.OpCode.ADD.toU8() => blk: {
                         const res = self.operation(core.addOp, null);
 
                         if (res == core.InterpretResults.CONTINUE) {
@@ -259,7 +259,7 @@ pub fn VM() type {
 
                         break :blk res;
                     },
-                    .SUB => blk: {
+                    opcode.OpCode.SUB.toU8() => blk: {
                         const res = self.operation(core.subOp, null);
 
                         if (res == core.InterpretResults.CONTINUE) {
@@ -268,7 +268,7 @@ pub fn VM() type {
 
                         break :blk res;
                     },
-                    .MUL => blk: {
+                    opcode.OpCode.MUL.toU8() => blk: {
                         const res = self.operation(core.mulOp, null);
 
                         if (res == core.InterpretResults.CONTINUE) {
@@ -277,7 +277,7 @@ pub fn VM() type {
 
                         break :blk res;
                     },
-                    .DIV => blk: {
+                    opcode.OpCode.DIV.toU8() => blk: {
                         const res = self.operation(core.divOp, null);
 
                         if (res == core.InterpretResults.CONTINUE) {
@@ -286,7 +286,7 @@ pub fn VM() type {
 
                         break :blk res;
                     },
-                    .MOD => blk: {
+                    opcode.OpCode.MOD.toU8() => blk: {
                         const res = self.operation(core.divOp, null);
 
                         if (res == core.InterpretResults.CONTINUE) {
@@ -295,7 +295,7 @@ pub fn VM() type {
 
                         break :blk res;
                     },
-                    .XOR => blk: {
+                    opcode.OpCode.XOR.toU8() => blk: {
                         const res = self.operation(core.xorOp, null);
 
                         if (res == core.InterpretResults.CONTINUE) {
@@ -304,7 +304,7 @@ pub fn VM() type {
 
                         break :blk res;
                     },
-                    .POW => blk: {
+                    opcode.OpCode.POW.toU8() => blk: {
                         const res = self.operation(core.powOp, null);
 
                         if (res == core.InterpretResults.CONTINUE) {
@@ -313,8 +313,9 @@ pub fn VM() type {
 
                         break :blk res;
                     },
-                    .EQ => blk: {
-                        const res = self.operation(core.eqOp, byte);
+                    opcode.OpCode.EQ.toU8() => blk: {
+                        const opCode = @as(opcode.OpCode, @enumFromInt(byte));
+                        const res = self.operation(core.eqOp, opCode);
 
                         if (res == core.InterpretResults.CONTINUE) {
                             offset += 1;
@@ -322,8 +323,9 @@ pub fn VM() type {
 
                         break :blk res;
                     },
-                    .NE => blk: {
-                        const res = self.operation(core.eqOp, byte);
+                    opcode.OpCode.NE.toU8() => blk: {
+                        const opCode = @as(opcode.OpCode, @enumFromInt(byte));
+                        const res = self.operation(core.eqOp, opCode);
 
                         if (res == core.InterpretResults.CONTINUE) {
                             offset += 1;
@@ -331,8 +333,9 @@ pub fn VM() type {
 
                         break :blk res;
                     },
-                    .GT => blk: {
-                        const res = self.operation(core.eqOp, byte);
+                    opcode.OpCode.GT.toU8() => blk: {
+                        const opCode = @as(opcode.OpCode, @enumFromInt(byte));
+                        const res = self.operation(core.eqOp, opCode);
 
                         if (res == core.InterpretResults.CONTINUE) {
                             offset += 1;
@@ -340,8 +343,9 @@ pub fn VM() type {
 
                         break :blk res;
                     },
-                    .GE => blk: {
-                        const res = self.operation(core.eqOp, byte);
+                    opcode.OpCode.GE.toU8() => blk: {
+                        const opCode = @as(opcode.OpCode, @enumFromInt(byte));
+                        const res = self.operation(core.eqOp, opCode);
 
                         if (res == core.InterpretResults.CONTINUE) {
                             offset += 1;
@@ -349,8 +353,9 @@ pub fn VM() type {
 
                         break :blk res;
                     },
-                    .LT => blk: {
-                        const res = self.operation(core.eqOp, byte);
+                    opcode.OpCode.LT.toU8() => blk: {
+                        const opCode = @as(opcode.OpCode, @enumFromInt(byte));
+                        const res = self.operation(core.eqOp, opCode);
 
                         if (res == core.InterpretResults.CONTINUE) {
                             offset += 1;
@@ -358,8 +363,9 @@ pub fn VM() type {
 
                         break :blk res;
                     },
-                    .LE => blk: {
-                        const res = self.operation(core.eqOp, byte);
+                    opcode.OpCode.LE.toU8() => blk: {
+                        const opCode = @as(opcode.OpCode, @enumFromInt(byte));
+                        const res = self.operation(core.eqOp, opCode);
 
                         if (res == core.InterpretResults.CONTINUE) {
                             offset += 1;
@@ -367,8 +373,9 @@ pub fn VM() type {
 
                         break :blk res;
                     },
-                    .AND => blk: {
-                        const res = self.operation(core.andOp, byte);
+                    opcode.OpCode.AND.toU8() => blk: {
+                        const opCode = @as(opcode.OpCode, @enumFromInt(byte));
+                        const res = self.operation(core.eqOp, opCode);
 
                         if (res == core.InterpretResults.CONTINUE) {
                             offset += 1;
@@ -376,7 +383,7 @@ pub fn VM() type {
 
                         break :blk res;
                     },
-                    .FALSE => blk: {
+                    opcode.OpCode.FALSE.toU8() => blk: {
                         self.push(core.Value().initBool(false)) catch {
                             break :blk core.InterpretResults.RUNTIME_ERROR;
                         };
@@ -385,7 +392,7 @@ pub fn VM() type {
 
                         break :blk core.InterpretResults.CONTINUE;
                     },
-                    .TRUE => blk: {
+                    opcode.OpCode.TRUE.toU8() => blk: {
                         self.push(core.Value().initBool(true)) catch {
                             break :blk core.InterpretResults.RUNTIME_ERROR;
                         };
@@ -394,7 +401,7 @@ pub fn VM() type {
 
                         break :blk core.InterpretResults.CONTINUE;
                     },
-                    .NIL => blk: {
+                    opcode.OpCode.NIL.toU8() => blk: {
                         self.push(core.Value().initNil()) catch {
                             break :blk core.InterpretResults.RUNTIME_ERROR;
                         };
@@ -403,7 +410,7 @@ pub fn VM() type {
 
                         break :blk core.InterpretResults.CONTINUE;
                     },
-                    .OUT => blk: {
+                    opcode.OpCode.OUT.toU8() => blk: {
                         if (self.pop()) |val| {
                             val.print();
                         }
@@ -412,12 +419,15 @@ pub fn VM() type {
 
                         break :blk core.InterpretResults.CONTINUE;
                     },
-                    .POP => blk: {
+                    opcode.OpCode.POP.toU8() => blk: {
                         _ = self.pop();
                         offset += 1;
                         break :blk core.InterpretResults.CONTINUE;
                     },
-                    .RETURN => core.InterpretResults.OK,
+                    opcode.OpCode.RETURN.toU8() => core.InterpretResults.OK,
+                    else => blk: {
+                        break :blk core.InterpretResults.COMPILE_ERROR;
+                    },
                 };
 
                 if (result == core.InterpretResults.OK) {

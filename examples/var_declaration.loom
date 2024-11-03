@@ -23,9 +23,11 @@ print(test2);
     {
         let a = a + b;
         a = a + 4;
+        let c = 'Hello, world!';
         print('Inner block --');
         print(a);
         print(a + b);
+        print(c);
     }
 
     print(!test2);
