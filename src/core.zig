@@ -197,6 +197,7 @@ pub fn Value() type {
 }
 
 pub const OperationFn = *const fn (Value(), Value(), ?opcode.OpCode) CompilerError!Value();
+pub const GetterFn = *const fn (*chunk.Chunk(), usize) CompilerError!Value();
 pub const CompilerError = error{
     CompileError,
     RuntimeError,
@@ -392,6 +393,14 @@ pub fn readValue(c: *chunk.Chunk(), offset: usize) CompilerError!Value() {
     return c.values.items[idx];
 }
 
+pub fn readValue16(c: *chunk.Chunk(), offset: usize) CompilerError!Value() {
+    const idxA: u16 = try readValueIdx(c, offset);
+    const idxB: u16 = try readValueIdx(c, offset + 1);
+    const idx: u16 = (idxB << 8) | idxA;
+    // std.debug.print("-> [{d}]\n", .{idx});
+    return c.values.items[idx];
+}
+
 pub fn returnInstruction(name: []const u8, offset: usize) usize {
     std.debug.print("{s}\n", .{name});
     return offset + 1;
@@ -507,7 +516,7 @@ pub fn constant16Instruction(name: []const u8, c: *chunk.Chunk(), offset: usize)
         std.debug.print("{s} = {x} ({d})\n", .{ name, idx, constant.val.number });
     }
 
-    return offset + 2;
+    return offset + 3;
 }
 
 pub fn simpleInstruction(name: []const u8, offset: usize) CompilerError!usize {

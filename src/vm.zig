@@ -63,9 +63,20 @@ pub fn VM() type {
                 const byte = self.chunk.code.items[offset][0];
 
                 const result = switch (byte) {
-                    opcode.OpCode.CONSTANT.toU8() => blk: {
-                        if (core.readValue(self.chunk, offset)) |constant| {
-                            offset += 2;
+                    opcode.OpCode.CONSTANT.toU8(), opcode.OpCode.CONSTANT_16.toU8() => blk: {
+                        var targetGetter: core.GetterFn = core.readValue;
+
+                        if (byte == opcode.OpCode.CONSTANT_16.toU8()) {
+                            targetGetter = core.readValue16;
+                        }
+
+                        if (targetGetter(self.chunk, offset)) |constant| {
+                            if (byte == opcode.OpCode.CONSTANT_16.toU8()) {
+                                offset += 3;
+                                // offset += 2;
+                            } else {
+                                offset += 2;
+                            }
 
                             if (self.verbose) {
                                 constant.print();
@@ -82,11 +93,11 @@ pub fn VM() type {
                             break :blk core.InterpretResults.RUNTIME_ERROR;
                         }
                     },
-                    opcode.OpCode.CONSTANT_16.toU8() => blk: {
-                        // TODO: Implement!
-                        offset += 1;
-                        break :blk core.InterpretResults.CONTINUE;
-                    },
+                    // opcode.OpCode.CONSTANT_16.toU8() => blk: {
+                    //     // TODO: Implement!
+                    //     offset += 3;
+                    //     break :blk core.InterpretResults.CONTINUE;
+                    // },
                     opcode.OpCode.DEFG.toU8() => blk: {
                         if (core.readValue(self.chunk, offset)) |varName| {
                             offset += 2;

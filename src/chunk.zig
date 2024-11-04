@@ -43,7 +43,7 @@ pub fn Chunk() type {
             if (opCode == opcode.OpCode.CONSTANT) {
                 const pos: u16 = @as(u16, @intCast(self.values.items.len));
 
-                if (pos >= 255) {
+                if (pos > 255) {
                     return self.code.append(.{ opcode.OpCode.CONSTANT_16.toU8(), line });
                 }
             }
