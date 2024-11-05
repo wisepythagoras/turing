@@ -4,7 +4,7 @@ const object = @import("object.zig");
 const opcode = @import("opcode.zig");
 const utils = @import("utils.zig");
 
-const CodeTuple = std.meta.Tuple(&.{ u8, usize });
+pub const CodeTuple = std.meta.Tuple(&.{ u8, usize });
 
 /// Creates a new chunk, which essentially represents a single bytecode instruction
 /// group.
@@ -369,6 +369,9 @@ fn instructionToBytes(chunk: *Chunk(), offset: *usize) core.CompilerError![]cons
             offset.* += 1;
             return opRes;
         },
+        else => {
+            return core.CompilerError.InvalidOperation;
+        },
     };
 }
 
@@ -398,6 +401,9 @@ fn disassembleInstruction(chunk: *Chunk(), offset: usize) core.CompilerError!usi
             return core.simpleInstruction(opCodeStr, offset);
         },
         .NIL => {
+            return core.simpleInstruction(opCodeStr, offset);
+        },
+        .JWF => {
             return core.simpleInstruction(opCodeStr, offset);
         },
     };

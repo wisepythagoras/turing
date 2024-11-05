@@ -151,6 +151,25 @@ pub fn Parser() type {
             return self.chunk.writeOpCode(opCode, self.getScanner().line);
         }
 
+        /// Emits a jump opcode and errors if it's not a jump.
+        pub fn emitJump(self: *Self, opCode: opcode.OpCode) !usize {
+            return switch (opCode) {
+                .JWF => {
+                    try self.emit(opCode);
+                    try self.emitByte(0xff);
+                    try self.emitByte(0xff);
+
+                    return self.chunk.code.items.len - 2;
+                },
+                else => return core.CompilerError.InvalidOperation,
+            };
+        }
+
+        pub fn patchJump(self: *Self, offset: usize) !void {
+            const jump = self.chunk.code.items.len - offset - 2;
+            _ = jump;
+        }
+
         /// Emits the necessary bytecode to represent a constant.
         pub fn emitConstant(self: *Self, value: core.Value()) !void {
             try self.emit(opcode.OpCode.CONSTANT);
@@ -400,7 +419,7 @@ pub fn Parser() type {
                     return err;
                 };
             } else {
-                self.statement() catch |err| {
+                self.statement(false) catch |err| {
                     std.debug.print("ERROR: {?}\n", .{err});
 
                     self.synchronize() catch |syncErr| {
@@ -494,7 +513,33 @@ pub fn Parser() type {
             };
         }
 
-        fn statement(self: *Self) core.CompilerError!void {
+        /// This function consumes an if statement. If statements follow the following syntax:
+        /// ```
+        /// if expression or condition {
+        ///     # Do stuff
+        /// }
+        /// ```
+        /// Also, the braces are mandatory in all cases.
+        fn ifStatement(self: *Self) core.CompilerError!void {
+            try self.expression();
+
+            const thenJump = self.emitJump(opcode.OpCode.JWF) catch |err| {
+                std.debug.print("ERROR: {any}\n", .{err});
+
+                if (err == core.CompilerError.InvalidOperation) {
+                    return err;
+                }
+
+                return core.CompilerError.CompileError;
+            };
+            _ = thenJump;
+
+            // As stated in the doc comment, we require a block to follow, since we do not require
+            // to wrap the condition in parentheses.
+            try self.statement(true);
+        }
+
+        fn statement(self: *Self, onlyBlock: bool) core.CompilerError!void {
             const isPrintStatement = self.match(token.TokenType.PRINT) catch |err| {
                 std.debug.print("ERROR: {?}\n", .{err});
                 return core.CompilerError.RuntimeError;
@@ -503,9 +548,20 @@ pub fn Parser() type {
                 std.debug.print("ERROR: {?}\n", .{err});
                 return core.CompilerError.RuntimeError;
             };
+            const isIf = self.match(token.TokenType.IF) catch |err| {
+                std.debug.print("ERROR: {?}\n", .{err});
+                return core.CompilerError.RuntimeError;
+            };
+
+            if (onlyBlock and !isLeftBrace) {
+                std.debug.print("ERROR: '{c}' expected.\n", .{'{'});
+                return core.CompilerError.SyntaxError;
+            }
 
             if (isPrintStatement) {
                 try self.printStatement();
+            } else if (isIf) {
+                //
             } else if (isLeftBrace) {
                 self.compiler.beginScope();
                 try self.block();
