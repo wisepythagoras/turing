@@ -203,6 +203,9 @@ pub fn Parser() type {
         /// Emits the necessary bytecode to represent the variable declaration.
         pub fn defineVariable(self: *Self, value: core.Value()) !void {
             try self.emit(opcode.OpCode.DEFG);
+            // TODO: Check here how many items we have. Depending on the byte size of the index, we should
+            // be adding a byte in between the value index and the opcode to signify how many bytes we have
+            // allocated to the index. This should also be taken into account in SETG/L and GETG/L as well.
             try self.chunk.emitConstant(value);
         }
 
