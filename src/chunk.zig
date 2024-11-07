@@ -76,9 +76,10 @@ pub fn Chunk() type {
             }
         }
 
+        /// Adds a constant in the values array and then the position onto the stack.
         pub fn emitConstant(self: *Self, constant: core.Value()) !void {
-            if (self.addConstant(constant)) |_| {
-                const pos: u16 = @as(u16, @intCast(self.values.items.len)) - 1;
+            if (self.addConstant(constant)) |newLen| {
+                const pos = newLen - 1;
 
                 if (pos <= 255) {
                     return self.writeByte(@as(u8, @intCast(pos)), 0);
@@ -404,6 +405,7 @@ fn disassembleInstruction(chunk: *Chunk(), offset: usize) core.CompilerError!usi
             return core.simpleInstruction(opCodeStr, offset);
         },
         .JWF => {
+            // TODO: Fix.
             return core.simpleInstruction(opCodeStr, offset);
         },
     };

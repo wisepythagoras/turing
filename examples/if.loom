@@ -1,0 +1,21 @@
+let test = 123;
+
+if test == 123 {
+    print('test == 123');
+}
+
+if test == 234 {
+    print('Unreachable code');
+}
+
+if test != 234 {
+    print('test != 234');
+}
+
+let test2 = 'abc';
+
+if test2 == 'abc' {
+    print(test2);
+}
+
+print('done');

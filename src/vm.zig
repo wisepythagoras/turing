@@ -435,6 +435,19 @@ pub fn VM() type {
                         offset += 1;
                         break :blk core.InterpretResults.CONTINUE;
                     },
+                    opcode.OpCode.JWF.toU8() => blk: {
+                        const newOffset = try core.readRaw32(self.chunk, offset);
+
+                        if (self.peek()) |val| {
+                            if (core.isFalsey(val)) {
+                                offset += newOffset;
+                            }
+                        }
+
+                        offset += 5;
+
+                        break :blk core.InterpretResults.CONTINUE;
+                    },
                     opcode.OpCode.RETURN.toU8() => core.InterpretResults.OK,
                     else => blk: {
                         break :blk core.InterpretResults.COMPILE_ERROR;

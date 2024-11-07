@@ -156,23 +156,47 @@ pub fn Parser() type {
             return switch (opCode) {
                 .JWF => {
                     try self.emit(opCode);
-                    try self.emitByte(0xff);
-                    try self.emitByte(0xff);
 
-                    return self.chunk.code.items.len - 2;
+                    // TODO: Explore how to do this dynamically, instead of always expect 4 bytes.
+                    // Is that even needed?
+                    try self.emitByte(0);
+                    try self.emitByte(0);
+                    try self.emitByte(0);
+                    try self.emitByte(0);
+
+                    return self.chunk.code.items.len - 4;
                 },
                 else => return core.CompilerError.InvalidOperation,
             };
         }
 
         pub fn patchJump(self: *Self, offset: usize) !void {
-            const jump = self.chunk.code.items.len - offset - 2;
-            _ = jump;
+            const jump = self.chunk.code.items.len - offset - 4;
+
+            if (jump > std.math.maxInt(u32)) {
+                std.debug.print("ERROR: Long jump\n", .{});
+                return core.CompilerError.RuntimeError;
+            }
+
+            // This would suffice if we wanted a simple 16 bit jump, but that would limit us to
+            // 65535 instructions. Let's do better.
+            // self.chunk.code.items[offset][0] = @as(u8, @intCast((jump >> 8) & 0xff));
+            // self.chunk.code.items[offset + 1][0] = @as(u8, @intCast((jump >> 0) & 0xff));
+
+            self.chunk.code.items[offset][0] = @as(u8, @intCast((jump >> 24) & 0xff));
+            self.chunk.code.items[offset + 1][0] = @as(u8, @intCast((jump >> 16) & 0xff));
+            self.chunk.code.items[offset + 2][0] = @as(u8, @intCast((jump >> 8) & 0xff));
+            self.chunk.code.items[offset + 3][0] = @as(u8, @intCast((jump >> 0) & 0xff));
         }
 
         /// Emits the necessary bytecode to represent a constant.
         pub fn emitConstant(self: *Self, value: core.Value()) !void {
-            try self.emit(opcode.OpCode.CONSTANT);
+            if (self.chunk.values.items.len >= 255) {
+                try self.emit(opcode.OpCode.CONSTANT_16);
+            } else {
+                try self.emit(opcode.OpCode.CONSTANT);
+            }
+
             try self.chunk.emitConstant(value);
         }
 
@@ -458,8 +482,6 @@ pub fn Parser() type {
                         return;
                     }
 
-                    std.debug.print("-> {any}\n", .{curr});
-
                     curr = try self.advance();
                 }
             }
@@ -524,19 +546,23 @@ pub fn Parser() type {
             try self.expression();
 
             const thenJump = self.emitJump(opcode.OpCode.JWF) catch |err| {
-                std.debug.print("ERROR: {any}\n", .{err});
+                std.debug.print("ERROR: Can't emit jump: {any}\n", .{err});
 
                 if (err == core.CompilerError.InvalidOperation) {
-                    return err;
+                    return core.CompilerError.InvalidOperation;
                 }
 
                 return core.CompilerError.CompileError;
             };
-            _ = thenJump;
 
             // As stated in the doc comment, we require a block to follow, since we do not require
             // to wrap the condition in parentheses.
             try self.statement(true);
+
+            self.patchJump(thenJump) catch |err| {
+                std.debug.print("ERROR: {any}\n", .{err});
+                return core.CompilerError.CompileError;
+            };
         }
 
         fn statement(self: *Self, onlyBlock: bool) core.CompilerError!void {
@@ -561,7 +587,7 @@ pub fn Parser() type {
             if (isPrintStatement) {
                 try self.printStatement();
             } else if (isIf) {
-                //
+                try self.ifStatement();
             } else if (isLeftBrace) {
                 self.compiler.beginScope();
                 try self.block();

@@ -19,20 +19,20 @@ pub const OpCode = enum(u8) {
     POW,
     AND,
     NOT,
-    EQ, // Equal
-    NE, // Not equal
-    GT, // Greater than
-    GE, // Greater or equal
-    LT, // Less than
-    LE, // Less or equal
-    OUT, // Print to the screen
-    POP, // Remove the last value from the stack
-    DEFG, // Define a global variable
-    GETG, // Get a global variable
-    SETG, // Set the value of a global variable
-    GETL, // Get a local variable
-    SETL, // Set a local variable
-    JWF, // Jump when/if false
+    EQ, // Equal (16)
+    NE, // Not equal (17)
+    GT, // Greater than (18)
+    GE, // Greater or equal (19)
+    LT, // Less than (20)
+    LE, // Less or equal (21)
+    OUT, // Print to the screen (22)
+    POP, // Remove the last value from the stack (23)
+    DEFG, // Define a global variable (24)
+    GETG, // Get a global variable (25)
+    SETG, // Set the value of a global variable (26)
+    GETL, // Get a local variable (27)
+    SETL, // Set a local variable (28)
+    JWF, // Jump when/if false (29)
 
     // https://ziglearn.org/chapter-2/#formatting
     pub fn toString(self: Self) []const u8 {

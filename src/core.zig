@@ -388,16 +388,27 @@ pub fn readValueIdx(c: *chunk.Chunk(), offset: usize) CompilerError!u8 {
     return idx;
 }
 
+pub fn readRaw16(c: *chunk.Chunk(), offset: usize) CompilerError!usize {
+    const idxB: u16 = try readValueIdx(c, offset);
+    const idxA: u16 = try readValueIdx(c, offset + 1);
+    return (idxB << 8) | idxA;
+}
+
+pub fn readRaw32(c: *chunk.Chunk(), offset: usize) CompilerError!usize {
+    const idxD: u32 = try readValueIdx(c, offset);
+    const idxC: u32 = try readValueIdx(c, offset + 1);
+    const idxB: u32 = try readValueIdx(c, offset + 2);
+    const idxA: u32 = try readValueIdx(c, offset + 3);
+    return (idxD << 24) | (idxC << 16) | (idxB << 8) | idxA;
+}
+
 pub fn readValue(c: *chunk.Chunk(), offset: usize) CompilerError!Value() {
     const idx = try readValueIdx(c, offset);
     return c.values.items[idx];
 }
 
 pub fn readValue16(c: *chunk.Chunk(), offset: usize) CompilerError!Value() {
-    const idxA: u16 = try readValueIdx(c, offset);
-    const idxB: u16 = try readValueIdx(c, offset + 1);
-    const idx: u16 = (idxB << 8) | idxA;
-    // std.debug.print("-> [{d}]\n", .{idx});
+    const idx = try readRaw16(c, offset);
     return c.values.items[idx];
 }
 
