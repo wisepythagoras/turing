@@ -404,7 +404,7 @@ fn disassembleInstruction(chunk: *Chunk(), offset: usize) core.CompilerError!usi
         .NIL => {
             return core.simpleInstruction(opCodeStr, offset);
         },
-        .JWF => {
+        .JWF, .JMP => {
             // TODO: Fix.
             return core.simpleInstruction(opCodeStr, offset);
         },

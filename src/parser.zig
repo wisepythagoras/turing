@@ -154,7 +154,7 @@ pub fn Parser() type {
         /// Emits a jump opcode and errors if it's not a jump.
         pub fn emitJump(self: *Self, opCode: opcode.OpCode) !usize {
             return switch (opCode) {
-                .JWF => {
+                .JWF, .JMP => {
                     try self.emit(opCode);
 
                     // TODO: Explore how to do this dynamically, instead of always expect 4 bytes.
@@ -557,12 +557,44 @@ pub fn Parser() type {
 
                 return core.CompilerError.CompileError;
             };
+            self.emit(opcode.OpCode.POP) catch |err| {
+                std.debug.print("ERROR: {any}\n", .{err});
+                return core.CompilerError.CompileError;
+            };
 
             // As stated in the doc comment, we require a block to follow, since we do not require
             // to wrap the condition in parentheses.
             try self.statement(true);
 
+            const elseJump = self.emitJump(opcode.OpCode.JMP) catch |err| {
+                std.debug.print("ERROR: Can't emit jump: {any}\n", .{err});
+
+                if (err == core.CompilerError.InvalidOperation) {
+                    return core.CompilerError.InvalidOperation;
+                }
+
+                return core.CompilerError.CompileError;
+            };
+
             self.patchJump(thenJump) catch |err| {
+                std.debug.print("ERROR: {any}\n", .{err});
+                return core.CompilerError.CompileError;
+            };
+            self.emit(opcode.OpCode.POP) catch |err| {
+                std.debug.print("ERROR: {any}\n", .{err});
+                return core.CompilerError.CompileError;
+            };
+
+            const isElse = self.match(token.TokenType.ELSE) catch |err| {
+                std.debug.print("ERROR: {?}\n", .{err});
+                return core.CompilerError.RuntimeError;
+            };
+
+            if (isElse) {
+                try self.statement(false);
+            }
+
+            self.patchJump(elseJump) catch |err| {
                 std.debug.print("ERROR: {any}\n", .{err});
                 return core.CompilerError.CompileError;
             };

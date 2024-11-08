@@ -6,10 +6,16 @@ if test == 123 {
 
 if test == 234 {
     print('Unreachable code');
+} else if test == 235 {
+    print('Also unreachable code');
+} else {
+    print('That was unreachable');
 }
 
 if test != 234 {
     print('test != 234');
+} else {
+    print('Unreachable code');
 }
 
 let test2 = 'abc';
