@@ -85,7 +85,7 @@ pub const ParseRules: [46]Rule = [46]Rule{
 
     // Keywords
     .{ token.TokenType.AND, OperationType.NONE, OperationType.AND, Precedence.AND },
-    .{ token.TokenType.OR, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.OR, OperationType.NONE, OperationType.OR, Precedence.OR },
     .{ token.TokenType.STRUCT, OperationType.NONE, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.IF, OperationType.NONE, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.ELSE, OperationType.NONE, OperationType.NONE, Precedence.NONE },
@@ -335,6 +335,22 @@ pub fn Parser() type {
             try self.emit(opcode.OpCode.POP);
 
             try self.parsePrecedence(Precedence.AND);
+            try self.patchJump(endJump);
+        }
+
+        /// This handler implements short circuit evaluation for logic or operations. If the left hand
+        /// side of the expression/operation is truthy, then we can skip the right hand side. Otherwise
+        /// we have to evaluate the right hand side.
+        fn logicOr(self: *Self, canAssign: bool) !void {
+            _ = canAssign;
+
+            const elseJump = try self.emitJump(opcode.OpCode.JWF);
+            const endJump = try self.emitJump(opcode.OpCode.JMP);
+
+            try self.patchJump(elseJump);
+            try self.emit(opcode.OpCode.POP);
+
+            try self.parsePrecedence(Precedence.OR);
             try self.patchJump(endJump);
         }
 
@@ -841,6 +857,11 @@ pub fn Parser() type {
                             };
                         } else if (influxRule == OperationType.AND) {
                             self.logicAnd(canAssign) catch |err| {
+                                std.debug.print("ERROR: {}\n", .{err});
+                                return core.CompilerError.CompileError;
+                            };
+                        } else if (influxRule == OperationType.OR) {
+                            self.logicOr(canAssign) catch |err| {
                                 std.debug.print("ERROR: {}\n", .{err});
                                 return core.CompilerError.CompileError;
                             };

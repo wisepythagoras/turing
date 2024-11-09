@@ -5,16 +5,16 @@ if test == 123 and something {
     print('test == 123');
 }
 
-if test == 234 {
+if test > 234 {
     print('Unreachable code');
-} else if test == 235 {
+} else if test < 300 and test > 250 {
     print('Also unreachable code');
 } else {
     print('That was unreachable');
 }
 
-if test != 234 {
-    print('test != 234');
+if test < 10 or test >= 123 {
+    print('test < 10 or test >= 100');
 } else {
     print('Unreachable code');
 }
