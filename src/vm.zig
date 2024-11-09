@@ -101,13 +101,14 @@ pub fn VM() type {
                     opcode.OpCode.DEFG.toU8() => blk: {
                         const size = self.chunk.code.items[offset + 1][0];
                         var targetGetter: core.GetterFn = core.readValue;
+                        const is16 = size == opcode.OpCode.CONSTANT_16.toU8();
 
-                        if (size == opcode.OpCode.CONSTANT_16.toU8()) {
+                        if (is16) {
                             targetGetter = core.readValue16;
                         }
 
                         if (targetGetter(self.chunk, offset + 1)) |varName| {
-                            offset += 3;
+                            offset += if (is16) 4 else 3;
 
                             if (!varName.isString()) {
                                 break :blk core.InterpretResults.RUNTIME_ERROR;
@@ -131,13 +132,14 @@ pub fn VM() type {
                     opcode.OpCode.GETG.toU8() => blk: {
                         const size = self.chunk.code.items[offset + 1][0];
                         var targetGetter: core.GetterFn = core.readValue;
+                        const is16 = size == opcode.OpCode.CONSTANT_16.toU8();
 
-                        if (size == opcode.OpCode.CONSTANT_16.toU8()) {
+                        if (is16) {
                             targetGetter = core.readValue16;
                         }
 
                         if (targetGetter(self.chunk, offset + 1)) |varName| {
-                            offset += 3;
+                            offset += if (is16) 4 else 3;
 
                             // std.debug.print("{any} {s}\n", .{ size, varName.val.object.toString() });
 
@@ -164,13 +166,14 @@ pub fn VM() type {
                     opcode.OpCode.SETG.toU8() => blk: {
                         const size = self.chunk.code.items[offset + 1][0];
                         var targetGetter: core.GetterFn = core.readValue;
+                        const is16 = size == opcode.OpCode.CONSTANT_16.toU8();
 
-                        if (size == opcode.OpCode.CONSTANT_16.toU8()) {
+                        if (is16) {
                             targetGetter = core.readValue16;
                         }
 
                         if (targetGetter(self.chunk, offset + 1)) |varName| {
-                            offset += 3;
+                            offset += if (is16) 4 else 3;
 
                             if (!varName.isString()) {
                                 break :blk core.InterpretResults.RUNTIME_ERROR;
@@ -201,13 +204,14 @@ pub fn VM() type {
                     opcode.OpCode.GETL.toU8() => blk: {
                         const size = self.chunk.code.items[offset + 1][0];
                         var targetGetter: core.GetterFn = core.readValue;
+                        const is16 = size == opcode.OpCode.CONSTANT_16.toU8();
 
-                        if (size == opcode.OpCode.CONSTANT_16.toU8()) {
+                        if (is16) {
                             targetGetter = core.readValue16;
                         }
 
                         if (targetGetter(self.chunk, offset + 1)) |slot| {
-                            offset += 3;
+                            offset += if (is16) 4 else 3;
 
                             if (!slot.isNumber()) {
                                 std.debug.print("ERROR: Memory corruption\n", .{});
@@ -228,13 +232,14 @@ pub fn VM() type {
                     opcode.OpCode.SETL.toU8() => blk: {
                         const size = self.chunk.code.items[offset + 1][0];
                         var targetGetter: core.GetterFn = core.readValue;
+                        const is16 = size == opcode.OpCode.CONSTANT_16.toU8();
 
-                        if (size == opcode.OpCode.CONSTANT_16.toU8()) {
+                        if (is16) {
                             targetGetter = core.readValue16;
                         }
 
                         if (targetGetter(self.chunk, offset + 1)) |slot| {
-                            offset += 3;
+                            offset += if (is16) 4 else 3;
 
                             if (!slot.isNumber()) {
                                 std.debug.print("ERROR: Memory corruption\n", .{});
