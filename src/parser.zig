@@ -341,6 +341,9 @@ pub fn Parser() type {
         /// This handler implements short circuit evaluation for logic or operations. If the left hand
         /// side of the expression/operation is truthy, then we can skip the right hand side. Otherwise
         /// we have to evaluate the right hand side.
+        ///
+        /// TODO: This could probably be optimized by adding a new instruction, since this is not the
+        /// best way to do this.
         fn logicOr(self: *Self, canAssign: bool) !void {
             _ = canAssign;
 
