@@ -205,6 +205,13 @@ pub fn Parser() type {
         /// Emits the necessary bytecode to represent the variable declaration.
         pub fn defineVariable(self: *Self, value: core.Value()) !void {
             try self.emit(opcode.OpCode.DEFG);
+
+            if (self.chunk.values.items.len > 255) {
+                try self.emit(opcode.OpCode.CONSTANT_16);
+            } else {
+                try self.emit(opcode.OpCode.CONSTANT);
+            }
+
             // TODO: Check here how many items we have. Depending on the byte size of the index, we should
             // be adding a byte in between the value index and the opcode to signify how many bytes we have
             // allocated to the index. This should also be taken into account in SETG/L and GETG/L as well.
@@ -741,13 +748,23 @@ pub fn Parser() type {
             }
 
             if (self.match(token.TokenType.EQUAL)) |isEqual| {
+                var oc: opcode.OpCode = undefined;
+
+                if (self.chunk.values.items.len > 255) {
+                    oc = opcode.OpCode.CONSTANT_16;
+                } else {
+                    oc = opcode.OpCode.CONSTANT;
+                }
+
                 if (canAssign and isEqual) {
                     try self.expression();
 
                     try self.emit(setOp);
+                    try self.emit(oc);
                     try self.chunk.emitConstant(value);
                 } else {
                     try self.emit(getOp);
+                    try self.emit(oc);
                     try self.chunk.emitConstant(value);
                 }
             } else |err| {

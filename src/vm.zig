@@ -99,8 +99,15 @@ pub fn VM() type {
                     //     break :blk core.InterpretResults.CONTINUE;
                     // },
                     opcode.OpCode.DEFG.toU8() => blk: {
-                        if (core.readValue(self.chunk, offset)) |varName| {
-                            offset += 2;
+                        const size = self.chunk.code.items[offset + 1][0];
+                        var targetGetter: core.GetterFn = core.readValue;
+
+                        if (size == opcode.OpCode.CONSTANT_16.toU8()) {
+                            targetGetter = core.readValue16;
+                        }
+
+                        if (targetGetter(self.chunk, offset + 1)) |varName| {
+                            offset += 3;
 
                             if (!varName.isString()) {
                                 break :blk core.InterpretResults.RUNTIME_ERROR;
@@ -122,8 +129,17 @@ pub fn VM() type {
                         }
                     },
                     opcode.OpCode.GETG.toU8() => blk: {
-                        if (core.readValue(self.chunk, offset)) |varName| {
-                            offset += 2;
+                        const size = self.chunk.code.items[offset + 1][0];
+                        var targetGetter: core.GetterFn = core.readValue;
+
+                        if (size == opcode.OpCode.CONSTANT_16.toU8()) {
+                            targetGetter = core.readValue16;
+                        }
+
+                        if (targetGetter(self.chunk, offset + 1)) |varName| {
+                            offset += 3;
+
+                            // std.debug.print("{any} {s}\n", .{ size, varName.val.object.toString() });
 
                             if (!varName.isString()) {
                                 break :blk core.InterpretResults.RUNTIME_ERROR;
@@ -146,8 +162,15 @@ pub fn VM() type {
                         }
                     },
                     opcode.OpCode.SETG.toU8() => blk: {
-                        if (core.readValue(self.chunk, offset)) |varName| {
-                            offset += 2;
+                        const size = self.chunk.code.items[offset + 1][0];
+                        var targetGetter: core.GetterFn = core.readValue;
+
+                        if (size == opcode.OpCode.CONSTANT_16.toU8()) {
+                            targetGetter = core.readValue16;
+                        }
+
+                        if (targetGetter(self.chunk, offset + 1)) |varName| {
+                            offset += 3;
 
                             if (!varName.isString()) {
                                 break :blk core.InterpretResults.RUNTIME_ERROR;
@@ -176,8 +199,15 @@ pub fn VM() type {
                         }
                     },
                     opcode.OpCode.GETL.toU8() => blk: {
-                        if (core.readValue(self.chunk, offset)) |slot| {
-                            offset += 2;
+                        const size = self.chunk.code.items[offset + 1][0];
+                        var targetGetter: core.GetterFn = core.readValue;
+
+                        if (size == opcode.OpCode.CONSTANT_16.toU8()) {
+                            targetGetter = core.readValue16;
+                        }
+
+                        if (targetGetter(self.chunk, offset + 1)) |slot| {
+                            offset += 3;
 
                             if (!slot.isNumber()) {
                                 std.debug.print("ERROR: Memory corruption\n", .{});
@@ -196,8 +226,15 @@ pub fn VM() type {
                         break :blk core.InterpretResults.CONTINUE;
                     },
                     opcode.OpCode.SETL.toU8() => blk: {
-                        if (core.readValue(self.chunk, offset)) |slot| {
-                            offset += 2;
+                        const size = self.chunk.code.items[offset + 1][0];
+                        var targetGetter: core.GetterFn = core.readValue;
+
+                        if (size == opcode.OpCode.CONSTANT_16.toU8()) {
+                            targetGetter = core.readValue16;
+                        }
+
+                        if (targetGetter(self.chunk, offset + 1)) |slot| {
+                            offset += 3;
 
                             if (!slot.isNumber()) {
                                 std.debug.print("ERROR: Memory corruption\n", .{});
