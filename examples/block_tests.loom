@@ -8,7 +8,8 @@ print(test);
 
     {
         let test3 = 'abcde';
-        print(test3 + 'fghijk');
+        let test4 = 'fghijk';
+        print(test3 + test4);
     }
 
     #print('hello');

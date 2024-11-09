@@ -496,6 +496,37 @@ pub fn constToBytes(c: *chunk.Chunk(), opCode: opcode.OpCode, offset: *usize) Co
     return res;
 }
 
+pub fn varInstruction(name: []const u8, c: *chunk.Chunk(), offset: usize) CompilerError!usize {
+    const size = c.code.items[offset + 1][0];
+    var targetGetter: GetterFn = readValue;
+    var idx: usize = undefined;
+
+    if (size == opcode.OpCode.CONSTANT_16.toU8()) {
+        targetGetter = readValue16;
+        idx = try readRaw16(c, offset + 1);
+    } else {
+        idx = try readValueIdx(c, offset + 1);
+    }
+
+    if (targetGetter(c, offset + 1)) |constant| {
+        if (constant.vType == ValueType.NUMBER) {
+            const num = constant.val.number;
+            std.debug.print("{s} = {x} ({d}) @{d}\n", .{ name, num, num, idx });
+        } else if (constant.vType == ValueType.OBJECT) {
+            const obj = constant.val.object;
+
+            if (obj.objType == object.ObjectType.STRING) {
+                const str = obj.val.string.chars;
+                std.debug.print("{s} = \"{s}\" @{d}\n", .{ name, str, idx });
+            }
+        }
+
+        return offset + 3;
+    } else |err| {
+        return err;
+    }
+}
+
 pub fn constantInstruction(name: []const u8, c: *chunk.Chunk(), offset: usize) CompilerError!usize {
     if (readValue(c, offset)) |constant| {
         if (constant.vType == ValueType.NUMBER) {

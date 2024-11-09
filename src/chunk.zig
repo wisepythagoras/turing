@@ -342,6 +342,7 @@ pub fn Chunk() type {
     };
 }
 
+/// TODO: This needs to be rebuilt, since the commands/arch has changed.
 fn instructionToBytes(chunk: *Chunk(), offset: *usize) core.CompilerError![]const u8 {
     const instruction = chunk.code.items[offset.*];
     const opCode = @as(opcode.OpCode, @enumFromInt(instruction[0]));
@@ -391,8 +392,11 @@ fn disassembleInstruction(chunk: *Chunk(), offset: usize) core.CompilerError!usi
 
     return switch (opCode) {
         .RETURN => core.returnInstruction(opCodeStr, offset),
-        .CONSTANT, .DEFG, .GETG, .SETG, .GETL, .SETL => {
+        .CONSTANT => {
             return core.constantInstruction(opCodeStr, chunk, offset);
+        },
+        .DEFG, .GETG, .SETG, .GETL, .SETL => {
+            return core.varInstruction(opCodeStr, chunk, offset);
         },
         .CONSTANT_16 => core.constant16Instruction(opCodeStr, chunk, offset),
         .NEG, .ADD, .MUL, .DIV, .SUB, .XOR, .MOD, .POW, .AND, .NOT, .EQ, .NE, .GT, .GE, .LT, .LE, .OUT, .POP => {
