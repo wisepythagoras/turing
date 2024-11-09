@@ -3,13 +3,13 @@ let test = 'abc';
 print(test);
 
 {
-    let test2 = 'abcd';
+    let test2 = 'lmnop';
     print(test2);
 
     {
         let test3 = 'abcde';
         let test4 = 'fghijk';
-        print(test3 + test4);
+        print(test3 + test4 + test2);
     }
 
     #print('hello');
