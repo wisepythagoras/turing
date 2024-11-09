@@ -1,6 +1,7 @@
 let test = 123;
+let something = true;
 
-if test == 123 {
+if test == 123 and something {
     print('test == 123');
 }
 

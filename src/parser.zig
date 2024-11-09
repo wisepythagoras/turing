@@ -39,6 +39,8 @@ pub const OperationType = enum(u8) {
     LITERAL,
     STRING,
     VARIABLE,
+    AND,
+    OR,
 };
 
 pub const Rule = struct {
@@ -82,7 +84,7 @@ pub const ParseRules: [46]Rule = [46]Rule{
     .{ token.TokenType.NUMBER, OperationType.NUMBER, OperationType.NONE, Precedence.NONE },
 
     // Keywords
-    .{ token.TokenType.AND, OperationType.NONE, OperationType.NONE, Precedence.NONE },
+    .{ token.TokenType.AND, OperationType.NONE, OperationType.AND, Precedence.AND },
     .{ token.TokenType.OR, OperationType.NONE, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.STRUCT, OperationType.NONE, OperationType.NONE, Precedence.NONE },
     .{ token.TokenType.IF, OperationType.NONE, OperationType.NONE, Precedence.NONE },
@@ -320,6 +322,20 @@ pub fn Parser() type {
             }
 
             return self.parsePrecedence(Precedence.ASSIGNMENT);
+        }
+
+        /// This handler implements short circuit evaluation. They're a variation of the if-else statement
+        /// in that depending on the expression, if we reach a satisfactory AND statement, we do not need
+        /// to evaluate the rest of the statement. For example, if we have `false and true`, it would be
+        /// enough to evaluate only the `false` and not the rest of the expression.
+        fn logicAnd(self: *Self, canAssign: bool) !void {
+            _ = canAssign;
+
+            const endJump = try self.emitJump(opcode.OpCode.JWF);
+            try self.emit(opcode.OpCode.POP);
+
+            try self.parsePrecedence(Precedence.AND);
+            try self.patchJump(endJump);
         }
 
         fn declareVariable(self: *Self, name: *token.Token()) !void {
@@ -820,6 +836,11 @@ pub fn Parser() type {
 
                         if (influxRule == OperationType.BINARY) {
                             self.binary(canAssign) catch |err| {
+                                std.debug.print("ERROR: {}\n", .{err});
+                                return core.CompilerError.CompileError;
+                            };
+                        } else if (influxRule == OperationType.AND) {
+                            self.logicAnd(canAssign) catch |err| {
                                 std.debug.print("ERROR: {}\n", .{err});
                                 return core.CompilerError.CompileError;
                             };
