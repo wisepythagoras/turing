@@ -477,11 +477,14 @@ pub fn valuesToBytes(c: *chunk.Chunk()) CompilerError![]const u8 {
 }
 
 pub fn constToBytes(c: *chunk.Chunk(), opCode: opcode.OpCode, offset: *usize) CompilerError![]const u8 {
+    const is16 = opCode == opcode.OpCode.CONSTANT_16;
     const idx = try readValueIdx(c, offset.*);
-    offset.* += 2;
+    const idx2: u8 = if (is16) try readValueIdx(c, offset.* + 1) else 0;
+    const size: usize = if (is16) 3 else 2;
+    offset.* += size;
 
     const memory = std.heap.page_allocator;
-    const res = memory.alloc(u8, 2) catch |err| {
+    const res = memory.alloc(u8, size) catch |err| {
         std.debug.print("ERROR: {?}\n", .{err});
         return CompilerError.MemoryError;
     };
@@ -492,6 +495,10 @@ pub fn constToBytes(c: *chunk.Chunk(), opCode: opcode.OpCode, offset: *usize) Co
 
     res[0] = opCodeBytes[0];
     res[1] = idx;
+
+    if (is16) {
+        res[2] = idx2;
+    }
 
     return res;
 }

@@ -164,17 +164,13 @@ pub fn Chunk() type {
                     return err;
                 }
             }
-
-            // for (self.code.items) |opCode| {
-            //     _ = opCode;
-            //     //
-            // }
         }
 
         /// Load raw bytes as bytecode into the current chunk. The bytecode that's loaded can then be
         /// run in the VM.
         ///
         /// TODO: Add specs for this.
+        /// TODO: This does not always work for 16 bit constants.
         pub fn loadBytecode(self: *Self, bytes: []const u8) !void {
             var isCode = false;
             var i: usize = 0;
@@ -309,6 +305,22 @@ pub fn Chunk() type {
 
                             break :blk;
                         },
+                        opcode.OpCode.CONSTANT_16.toU8() => blk: {
+                            if (self.verbose) {
+                                const idxA: u32 = bytes[i + 1];
+                                const idxB: u32 = bytes[i + 2];
+                                const num: usize = (idxA << 8) | idxB;
+                                std.debug.print("CONSTANT_16 {d}\n", .{num});
+                            }
+
+                            try self.writeOpCode(opcode.OpCode.CONSTANT_16, 0);
+                            try self.writeByte(bytes[i + 1], 0);
+                            try self.writeByte(bytes[i + 2], 0);
+
+                            i += 2;
+
+                            break :blk;
+                        },
                         opcode.OpCode.DEFG.toU8(), opcode.OpCode.GETG.toU8(), opcode.OpCode.SETG.toU8() => blk: {
                             const opCode = try opcode.OpCode.fromU8(b);
 
@@ -317,9 +329,9 @@ pub fn Chunk() type {
                             }
 
                             try self.writeOpCode(opCode, 0);
-                            try self.writeByte(bytes[i + 1], 0);
+                            // try self.writeByte(bytes[i + 1], 0);
 
-                            i += 1;
+                            // i += 1;
 
                             break :blk;
                         },
@@ -328,6 +340,10 @@ pub fn Chunk() type {
                                 std.debug.print("ERROR: Unrecognized opcode \"{d}\". {?}\n", .{ b, err });
                                 break :blk;
                             };
+
+                            if (self.verbose) {
+                                std.debug.print("{any}\n", .{opCode});
+                            }
 
                             try self.writeOpCode(opCode, 0);
 
@@ -347,6 +363,8 @@ fn instructionToBytes(chunk: *Chunk(), offset: *usize) core.CompilerError![]cons
     const instruction = chunk.code.items[offset.*];
     const opCode = @as(opcode.OpCode, @enumFromInt(instruction[0]));
 
+    std.debug.print("OPCODE: {?}\n", .{opCode});
+
     return switch (opCode) {
         .RETURN => {
             const retRes = opCode.toBytes() catch |err| {
@@ -356,14 +374,17 @@ fn instructionToBytes(chunk: *Chunk(), offset: *usize) core.CompilerError![]cons
             offset.* += 1;
             return retRes;
         },
-        .CONSTANT, .DEFG, .GETG, .SETG, .GETL, .SETL => {
+        .CONSTANT, .CONSTANT_16 => {
             return core.constToBytes(chunk, opCode, offset);
         },
-        .CONSTANT_16 => {
-            offset.* += 2;
-            return "";
-        },
-        .NEG, .ADD, .MUL, .DIV, .SUB, .XOR, .MOD, .POW, .AND, .NOT, .EQ, .NE, .GT, .GE, .LT, .LE, .FALSE, .TRUE, .NIL, .OUT, .POP => {
+        // .DEFG, .GETG, .SETG, .GETL, .SETL => {
+        //     return core.constToBytes(chunk, opCode, offset);
+        // },
+        // .CONSTANT_16 => {
+        //     offset.* += 3;
+        //     return [3]u8{opCode.toBytes()};
+        // },
+        .NEG, .ADD, .MUL, .DIV, .SUB, .XOR, .MOD, .POW, .AND, .NOT, .EQ, .NE, .GT, .GE, .LT, .LE, .FALSE, .TRUE, .NIL, .OUT, .POP, .DEFG, .GETG, .SETG, .GETL, .SETL => {
             const opRes = opCode.toBytes() catch |err| {
                 std.debug.print("ERROR: {?}\n", .{err});
                 return core.CompilerError.MemoryError;
@@ -372,6 +393,7 @@ fn instructionToBytes(chunk: *Chunk(), offset: *usize) core.CompilerError![]cons
             return opRes;
         },
         else => {
+            std.debug.print("ERROR: ? {?}\n", .{opCode});
             return core.CompilerError.InvalidOperation;
         },
     };
