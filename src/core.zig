@@ -528,7 +528,8 @@ pub fn varInstruction(name: []const u8, c: *chunk.Chunk(), offset: usize) Compil
             }
         }
 
-        return offset + 3;
+        const newOffset: usize = if (size == 1) 3 else 4;
+        return offset + newOffset;
     } else |err| {
         return err;
     }
@@ -554,15 +555,18 @@ pub fn constantInstruction(name: []const u8, c: *chunk.Chunk(), offset: usize) C
     }
 }
 
-pub fn constant16Instruction(name: []const u8, c: *chunk.Chunk(), offset: usize) usize {
-    const idxB: u16 = c.code.items[offset + 1][0];
-    const idxA: u16 = c.code.items[offset + 2][0];
-    const idx: u16 = (idxB << 8) | idxA;
-
-    const constant: Value() = c.values.items[idx];
+pub fn constant16Instruction(name: []const u8, c: *chunk.Chunk(), offset: usize) !usize {
+    const constant = try readValue16(c, offset);
 
     if (constant.vType == ValueType.NUMBER) {
-        std.debug.print("{s} = {x} ({d})\n", .{ name, idx, constant.val.number });
+        std.debug.print("{s} = {x} ({d})\n", .{ name, constant.val.number, constant.val.number });
+    } else if (constant.vType == ValueType.OBJECT) {
+        const obj = constant.val.object;
+
+        if (obj.objType == object.ObjectType.STRING) {
+            const str = obj.val.string.chars;
+            std.debug.print("{s} = \"{s}\"\n", .{ name, str });
+        }
     }
 
     return offset + 3;

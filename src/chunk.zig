@@ -129,7 +129,7 @@ pub fn Chunk() type {
             var len: usize = res.len;
 
             while (offset.* < self.code.items.len) {
-                if (instructionToBytes(self, offset)) |bytes| {
+                if (instructionToBytes(self, offset, self.verbose)) |bytes| {
                     // std.debug.print("{any}\n", .{bytes});
                     len = len + bytes.len;
                     res = memory.realloc(res, len) catch |err| {
@@ -286,7 +286,7 @@ pub fn Chunk() type {
                     }
                 } else {
                     if (self.verbose) {
-                        std.debug.print("Byte {d} ({d})\n", .{ b, i });
+                        std.debug.print("Byte {d} (i = {d})\n", .{ b, i });
                     }
 
                     switch (b) {
@@ -329,9 +329,6 @@ pub fn Chunk() type {
                             }
 
                             try self.writeOpCode(opCode, 0);
-                            // try self.writeByte(bytes[i + 1], 0);
-
-                            // i += 1;
 
                             break :blk;
                         },
@@ -359,11 +356,13 @@ pub fn Chunk() type {
 }
 
 /// TODO: This needs to be rebuilt, since the commands/arch has changed.
-fn instructionToBytes(chunk: *Chunk(), offset: *usize) core.CompilerError![]const u8 {
+fn instructionToBytes(chunk: *Chunk(), offset: *usize, verbose: bool) core.CompilerError![]const u8 {
     const instruction = chunk.code.items[offset.*];
     const opCode = @as(opcode.OpCode, @enumFromInt(instruction[0]));
 
-    std.debug.print("OPCODE: {?}\n", .{opCode});
+    if (verbose) {
+        std.debug.print("OPCODE: {?}\n", .{opCode});
+    }
 
     return switch (opCode) {
         .RETURN => {
