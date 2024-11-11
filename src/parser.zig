@@ -172,6 +172,17 @@ pub fn Parser() type {
             };
         }
 
+        pub fn emitLoop(self: *Self, loopStart: usize) !void {
+            try self.emit(opcode.OpCode.LOOP);
+
+            const offset = self.chunk.code.items.len - loopStart + 4;
+
+            try self.emitByte(@as(u8, @intCast((offset >> 24) & 0xff)));
+            try self.emitByte(@as(u8, @intCast((offset >> 16) & 0xff)));
+            try self.emitByte(@as(u8, @intCast((offset >> 8) & 0xff)));
+            try self.emitByte(@as(u8, @intCast(offset & 0xff)));
+        }
+
         pub fn patchJump(self: *Self, offset: usize) !void {
             const jump = self.chunk.code.items.len - offset - 4;
 
@@ -642,6 +653,43 @@ pub fn Parser() type {
             };
         }
 
+        fn whileStatement(self: *Self) core.CompilerError!void {
+            const loopStart = self.chunk.code.items.len;
+            try self.expression();
+
+            const exitJump = self.emitJump(opcode.OpCode.JWF) catch |err| {
+                std.debug.print("ERROR: Can't emit jump: {any}\n", .{err});
+
+                if (err == core.CompilerError.InvalidOperation) {
+                    return core.CompilerError.InvalidOperation;
+                }
+
+                return core.CompilerError.CompileError;
+            };
+            self.emit(opcode.OpCode.POP) catch |err| {
+                std.debug.print("ERROR: {any}\n", .{err});
+                return core.CompilerError.CompileError;
+            };
+
+            // As stated in the doc comment, we require a block to follow, since we do not require
+            // to wrap the condition in parentheses.
+            try self.statement(true);
+
+            self.emitLoop(loopStart) catch |err| {
+                std.debug.print("ERROR: {any}\n", .{err});
+                return core.CompilerError.CompileError;
+            };
+
+            self.patchJump(exitJump) catch |err| {
+                std.debug.print("ERROR: {any}\n", .{err});
+                return core.CompilerError.CompileError;
+            };
+            self.emit(opcode.OpCode.POP) catch |err| {
+                std.debug.print("ERROR: {any}\n", .{err});
+                return core.CompilerError.CompileError;
+            };
+        }
+
         fn statement(self: *Self, onlyBlock: bool) core.CompilerError!void {
             const isPrintStatement = self.match(token.TokenType.PRINT) catch |err| {
                 std.debug.print("ERROR: {?}\n", .{err});
@@ -655,6 +703,10 @@ pub fn Parser() type {
                 std.debug.print("ERROR: {?}\n", .{err});
                 return core.CompilerError.RuntimeError;
             };
+            const isWhile = self.match(token.TokenType.WHILE) catch |err| {
+                std.debug.print("ERROR: {?}\n", .{err});
+                return core.CompilerError.RuntimeError;
+            };
 
             if (onlyBlock and !isLeftBrace) {
                 std.debug.print("ERROR: '{c}' expected.\n", .{'{'});
@@ -665,6 +717,8 @@ pub fn Parser() type {
                 try self.printStatement();
             } else if (isIf) {
                 try self.ifStatement();
+            } else if (isWhile) {
+                try self.whileStatement();
             } else if (isLeftBrace) {
                 self.compiler.beginScope();
                 try self.block();

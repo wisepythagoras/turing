@@ -34,6 +34,7 @@ pub const OpCode = enum(u8) {
     SETL, // Set a local variable (28)
     JWF, // Jump when/if false (29)
     JMP, // Simple jump (30)
+    LOOP, // Simple loop back instruction (31)
 
     // https://ziglearn.org/chapter-2/#formatting
     pub fn toString(self: Self) []const u8 {

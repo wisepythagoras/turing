@@ -14,7 +14,8 @@ if test > 234 {
 }
 
 if test < 10 or test >= 123 {
-    print('test < 10 or test >= 100');
+    let label = 'test < 10 ' + 'or test >= 100';
+    print(label);
 } else {
     print('Unreachable code');
 }
