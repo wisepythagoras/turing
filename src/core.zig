@@ -234,8 +234,11 @@ pub fn addOp(a: Value(), b: Value(), _: ?opcode.OpCode) !Value() {
     const bStr = b.toString();
 
     // Free the memory.
-    _ = a.destroy();
-    _ = b.destroy();
+    // TODO: Garbage collecting here will get in the way of reusing constants within a loop. Or
+    // Even in a case where we reuse the constant for some operation. So garbage collection
+    // needs to be done at the end of each block.
+    //_ = a.destroy();
+    //_ = b.destroy();
 
     const memory = std.heap.page_allocator;
 
