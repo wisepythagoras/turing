@@ -161,7 +161,7 @@ pub fn Value() type {
         pub fn toBytes(self: Self) ![]const u8 {
             if (self.vType == ValueType.OBJECT) {
                 return self.val.object.toBytes() catch |err| {
-                    std.debug.print("ERROR: {?}\n", .{err});
+                    std.debug.print("ERROR: {?} (toBytes internal)\n", .{err});
                     return CompilerError.MemoryError; // TODO: Handle this better.
                 };
             }
@@ -170,7 +170,7 @@ pub fn Value() type {
 
             if (self.vType == ValueType.BOOL) {
                 const res = memory.alloc(u8, 1) catch |err| {
-                    std.debug.print("ERROR: {?}\n", .{err});
+                    std.debug.print("ERROR: {?} (value alloc)\n", .{err});
                     return CompilerError.MemoryError;
                 };
 
@@ -179,7 +179,7 @@ pub fn Value() type {
             }
 
             const res = memory.alloc(u8, 8) catch |err| {
-                std.debug.print("ERROR: {?}\n", .{err});
+                std.debug.print("ERROR: {?} (value alloc)\n", .{err});
                 return CompilerError.MemoryError;
             };
 
@@ -444,7 +444,7 @@ pub fn booleanInstruction(name: []const u8, c: *chunk.Chunk(), offset: usize) Co
 pub fn valuesToBytes(c: *chunk.Chunk()) CompilerError![]const u8 {
     const memory = std.heap.page_allocator;
     var res = memory.alloc(u8, 0) catch |err| {
-        std.debug.print("ERROR: {?}\n", .{err});
+        std.debug.print("ERROR: {?} (alloc)\n", .{err});
         return CompilerError.MemoryError;
     };
 
@@ -456,7 +456,7 @@ pub fn valuesToBytes(c: *chunk.Chunk()) CompilerError![]const u8 {
         len = len + val.len + 2;
 
         res = memory.realloc(res, len) catch |err| {
-            std.debug.print("ERROR: {?}\n", .{err});
+            std.debug.print("ERROR: {?} (realloc)\n", .{err});
             return CompilerError.MemoryError;
         };
 
@@ -484,11 +484,11 @@ pub fn constToBytes(c: *chunk.Chunk(), opCode: opcode.OpCode, offset: *usize) Co
 
     const memory = std.heap.page_allocator;
     const res = memory.alloc(u8, size) catch |err| {
-        std.debug.print("ERROR: {?}\n", .{err});
+        std.debug.print("ERROR: {?} (alloc)\n", .{err});
         return CompilerError.MemoryError;
     };
     const opCodeBytes = opCode.toBytes() catch |err| {
-        std.debug.print("ERROR: {?}\n", .{err});
+        std.debug.print("ERROR: {?} (realloc)\n", .{err});
         return CompilerError.MemoryError;
     };
 
@@ -532,6 +532,12 @@ pub fn varInstruction(name: []const u8, c: *chunk.Chunk(), offset: usize) Compil
     } else |err| {
         return err;
     }
+}
+
+pub fn branchInstruction(name: []const u8, c: *chunk.Chunk(), offset: usize) CompilerError!usize {
+    const idx = try readRaw32(c, offset + 1);
+    std.debug.print("{s} -> @{d}\n", .{ name, idx });
+    return offset + 5;
 }
 
 pub fn constantInstruction(name: []const u8, c: *chunk.Chunk(), offset: usize) CompilerError!usize {

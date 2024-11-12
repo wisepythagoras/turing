@@ -144,8 +144,7 @@ pub fn Parser() type {
 
         /// Emits a pice of bytecode.
         pub fn emitByte(self: *Self, byte: u8) !void {
-            const opCode = try opcode.OpCode.fromU8(byte);
-            return self.chunk.writeOpCode(opCode, self.getScanner().line);
+            return try self.chunk.writeByte(byte, 0);
         }
 
         /// Emits an opcode of bytecode.
@@ -396,7 +395,7 @@ pub fn Parser() type {
             }
 
             self.compiler.locals.append(localVar) catch |err| {
-                std.debug.print("ERROR: {?}\n", .{err});
+                std.debug.print("ERROR: {?} (append)\n", .{err});
                 return core.CompilerError.CompileError;
             };
             self.compiler.localCount += 1;
@@ -414,7 +413,7 @@ pub fn Parser() type {
                 if (self.compiler.scopeDepth > 0) {
                     const memory = std.heap.page_allocator;
                     const tokenPtr = memory.create(token.Token()) catch |err| {
-                        std.debug.print("ERROR: {?}\n", .{err});
+                        std.debug.print("ERROR: {?} (create ptr)\n", .{err});
                         return core.CompilerError.MemoryError;
                     };
 
@@ -428,7 +427,7 @@ pub fn Parser() type {
                 }
 
                 return utils.strToObject(str) catch |err| {
-                    std.debug.print("ERROR: {?}\n", .{err});
+                    std.debug.print("ERROR: {?} (strToObject)\n", .{err});
                     return core.CompilerError.MemoryError;
                 };
             }
@@ -444,18 +443,18 @@ pub fn Parser() type {
             };
 
             const isEqual = self.match(token.TokenType.EQUAL) catch |err| {
-                std.debug.print("ERROR: {?}\n", .{err});
+                std.debug.print("ERROR: {?} (isEqual)\n", .{err});
                 return core.CompilerError.CompileError;
             };
 
             if (isEqual) {
                 self.expression() catch |err| {
-                    std.debug.print("ERROR: {?}\n", .{err});
+                    std.debug.print("ERROR: {?} (expression)\n", .{err});
                     return core.CompilerError.CompileError;
                 };
             } else {
                 self.emit(opcode.OpCode.NIL) catch |err| {
-                    std.debug.print("ERROR: {?}\n", .{err});
+                    std.debug.print("ERROR: {?} (emit)\n", .{err});
                     return core.CompilerError.CompileError;
                 };
             }
@@ -483,16 +482,16 @@ pub fn Parser() type {
         /// Handle declarations of any kind, such as variables or just statements.
         pub fn declaration(self: *Self) core.CompilerError!void {
             const isVar = self.match(token.TokenType.VAR) catch |err| {
-                std.debug.print("ERROR: {?}\n", .{err});
+                std.debug.print("ERROR: {?} (match)\n", .{err});
                 return core.CompilerError.CompileError;
             };
 
             if (isVar) {
                 self.varDeclaration() catch |err| {
-                    std.debug.print("ERROR: {?}\n", .{err});
+                    std.debug.print("ERROR: {?} (varDeclaration)\n", .{err});
 
                     self.synchronize() catch |syncErr| {
-                        std.debug.print("ERROR: {?}\n", .{syncErr});
+                        std.debug.print("ERROR: {?} (syncronize)\n", .{syncErr});
                         return core.CompilerError.CompileError;
                     };
 
@@ -500,10 +499,10 @@ pub fn Parser() type {
                 };
             } else {
                 self.statement(false) catch |err| {
-                    std.debug.print("ERROR: {?}\n", .{err});
+                    std.debug.print("ERROR: {?} (statement)\n", .{err});
 
                     self.synchronize() catch |syncErr| {
-                        std.debug.print("ERROR: {?}\n", .{syncErr});
+                        std.debug.print("ERROR: {?} (synchronize)\n", .{syncErr});
                         return core.CompilerError.CompileError;
                     };
 
@@ -551,7 +550,7 @@ pub fn Parser() type {
             };
 
             self.emit(opcode.OpCode.POP) catch |err| {
-                std.debug.print("ERROR: {?}\n", .{err});
+                std.debug.print("ERROR: {?} (emit)\n", .{err});
                 return core.CompilerError.CompileError;
             };
         }
@@ -667,7 +666,7 @@ pub fn Parser() type {
                 return core.CompilerError.CompileError;
             };
             self.emit(opcode.OpCode.POP) catch |err| {
-                std.debug.print("ERROR: {any}\n", .{err});
+                std.debug.print("ERROR: {any} (emit)\n", .{err});
                 return core.CompilerError.CompileError;
             };
 
@@ -676,35 +675,35 @@ pub fn Parser() type {
             try self.statement(true);
 
             self.emitLoop(loopStart) catch |err| {
-                std.debug.print("ERROR: {any}\n", .{err});
+                std.debug.print("ERROR: {any} (emitLoop)\n", .{err});
                 return core.CompilerError.CompileError;
             };
 
             self.patchJump(exitJump) catch |err| {
-                std.debug.print("ERROR: {any}\n", .{err});
+                std.debug.print("ERROR: {any} (patchJump)\n", .{err});
                 return core.CompilerError.CompileError;
             };
             self.emit(opcode.OpCode.POP) catch |err| {
-                std.debug.print("ERROR: {any}\n", .{err});
+                std.debug.print("ERROR: {any} (emit)\n", .{err});
                 return core.CompilerError.CompileError;
             };
         }
 
         fn statement(self: *Self, onlyBlock: bool) core.CompilerError!void {
             const isPrintStatement = self.match(token.TokenType.PRINT) catch |err| {
-                std.debug.print("ERROR: {?}\n", .{err});
+                std.debug.print("ERROR: {?} (match print)\n", .{err});
                 return core.CompilerError.RuntimeError;
             };
             const isLeftBrace = self.match(token.TokenType.LEFT_BRACE) catch |err| {
-                std.debug.print("ERROR: {?}\n", .{err});
+                std.debug.print("ERROR: {?} (match brace)\n", .{err});
                 return core.CompilerError.RuntimeError;
             };
             const isIf = self.match(token.TokenType.IF) catch |err| {
-                std.debug.print("ERROR: {?}\n", .{err});
+                std.debug.print("ERROR: {?} (match if)\n", .{err});
                 return core.CompilerError.RuntimeError;
             };
             const isWhile = self.match(token.TokenType.WHILE) catch |err| {
-                std.debug.print("ERROR: {?}\n", .{err});
+                std.debug.print("ERROR: {?} (match while)\n", .{err});
                 return core.CompilerError.RuntimeError;
             };
 
@@ -723,7 +722,7 @@ pub fn Parser() type {
                 self.compiler.beginScope();
                 try self.block();
                 self.compiler.endScope() catch |err| {
-                    std.debug.print("ERROR: {?}\n", .{err});
+                    std.debug.print("ERROR: {?} (endScope)\n", .{err});
                     return core.CompilerError.CompileError;
                 };
             } else {

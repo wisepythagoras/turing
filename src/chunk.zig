@@ -112,7 +112,7 @@ pub fn Chunk() type {
             const memory = std.heap.page_allocator;
             const valuesBytes = try core.valuesToBytes(self);
             var res = memory.alloc(u8, valuesBytes.len + 1) catch |err| {
-                std.debug.print("ERROR: {?}\n", .{err});
+                std.debug.print("ERROR: {?} (alloc)\n", .{err});
                 return core.CompilerError.MemoryError;
             };
 
@@ -133,7 +133,7 @@ pub fn Chunk() type {
                     // std.debug.print("{any}\n", .{bytes});
                     len = len + bytes.len;
                     res = memory.realloc(res, len) catch |err| {
-                        std.debug.print("ERROR: {?}\n", .{err});
+                        std.debug.print("ERROR: {?} (realloc)\n", .{err});
                         return core.CompilerError.MemoryError;
                     };
 
@@ -367,7 +367,7 @@ fn instructionToBytes(chunk: *Chunk(), offset: *usize, verbose: bool) core.Compi
     return switch (opCode) {
         .RETURN => {
             const retRes = opCode.toBytes() catch |err| {
-                std.debug.print("ERROR: {?}\n", .{err});
+                std.debug.print("ERROR: {?} (toBytes)\n", .{err});
                 return core.CompilerError.MemoryError;
             };
             offset.* += 1;
@@ -385,7 +385,7 @@ fn instructionToBytes(chunk: *Chunk(), offset: *usize, verbose: bool) core.Compi
         // },
         .NEG, .ADD, .MUL, .DIV, .SUB, .XOR, .MOD, .POW, .AND, .NOT, .EQ, .NE, .GT, .GE, .LT, .LE, .FALSE, .TRUE, .NIL, .OUT, .POP, .DEFG, .GETG, .SETG, .GETL, .SETL => {
             const opRes = opCode.toBytes() catch |err| {
-                std.debug.print("ERROR: {?}\n", .{err});
+                std.debug.print("ERROR: {?} (toBytes)\n", .{err});
                 return core.CompilerError.MemoryError;
             };
             offset.* += 1;
@@ -430,8 +430,7 @@ fn disassembleInstruction(chunk: *Chunk(), offset: usize) core.CompilerError!usi
             return core.simpleInstruction(opCodeStr, offset);
         },
         .JWF, .JMP, .LOOP => {
-            // TODO: Fix.
-            return core.simpleInstruction(opCodeStr, offset);
+            return core.branchInstruction(opCodeStr, chunk, offset);
         },
     };
 }

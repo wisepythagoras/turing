@@ -2,6 +2,8 @@
     let i = 10;
 
     while i > 0 {
+        # TODO: This only works the first time. Check POPs.
+        # let label = 'i = ' + i;
         print(i);
         i = i - 1;
     }

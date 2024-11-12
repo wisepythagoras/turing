@@ -56,7 +56,7 @@ pub fn main() !void {
             };
         } else {
             var comp = compiler.Compiler().init(source, myVm.chunk, verbose) catch |err| {
-                std.debug.print("ERROR: {?}\n", .{err});
+                std.debug.print("ERROR: {?} (compiler init)\n", .{err});
                 std.process.exit(1);
             };
             comp.parser.setCompiler(&comp);
