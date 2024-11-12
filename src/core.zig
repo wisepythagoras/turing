@@ -149,8 +149,8 @@ pub fn Value() type {
                 return if (self.val.boolean) "true" else "false";
             }
 
-            var buf: [256]u8 = undefined;
-            const str = std.fmt.bufPrint(&buf, "{}", .{self.val.number}) catch {
+            const memory = std.heap.page_allocator;
+            const str = std.fmt.allocPrint(memory, "{d}", .{self.val.number}) catch {
                 return "";
             };
 
@@ -232,8 +232,11 @@ pub fn addOp(a: Value(), b: Value(), _: ?opcode.OpCode) !Value() {
 
     const aStr = a.toString();
     const bStr = b.toString();
+
+    // Free the memory.
     _ = a.destroy();
     _ = b.destroy();
+
     const memory = std.heap.page_allocator;
 
     const buf = memory.alloc(u8, aStr.len + bStr.len) catch {
@@ -243,18 +246,14 @@ pub fn addOp(a: Value(), b: Value(), _: ?opcode.OpCode) !Value() {
     const str = std.fmt.bufPrint(buf, "{s}{s}", .{ aStr, bStr }) catch {
         return CompilerError.RuntimeError;
     };
-    const strObj = object.String().init(str);
 
-    if (object.Object().init(strObj)) |obj| {
-        const o = memory.create(object.Object()) catch {
-            return CompilerError.MemoryError;
-        };
-        o.* = obj;
+    return utils.strToObject(str) catch |err| {
+        if (err == CompilerError.RuntimeError) {
+            return CompilerError.RuntimeError;
+        }
 
-        return Value().initObj(o);
-    }
-
-    return Value().initNil();
+        return CompilerError.MemoryError;
+    };
 }
 
 pub fn subOp(a: Value(), b: Value(), _: ?opcode.OpCode) !Value() {
