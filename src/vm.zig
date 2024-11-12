@@ -59,6 +59,9 @@ pub fn VM() type {
         pub fn run(self: *Self) core.CompilerError!void {
             var offset: usize = 0;
 
+            // const sl = try self.chunk.code.toOwnedSlice();
+            // sl.ptr = 1;
+
             while (offset < self.chunk.code.items.len) {
                 const byte = self.chunk.code.items[offset][0];
 

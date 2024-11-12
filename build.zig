@@ -30,6 +30,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+    lib.linkSystemLibrary("c");
 
     lib.root_module.addImport("clap", module);
 
@@ -44,6 +45,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+    exe.linkSystemLibrary("c");
 
     exe.root_module.addImport("clap", module);
 

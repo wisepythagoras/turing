@@ -690,20 +690,8 @@ pub fn Parser() type {
         }
 
         fn statement(self: *Self, onlyBlock: bool) core.CompilerError!void {
-            const isPrintStatement = self.match(token.TokenType.PRINT) catch |err| {
-                std.debug.print("ERROR: {?} (match print)\n", .{err});
-                return core.CompilerError.RuntimeError;
-            };
             const isLeftBrace = self.match(token.TokenType.LEFT_BRACE) catch |err| {
                 std.debug.print("ERROR: {?} (match brace)\n", .{err});
-                return core.CompilerError.RuntimeError;
-            };
-            const isIf = self.match(token.TokenType.IF) catch |err| {
-                std.debug.print("ERROR: {?} (match if)\n", .{err});
-                return core.CompilerError.RuntimeError;
-            };
-            const isWhile = self.match(token.TokenType.WHILE) catch |err| {
-                std.debug.print("ERROR: {?} (match while)\n", .{err});
                 return core.CompilerError.RuntimeError;
             };
 
@@ -712,19 +700,41 @@ pub fn Parser() type {
                 return core.CompilerError.SyntaxError;
             }
 
-            if (isPrintStatement) {
-                try self.printStatement();
-            } else if (isIf) {
-                try self.ifStatement();
-            } else if (isWhile) {
-                try self.whileStatement();
-            } else if (isLeftBrace) {
+            if (isLeftBrace) {
                 self.compiler.beginScope();
                 try self.block();
                 self.compiler.endScope() catch |err| {
                     std.debug.print("ERROR: {?} (endScope)\n", .{err});
                     return core.CompilerError.CompileError;
                 };
+                return;
+            }
+
+            const isPrintStatement = self.match(token.TokenType.PRINT) catch |err| {
+                std.debug.print("ERROR: {?} (match print)\n", .{err});
+                return core.CompilerError.RuntimeError;
+            };
+
+            if (isPrintStatement) {
+                return self.printStatement();
+            }
+
+            const isIf = self.match(token.TokenType.IF) catch |err| {
+                std.debug.print("ERROR: {?} (match if)\n", .{err});
+                return core.CompilerError.RuntimeError;
+            };
+
+            if (isIf) {
+                return self.ifStatement();
+            }
+
+            const isWhile = self.match(token.TokenType.WHILE) catch |err| {
+                std.debug.print("ERROR: {?} (match while)\n", .{err});
+                return core.CompilerError.RuntimeError;
+            };
+
+            if (isWhile) {
+                return self.whileStatement();
             } else {
                 try self.expressionStatement();
             }

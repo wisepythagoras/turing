@@ -332,6 +332,23 @@ pub fn Chunk() type {
 
                             break :blk;
                         },
+                        opcode.OpCode.JWF.toU8(), opcode.OpCode.JMP.toU8(), opcode.OpCode.LOOP.toU8() => blk: {
+                            const opCode = try opcode.OpCode.fromU8(b);
+
+                            if (self.verbose) {
+                                std.debug.print("{any} {d}\n", .{ opCode, bytes[i + 1] });
+                            }
+
+                            try self.writeOpCode(opCode, 0);
+                            try self.writeByte(bytes[i + 1], 0);
+                            try self.writeByte(bytes[i + 2], 0);
+                            try self.writeByte(bytes[i + 3], 0);
+                            try self.writeByte(bytes[i + 4], 0);
+
+                            i += 4;
+
+                            break :blk;
+                        },
                         else => blk: {
                             const opCode = opcode.OpCode.fromU8(b) catch |err| {
                                 std.debug.print("ERROR: Unrecognized opcode \"{d}\". {?}\n", .{ b, err });
@@ -376,13 +393,18 @@ fn instructionToBytes(chunk: *Chunk(), offset: *usize, verbose: bool) core.Compi
         .CONSTANT, .CONSTANT_16 => {
             return core.constToBytes(chunk, opCode, offset);
         },
-        // .DEFG, .GETG, .SETG, .GETL, .SETL => {
-        //     return core.constToBytes(chunk, opCode, offset);
-        // },
-        // .CONSTANT_16 => {
-        //     offset.* += 3;
-        //     return [3]u8{opCode.toBytes()};
-        // },
+        .JWF, .JMP, .LOOP => {
+            const res = [5]u8{
+                @as(u8, @intFromEnum(opCode)),
+                try core.readValueIdx(chunk, offset.*),
+                try core.readValueIdx(chunk, offset.* + 1),
+                try core.readValueIdx(chunk, offset.* + 2),
+                try core.readValueIdx(chunk, offset.* + 3),
+            };
+            offset.* += 5;
+
+            return &res;
+        },
         .NEG, .ADD, .MUL, .DIV, .SUB, .XOR, .MOD, .POW, .AND, .NOT, .EQ, .NE, .GT, .GE, .LT, .LE, .FALSE, .TRUE, .NIL, .OUT, .POP, .DEFG, .GETG, .SETG, .GETL, .SETL => {
             const opRes = opCode.toBytes() catch |err| {
                 std.debug.print("ERROR: {?} (toBytes)\n", .{err});
@@ -390,10 +412,6 @@ fn instructionToBytes(chunk: *Chunk(), offset: *usize, verbose: bool) core.Compi
             };
             offset.* += 1;
             return opRes;
-        },
-        else => {
-            std.debug.print("ERROR: ? {?}\n", .{opCode});
-            return core.CompilerError.InvalidOperation;
         },
     };
 }

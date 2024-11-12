@@ -1,5 +1,5 @@
 {
-    let i = 10;
+    let i = 10000;
 
     while i > 0 {
         let label = 'i = ' + i;
