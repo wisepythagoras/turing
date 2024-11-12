@@ -498,8 +498,8 @@ pub fn VM() type {
                     },
                     opcode.OpCode.LOOP.toU8() => blk: {
                         const newOffset = try core.readRaw32(self.chunk, offset);
-                        offset -= newOffset;
                         offset += 5;
+                        offset -= newOffset;
 
                         break :blk core.InterpretResults.CONTINUE;
                     },
