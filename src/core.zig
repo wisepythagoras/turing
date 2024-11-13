@@ -166,11 +166,11 @@ pub fn Value() type {
             var str: []u8 = undefined;
 
             if (floored != self.val.number) {
-                str = std.fmt.allocPrint(memory, "{d}", .{self.val.number}) catch {
+                str = std.fmt.allocPrint(memory, "{d:.6}", .{self.val.number}) catch {
                     return "";
                 };
             } else {
-                str = std.fmt.allocPrint(memory, "{d:.0}", .{self.val.number}) catch {
+                str = std.fmt.allocPrint(memory, "{d}", .{@as(i64, @intFromFloat(self.val.number))}) catch {
                     return "";
                 };
             }
