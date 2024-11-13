@@ -2,9 +2,9 @@
     let i = 10000;
 
     while i > 0 {
-        # let label = 'i = ' + i;
-        # print(label);
-        print(i);
+        let label = 'i = ' + i;
+        print(label);
+        #print(i);
         i = i - 1;
     }
     print(1.123101);

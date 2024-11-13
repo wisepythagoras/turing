@@ -7,7 +7,6 @@ const cLib = @cImport({
     @cDefine("_NO_CRT_STDIO_INLINE", "1");
     @cInclude("stdio.h");
     @cInclude("stdlib.h");
-    @cInclude("string.h");
 });
 
 pub const InterpretResults = enum(u8) {
@@ -163,9 +162,18 @@ pub fn Value() type {
 
             // TODO: This seems to be wasteful and it underperforms.
             const memory = std.heap.page_allocator;
-            const str = std.fmt.allocPrint(memory, "{d}", .{self.val.number}) catch {
-                return "";
-            };
+            const floored = @floor(self.val.number);
+            var str: []u8 = undefined;
+
+            if (floored != self.val.number) {
+                str = std.fmt.allocPrint(memory, "{d}", .{self.val.number}) catch {
+                    return "";
+                };
+            } else {
+                str = std.fmt.allocPrint(memory, "{d:.0}", .{self.val.number}) catch {
+                    return "";
+                };
+            }
 
             return str;
         }
