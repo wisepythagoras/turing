@@ -6,19 +6,19 @@ pub const OpCode = enum(u8) {
     RETURN,
     CONSTANT,
     CONSTANT_16,
-    NEG,
-    ADD,
-    SUB,
-    DIV,
-    MUL,
-    MOD,
-    NIL,
-    TRUE,
-    FALSE,
-    XOR,
-    POW,
-    AND,
-    NOT,
+    NEG, // Negate (3)
+    ADD, // Add (4)
+    SUB, // Subtract (5)
+    DIV, // Divide (6)
+    MUL, // Multiply (7)
+    MOD, // Modulo (8)
+    NIL, // Nil/null (9)
+    TRUE, // True (10)
+    FALSE, // False (11)
+    XOR, // Exclusive or (12)
+    POW, // Power (13)
+    AND, // Logic and (14)
+    NOT, // Not (15)
     EQ, // Equal (16)
     NE, // Not equal (17)
     GT, // Greater than (18)

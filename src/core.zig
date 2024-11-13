@@ -3,6 +3,12 @@ const chunk = @import("chunk.zig");
 const object = @import("object.zig");
 const opcode = @import("opcode.zig");
 const utils = @import("utils.zig");
+const cLib = @cImport({
+    @cDefine("_NO_CRT_STDIO_INLINE", "1");
+    @cInclude("stdio.h");
+    @cInclude("stdlib.h");
+    @cInclude("string.h");
+});
 
 pub const InterpretResults = enum(u8) {
     OK,
@@ -124,7 +130,13 @@ pub fn Value() type {
 
         pub fn print(self: Self) void {
             if (self.vType == ValueType.NUMBER) {
-                std.debug.print("{d}\n", .{self.val.number});
+                const a = @floor(self.val.number);
+
+                if (a != self.val.number) {
+                    _ = cLib.printf("%f\n", self.val.number);
+                } else {
+                    _ = cLib.printf("%.0f\n", self.val.number);
+                }
             } else if (self.vType == ValueType.BOOL) {
                 var valToPrint: []const u8 = "true";
 
@@ -149,6 +161,7 @@ pub fn Value() type {
                 return if (self.val.boolean) "true" else "false";
             }
 
+            // TODO: This seems to be wasteful and it underperforms.
             const memory = std.heap.page_allocator;
             const str = std.fmt.allocPrint(memory, "{d}", .{self.val.number}) catch {
                 return "";
@@ -217,6 +230,7 @@ pub const CompilerError = error{
     Redeclaration,
 };
 
+/// TODO: This function seems to be underperforming.
 pub fn addOp(a: Value(), b: Value(), _: ?opcode.OpCode) !Value() {
     if (a.vType != ValueType.NUMBER or b.vType != ValueType.NUMBER) {
         if ((a.vType == ValueType.OBJECT and a.val.object.objType != object.ObjectType.STRING) or
