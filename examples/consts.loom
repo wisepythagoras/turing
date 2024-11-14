@@ -1,0 +1,15 @@
+const a = 123;
+
+# This should throw an error.
+a = 234;
+
+print (a);
+
+{
+    const abc = 'abc';
+    print(abc);
+
+    # This should also fail
+    abc = 123;
+    print(abc);
+}

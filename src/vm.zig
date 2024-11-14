@@ -96,13 +96,10 @@ pub fn VM() type {
                             break :blk core.InterpretResults.RUNTIME_ERROR;
                         }
                     },
-                    // opcode.OpCode.CONSTANT_16.toU8() => blk: {
-                    //     // TODO: Implement!
-                    //     offset += 3;
-                    //     break :blk core.InterpretResults.CONTINUE;
-                    // },
                     opcode.OpCode.DEFG.toU8() => blk: {
-                        const size = self.chunk.code.items[offset + 1][0];
+                        const data = self.chunk.code.items[offset + 1][0];
+                        const isConst = data >> 7 == 1;
+                        const size = data & ((1 << 7) - 1);
                         var targetGetter: core.GetterFn = core.readValue;
                         const is16 = size == opcode.OpCode.CONSTANT_16.toU8();
 
@@ -118,7 +115,10 @@ pub fn VM() type {
                             }
 
                             if (self.pop()) |val| {
-                                self.globals.put(varName.toString(), val) catch |err| {
+                                var v = val;
+                                v.setIsImmutable(isConst);
+
+                                self.globals.put(varName.toString(), v) catch |err| {
                                     std.debug.print("ERROR: {?}\n", .{err});
                                     break :blk core.InterpretResults.COMPILE_ERROR;
                                 };
@@ -143,8 +143,6 @@ pub fn VM() type {
 
                         if (targetGetter(self.chunk, offset + 1)) |varName| {
                             offset += if (is16) 4 else 3;
-
-                            // std.debug.print("{any} {s}\n", .{ size, varName.val.object.toString() });
 
                             if (!varName.isString()) {
                                 break :blk core.InterpretResults.RUNTIME_ERROR;
@@ -182,8 +180,10 @@ pub fn VM() type {
                                 break :blk core.InterpretResults.RUNTIME_ERROR;
                             }
 
-                            if (self.globals.get(varName.toString())) |value| {
-                                _ = value; // TODO: Check here if it's a constant in the future.
+                            if (self.globals.get(varName.toString())) |existingVal| {
+                                if (existingVal.immutable) {
+                                    break :blk core.InterpretResults.ASSIGN_TO_CONST;
+                                }
 
                                 if (self.peek()) |val| {
                                     self.globals.put(varName.toString(), val) catch |err| {
@@ -250,7 +250,13 @@ pub fn VM() type {
                             }
 
                             if (self.peek()) |val| {
-                                self.stack.items[@as(usize, @intFromFloat(slot.val.number))] = val;
+                                const idx = @as(usize, @intFromFloat(slot.val.number));
+
+                                if (slot.immutable) {
+                                    break :blk core.InterpretResults.ASSIGN_TO_CONST;
+                                }
+
+                                self.stack.items[idx] = val;
                             } else {
                                 std.debug.print("ERROR: Memory corruption. No value\n", .{});
                                 break :blk core.InterpretResults.RUNTIME_ERROR;
@@ -514,7 +520,10 @@ pub fn VM() type {
 
                 if (result == core.InterpretResults.OK) {
                     break;
-                } else if (result == core.InterpretResults.RUNTIME_ERROR) {
+                } else if (result == core.InterpretResults.CONTINUE) {
+                    continue;
+                } else {
+                    std.debug.print("ERROR: {any}\n", .{result});
                     return core.CompilerError.RuntimeError;
                 }
             }

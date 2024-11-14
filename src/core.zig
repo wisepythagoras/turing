@@ -16,6 +16,7 @@ pub const InterpretResults = enum(u8) {
     RUNTIME_ERROR,
     SYNTAX_ERROR,
     UNEXPECTED_VALUE,
+    ASSIGN_TO_CONST,
 };
 
 pub const ValueType = enum(u8) {
@@ -45,22 +46,26 @@ pub fn Value() type {
         // number: f64,
         vType: ValueType,
         val: ValueUnion,
+        immutable: bool,
 
         pub fn init(val: anytype) ?Self {
             if (@TypeOf(val) == bool) {
                 return Self{
                     .val = ValueUnion{ .boolean = val },
                     .vType = ValueType.BOOL,
+                    .immutable = false,
                 };
             } else if (@TypeOf(val) == f64) {
                 return Self{
                     .val = ValueUnion{ .number = val },
                     .vType = ValueType.NUMBER,
+                    .immutable = false,
                 };
             } else if (@TypeOf(val) == object.Object()) {
                 return Self{
                     .val = ValueUnion{ .object = val },
                     .vType = ValueType.OBJECT,
+                    .immutable = false,
                 };
             }
 
@@ -72,6 +77,7 @@ pub fn Value() type {
                 // .number = num,
                 .val = ValueUnion{ .number = num },
                 .vType = ValueType.NUMBER,
+                .immutable = false,
             };
         }
 
@@ -79,6 +85,7 @@ pub fn Value() type {
             return Self{
                 .val = ValueUnion{ .boolean = b },
                 .vType = ValueType.BOOL,
+                .immutable = false,
             };
         }
 
@@ -86,6 +93,7 @@ pub fn Value() type {
             return Self{
                 .val = ValueUnion{ .number = 0 },
                 .vType = ValueType.NIL,
+                .immutable = false,
             };
         }
 
@@ -93,7 +101,12 @@ pub fn Value() type {
             return Self{
                 .val = ValueUnion{ .object = obj },
                 .vType = ValueType.OBJECT,
+                .immutable = false,
             };
+        }
+
+        pub fn setIsImmutable(self: *Self, isConst: bool) void {
+            self.immutable = isConst;
         }
 
         pub fn isNumber(self: Self) bool {
@@ -236,6 +249,7 @@ pub const CompilerError = error{
     ExpectExpression,
     MemoryError,
     Redeclaration,
+    AssignToConst,
 };
 
 /// TODO: This function seems to be underperforming.

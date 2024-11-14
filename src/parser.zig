@@ -213,18 +213,24 @@ pub fn Parser() type {
         }
 
         /// Emits the necessary bytecode to represent the variable declaration.
-        pub fn defineVariable(self: *Self, value: core.Value()) !void {
+        pub fn defineVariable(self: *Self, value: core.Value(), isConst: bool) !void {
             try self.emit(opcode.OpCode.DEFG);
+            var isConstBit: u8 = 0;
 
-            if (self.chunk.values.items.len > 255) {
-                try self.emit(opcode.OpCode.CONSTANT_16);
-            } else {
-                try self.emit(opcode.OpCode.CONSTANT);
+            if (isConst) {
+                isConstBit = 1;
             }
 
-            // TODO: Check here how many items we have. Depending on the byte size of the index, we should
-            // be adding a byte in between the value index and the opcode to signify how many bytes we have
-            // allocated to the index. This should also be taken into account in SETG/L and GETG/L as well.
+            const mutByte: u8 = isConstBit << 7;
+
+            if (self.chunk.values.items.len > 255) {
+                const opByte = opcode.OpCode.CONSTANT_16.toU8();
+                try self.emitByte(mutByte | opByte);
+            } else {
+                const opByte = opcode.OpCode.CONSTANT.toU8();
+                try self.emitByte(mutByte | opByte);
+            }
+
             try self.chunk.emitConstant(value);
         }
 
@@ -374,8 +380,8 @@ pub fn Parser() type {
             try self.patchJump(endJump);
         }
 
-        fn declareVariable(self: *Self, name: *token.Token()) !void {
-            const localVar = local.Local().new(name, 0);
+        fn declareVariable(self: *Self, name: *token.Token(), isConst: bool) !void {
+            const localVar = local.Local().new(name, 0, isConst);
 
             for (0..self.compiler.localCount) |index| {
                 // TODO: Maybe there's a logic issue here, but I'm too tired to understand it.
@@ -401,7 +407,7 @@ pub fn Parser() type {
             self.compiler.localCount += 1;
         }
 
-        fn parseVariable(self: *Self) core.CompilerError!core.Value() {
+        fn parseVariable(self: *Self, isConst: bool) core.CompilerError!core.Value() {
             _ = self.consume(token.TokenType.IDENTIFIER) catch |err| {
                 std.debug.print("ERROR: Expect variable name. {?}\n", .{err});
                 return core.CompilerError.CompileError;
@@ -418,7 +424,7 @@ pub fn Parser() type {
                     };
 
                     tokenPtr.* = t;
-                    try self.declareVariable(tokenPtr);
+                    try self.declareVariable(tokenPtr, isConst);
 
                     // For local variables we don't care to store the variable name. So we just need
                     // to return a dummy value here, which is nil in our case, since we don't care
@@ -437,8 +443,8 @@ pub fn Parser() type {
 
         /// A variable declaration looks something like this: `let myVar = expression;`.
         /// TODO: Handle constants as well.
-        fn varDeclaration(self: *Self) core.CompilerError!void {
-            const v = self.parseVariable() catch |err| {
+        fn varDeclaration(self: *Self, isConst: bool) core.CompilerError!void {
+            const v = self.parseVariable(isConst) catch |err| {
                 return err;
             };
 
@@ -470,7 +476,7 @@ pub fn Parser() type {
             // So basically we don't need to do anything else. The temporary value on the stack
             // becomes the local variable.
             if (self.compiler.scopeDepth == 0) {
-                self.defineVariable(v) catch |err| {
+                self.defineVariable(v, isConst) catch |err| {
                     std.debug.print("ERROR: varDeclaration(): {?}\n", .{err});
                     return core.CompilerError.CompileError;
                 };
@@ -485,9 +491,13 @@ pub fn Parser() type {
                 std.debug.print("ERROR: {?} (match)\n", .{err});
                 return core.CompilerError.CompileError;
             };
+            const isConst = self.match(token.TokenType.CONST) catch |err| {
+                std.debug.print("ERROR: {?} (match)\n", .{err});
+                return core.CompilerError.CompileError;
+            };
 
-            if (isVar) {
-                self.varDeclaration() catch |err| {
+            if (isVar or isConst) {
+                self.varDeclaration(isConst) catch |err| {
                     std.debug.print("ERROR: {?} (varDeclaration)\n", .{err});
 
                     self.synchronize() catch |syncErr| {
@@ -793,12 +803,19 @@ pub fn Parser() type {
             };
             tokenPtr.* = t;
 
-            if (self.compiler.resolveLocalVar(tokenPtr)) |idx| {
+            var isLocal = false;
+            var localVar: *local.Local() = undefined;
+
+            if (self.compiler.resolveLocalVar(tokenPtr)) |tup| {
+                localVar = tup[0];
+                const idx = tup[1];
+
                 getOp = opcode.OpCode.GETL;
                 setOp = opcode.OpCode.SETL;
 
                 value = core.Value().initNumber(@as(f64, @floatFromInt(idx)));
                 memory.destroy(tokenPtr);
+                isLocal = true;
             } else {
                 getOp = opcode.OpCode.GETG;
                 setOp = opcode.OpCode.SETG;
@@ -820,6 +837,10 @@ pub fn Parser() type {
                 }
 
                 if (canAssign and isEqual) {
+                    if (isLocal and localVar.immutable) {
+                        return core.CompilerError.AssignToConst;
+                    }
+
                     try self.expression();
 
                     try self.emit(setOp);

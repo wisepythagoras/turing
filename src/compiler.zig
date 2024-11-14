@@ -112,13 +112,21 @@ pub fn Compiler() type {
         }
 
         /// Resolve a local variable by its name.
-        pub fn resolveLocalVar(self: *Self, name: *token.Token()) ?usize {
+        pub fn resolveLocalVar(self: *Self, name: *token.Token()) ?local.LocalTuple {
             for (0..self.localCount) |index| {
                 const i = (self.localCount - 1) - index;
                 const lv = self.locals.items[i];
 
                 if (name.equals(lv.name, self.source) and lv.depth > 0) {
-                    return i;
+                    const memory = std.heap.c_allocator;
+                    const lvPtr = memory.create(local.Local()) catch |err| {
+                        std.debug.print("ERROR: {?} (create ptr)\n", .{err});
+                        return null;
+                    };
+
+                    lvPtr.* = lv;
+
+                    return .{ lvPtr, i };
                 }
             }
 
