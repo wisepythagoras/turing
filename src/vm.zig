@@ -98,8 +98,12 @@ pub fn VM() type {
                     },
                     opcode.OpCode.DEFG.toU8() => blk: {
                         const data = self.chunk.code.items[offset + 1][0];
+
+                        // The DEFG instruction packs two things into the first byte: The size of the address
+                        // and whether it's a constant or not.
                         const isConst = data >> 7 == 1;
                         const size = data & ((1 << 7) - 1);
+
                         var targetGetter: core.GetterFn = core.readValue;
                         const is16 = size == opcode.OpCode.CONSTANT_16.toU8();
 

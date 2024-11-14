@@ -221,6 +221,9 @@ pub fn Parser() type {
                 isConstBit = 1;
             }
 
+            // I had to be a little creative here, so I hid whether it's a constant or not
+            // AND the type of value it is in the same byte, just to avoid adding another
+            // byte to the code.
             const mutByte: u8 = isConstBit << 7;
 
             if (self.chunk.values.items.len > 255) {
