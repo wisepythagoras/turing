@@ -262,15 +262,18 @@ pub fn addOp(a: Value(), b: Value(), _: ?opcode.OpCode) !Value() {
     //_ = a.destroy();
     //_ = b.destroy();
 
-    const memory = std.heap.page_allocator;
-
-    const buf = memory.alloc(u8, aStr.len + bStr.len) catch {
+    const memory = std.heap.c_allocator; //std.heap.page_allocator;
+    const str: []const u8 = std.mem.concat(memory, u8, &[_][]const u8{ aStr, bStr }) catch {
         return CompilerError.MemoryError;
     };
 
-    const str = std.fmt.bufPrint(buf, "{s}{s}", .{ aStr, bStr }) catch {
-        return CompilerError.RuntimeError;
-    };
+    // const buf = memory.alloc(u8, aStr.len + bStr.len) catch {
+    //     return CompilerError.MemoryError;
+    // };
+
+    // const str = std.fmt.bufPrint(buf, "{s}{s}", .{ aStr, bStr }) catch {
+    //     return CompilerError.RuntimeError;
+    // };
 
     return utils.strToObject(str) catch |err| {
         if (err == CompilerError.RuntimeError) {
