@@ -394,16 +394,20 @@ fn instructionToBytes(chunk: *Chunk(), offset: *usize, verbose: bool) core.Compi
             return core.constToBytes(chunk, opCode, offset);
         },
         .JWF, .JMP, .LOOP => {
-            const res = [5]u8{
-                @as(u8, @intFromEnum(opCode)),
-                try core.readValueIdx(chunk, offset.*),
-                try core.readValueIdx(chunk, offset.* + 1),
-                try core.readValueIdx(chunk, offset.* + 2),
-                try core.readValueIdx(chunk, offset.* + 3),
+            const memory = std.heap.c_allocator;
+            const buf = memory.alloc(u8, 5) catch {
+                return core.CompilerError.MemoryError;
             };
+
+            buf[0] = @as(u8, @intFromEnum(opCode));
+            buf[1] = try core.readValueIdx(chunk, offset.*);
+            buf[2] = try core.readValueIdx(chunk, offset.* + 1);
+            buf[3] = try core.readValueIdx(chunk, offset.* + 2);
+            buf[4] = try core.readValueIdx(chunk, offset.* + 3);
+
             offset.* += 5;
 
-            return &res;
+            return buf;
         },
         .NEG, .ADD, .MUL, .DIV, .SUB, .XOR, .MOD, .POW, .AND, .NOT, .EQ, .NE, .GT, .GE, .LT, .LE, .FALSE, .TRUE, .NIL, .OUT, .POP, .DEFG, .GETG, .SETG, .GETL, .SETL => {
             const opRes = opCode.toBytes() catch |err| {
