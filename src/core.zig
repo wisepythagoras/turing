@@ -118,7 +118,7 @@ pub fn Value() type {
 
         pub fn destroy(self: Self) bool {
             if (self.vType == ValueType.OBJECT) {
-                const memory = std.heap.page_allocator;
+                const memory = std.heap.c_allocator;
                 memory.destroy(self.val.object);
 
                 return true;
@@ -161,7 +161,7 @@ pub fn Value() type {
             }
 
             // TODO: This seems to be wasteful and it underperforms.
-            const memory = std.heap.page_allocator;
+            const memory = std.heap.c_allocator;
             const floored = @floor(self.val.number);
             var str: []u8 = undefined;
 
@@ -187,7 +187,7 @@ pub fn Value() type {
                 };
             }
 
-            const memory = std.heap.page_allocator;
+            const memory = std.heap.c_allocator;
 
             if (self.vType == ValueType.BOOL) {
                 const res = memory.alloc(u8, 1) catch |err| {
@@ -262,18 +262,10 @@ pub fn addOp(a: Value(), b: Value(), _: ?opcode.OpCode) !Value() {
     //_ = a.destroy();
     //_ = b.destroy();
 
-    const memory = std.heap.c_allocator; //std.heap.page_allocator;
+    const memory = std.heap.c_allocator;
     const str: []const u8 = std.mem.concat(memory, u8, &[_][]const u8{ aStr, bStr }) catch {
         return CompilerError.MemoryError;
     };
-
-    // const buf = memory.alloc(u8, aStr.len + bStr.len) catch {
-    //     return CompilerError.MemoryError;
-    // };
-
-    // const str = std.fmt.bufPrint(buf, "{s}{s}", .{ aStr, bStr }) catch {
-    //     return CompilerError.RuntimeError;
-    // };
 
     return utils.strToObject(str) catch |err| {
         if (err == CompilerError.RuntimeError) {
@@ -470,7 +462,7 @@ pub fn booleanInstruction(name: []const u8, c: *chunk.Chunk(), offset: usize) Co
 }
 
 pub fn valuesToBytes(c: *chunk.Chunk()) CompilerError![]const u8 {
-    const memory = std.heap.page_allocator;
+    const memory = std.heap.c_allocator;
     var res = memory.alloc(u8, 0) catch |err| {
         std.debug.print("ERROR: {?} (alloc)\n", .{err});
         return CompilerError.MemoryError;
@@ -510,7 +502,7 @@ pub fn constToBytes(c: *chunk.Chunk(), opCode: opcode.OpCode, offset: *usize) Co
     const size: usize = if (is16) 3 else 2;
     offset.* += size;
 
-    const memory = std.heap.page_allocator;
+    const memory = std.heap.c_allocator;
     const res = memory.alloc(u8, size) catch |err| {
         std.debug.print("ERROR: {?} (alloc)\n", .{err});
         return CompilerError.MemoryError;

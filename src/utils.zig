@@ -9,7 +9,7 @@ pub fn readFile(fName: []const u8) ![]u8 {
 
     var buf_reader = std.io.bufferedReader(turFile.reader());
     var in_stream = buf_reader.reader();
-    const allocator = std.heap.page_allocator;
+    const allocator = std.heap.c_allocator;
 
     if (turFile.getEndPos()) |size| {
         if (allocator.alloc(u8, size)) |buf| {
@@ -53,7 +53,7 @@ pub fn strToObject(str: []const u8) !core.Value() {
     const strObj = object.String().init(str);
 
     if (object.Object().init(strObj)) |obj| {
-        const memory = std.heap.page_allocator;
+        const memory = std.heap.c_allocator;
         const o = try memory.create(object.Object());
         o.* = obj;
 
@@ -65,7 +65,7 @@ pub fn strToObject(str: []const u8) !core.Value() {
 
 /// Concatenate two strings (`[]const u8`).
 pub fn concatStrs(a: []const u8, b: []const u8) []const u8 {
-    const memory = std.heap.page_allocator;
+    const memory = std.heap.c_allocator;
     var result = memory.alloc(u8, a.len + b.len) catch unreachable;
 
     std.mem.copyForwards(u8, result[0..a.len], a);

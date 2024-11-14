@@ -47,7 +47,7 @@ pub fn Object() type {
 
         /// Returns the bytes that comprise this object.
         pub fn toBytes(self: Self) ![]const u8 {
-            const memory = std.heap.page_allocator;
+            const memory = std.heap.c_allocator;
 
             if (self.objType == ObjectType.STRING) {
                 const buf = try memory.alloc(u8, self.val.string.len + 1);

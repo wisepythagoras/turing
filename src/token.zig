@@ -143,7 +143,7 @@ pub fn Token() type {
 
         pub fn toString(self: Self, source: []u8) ![]u8 {
             var len = tokenSizes[self.tokenType.toUsize()];
-            const allocator = std.heap.page_allocator;
+            const allocator = std.heap.c_allocator;
 
             if (len == 0) {
                 // TODO: This is temporary.

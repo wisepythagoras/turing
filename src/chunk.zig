@@ -109,7 +109,7 @@ pub fn Chunk() type {
         pub fn toBytes(self: *Self) core.CompilerError![]const u8 {
             var offsetVal: usize = 0;
             const offset = &offsetVal;
-            const memory = std.heap.page_allocator;
+            const memory = std.heap.c_allocator;
             const valuesBytes = try core.valuesToBytes(self);
             var res = memory.alloc(u8, valuesBytes.len + 1) catch |err| {
                 std.debug.print("ERROR: {?} (alloc)\n", .{err});
@@ -179,7 +179,7 @@ pub fn Chunk() type {
                 std.debug.print("{any}\n", .{bytes});
             }
 
-            const memory = std.heap.page_allocator;
+            const memory = std.heap.c_allocator;
 
             while (i < bytes.len) {
                 const b = bytes[i];

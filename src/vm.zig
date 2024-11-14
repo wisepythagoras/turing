@@ -16,7 +16,7 @@ pub fn VM() type {
         /// up memory. `defer myVm.destroy()` is possible.
         pub fn init(verbose: bool) !Self {
             // TODO: To be used to print the stack trace and disassemble as we run through bytecode.
-            const allocator = std.heap.page_allocator;
+            const allocator = std.heap.c_allocator;
 
             if (allocator.create(chunk.Chunk())) |memory| {
                 const newChunk = chunk.Chunk().init(allocator, verbose);
@@ -552,7 +552,7 @@ pub fn VM() type {
 
         pub fn resetStack(self: *Self) void {
             self.stack = std.ArrayList(core.Value()).init(
-                std.heap.page_allocator,
+                std.heap.c_allocator,
             );
         }
 
@@ -560,7 +560,7 @@ pub fn VM() type {
             self.chunk.destroy();
             self.globals.deinit();
             self.stack.deinit();
-            std.heap.page_allocator.destroy(self.chunk);
+            std.heap.c_allocator.destroy(self.chunk);
         }
     };
 }

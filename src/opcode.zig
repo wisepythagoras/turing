@@ -38,7 +38,7 @@ pub const OpCode = enum(u8) {
 
     // https://ziglearn.org/chapter-2/#formatting
     pub fn toString(self: Self) []const u8 {
-        const allocator = std.heap.page_allocator;
+        const allocator = std.heap.c_allocator;
 
         if (std.fmt.allocPrint(allocator, "{?}", .{self})) |string| {
             return string;
@@ -49,7 +49,7 @@ pub const OpCode = enum(u8) {
     }
 
     pub fn toBytes(self: Self) ![]const u8 {
-        const memory = std.heap.page_allocator;
+        const memory = std.heap.c_allocator;
         const buf = try memory.alloc(u8, 1);
         buf[0] = @as(u8, @intFromEnum(self));
 

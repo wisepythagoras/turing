@@ -411,7 +411,7 @@ pub fn Parser() type {
                 const str = self.source[(t.pos)..(t.pos + t.size)];
 
                 if (self.compiler.scopeDepth > 0) {
-                    const memory = std.heap.page_allocator;
+                    const memory = std.heap.c_allocator;
                     const tokenPtr = memory.create(token.Token()) catch |err| {
                         std.debug.print("ERROR: {?} (create ptr)\n", .{err});
                         return core.CompilerError.MemoryError;
@@ -764,7 +764,7 @@ pub fn Parser() type {
                 const strObj = object.String().init(str);
 
                 if (object.Object().init(strObj)) |obj| {
-                    const memory = std.heap.page_allocator;
+                    const memory = std.heap.c_allocator;
                     const o = try memory.create(object.Object());
                     o.* = obj;
                     // const o = @as(*object.Object(), @ptrCast(@constCast(&obj)));
@@ -786,7 +786,7 @@ pub fn Parser() type {
             var setOp: opcode.OpCode = undefined;
             var value: core.Value() = undefined;
 
-            const memory = std.heap.page_allocator;
+            const memory = std.heap.c_allocator;
             const tokenPtr = memory.create(token.Token()) catch |err| {
                 std.debug.print("ERROR: {?}\n", .{err});
                 return core.CompilerError.MemoryError;
