@@ -7,8 +7,7 @@ const compiler = @import("compiler.zig");
 const utils = @import("utils.zig");
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    const memory = std.heap.c_allocator;
 
     // https://github.com/Hejsil/zig-clap
     const params = comptime clap.parseParamsComptime(
@@ -23,7 +22,7 @@ pub fn main() !void {
     var diag = clap.Diagnostic{};
     var res = clap.parse(clap.Help, &params, clap.parsers.default, .{
         .diagnostic = &diag,
-        .allocator = gpa.allocator(),
+        .allocator = memory,
     }) catch |err| {
         diag.report(std.io.getStdErr().writer(), err) catch {};
         return err;
@@ -33,7 +32,7 @@ pub fn main() !void {
     const verbose = res.args.verbose != 0;
 
     if (res.args.help != 0) {
-        var list = std.ArrayList(u8).init(gpa.allocator());
+        var list = std.ArrayList(u8).init(memory);
         defer list.deinit();
         try clap.help(list.writer(), clap.Help, &params, clap.HelpOptions{});
         std.debug.print("{s}\n", .{list.items});
