@@ -714,7 +714,7 @@ pub fn Parser() type {
                 try self.expressionStatement();
             }
 
-            const loopStart = self.chunk.code.items.len;
+            var loopStart = self.chunk.code.items.len;
             var exitJump: usize = undefined;
             var hasExitJump = false;
 
@@ -732,6 +732,32 @@ pub fn Parser() type {
                     return core.CompilerError.CompileError;
                 };
                 hasExitJump = true;
+            }
+
+            // Implement increment clause.
+            if (!try self.check(token.TokenType.LEFT_BRACE)) {
+                const bodyJump = self.emitJump(opcode.OpCode.JMP) catch |err| {
+                    std.debug.print("ERROR: Failed to emit jump: {any}\n", .{err});
+                    return core.CompilerError.CompileError;
+                };
+                const incStart = self.chunk.code.items.len;
+
+                try self.expression();
+                self.emit(opcode.OpCode.POP) catch |err| {
+                    std.debug.print("ERROR: {any} (emit)\n", .{err});
+                    return core.CompilerError.CompileError;
+                };
+
+                self.emitLoop(loopStart) catch |err| {
+                    std.debug.print("ERROR: {any} (emitLoop)\n", .{err});
+                    return core.CompilerError.CompileError;
+                };
+                loopStart = incStart;
+
+                self.patchJump(bodyJump) catch |err| {
+                    std.debug.print("ERROR: {any} (patchJump)\n", .{err});
+                    return core.CompilerError.CompileError;
+                };
             }
 
             // TODO: For a break or continue statement maybe the exit jump location needs to be
