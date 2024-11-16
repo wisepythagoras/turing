@@ -715,7 +715,8 @@ pub fn Parser() type {
             }
 
             const loopStart = self.chunk.code.items.len;
-            var exitJump: i32 = -1;
+            var exitJump: usize = undefined;
+            var hasExitJump = false;
 
             // Conditional clause.
             if (!try self.match(token.TokenType.SEMICOLON)) {
@@ -730,6 +731,7 @@ pub fn Parser() type {
                     std.debug.print("ERROR: {any} (emit)\n", .{err});
                     return core.CompilerError.CompileError;
                 };
+                hasExitJump = true;
             }
 
             // TODO: For a break or continue statement maybe the exit jump location needs to be
@@ -743,7 +745,7 @@ pub fn Parser() type {
 
             // Since the conditional is optional and we may not have an exit, check here for it
             // and then patch the jump.
-            if (exitJump != -1) {
+            if (hasExitJump) {
                 self.patchJump(exitJump) catch |err| {
                     std.debug.print("ERROR: {any} (patchJump)\n", .{err});
                     return core.CompilerError.CompileError;
@@ -754,7 +756,10 @@ pub fn Parser() type {
                 };
             }
 
-            self.compiler.endScope();
+            self.compiler.endScope() catch |err| {
+                std.debug.print("ERROR: {?} (endScope)\n", .{err});
+                return core.CompilerError.CompileError;
+            };
         }
 
         fn statement(self: *Self, onlyBlock: bool) core.CompilerError!void {
