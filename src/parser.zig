@@ -718,10 +718,7 @@ pub fn Parser() type {
         }
 
         fn statement(self: *Self, onlyBlock: bool) core.CompilerError!void {
-            const isLeftBrace = self.match(token.TokenType.LEFT_BRACE) catch |err| {
-                std.debug.print("ERROR: {?} (match brace)\n", .{err});
-                return core.CompilerError.RuntimeError;
-            };
+            const isLeftBrace = try self.match(token.TokenType.LEFT_BRACE);
 
             if (onlyBlock and !isLeftBrace) {
                 std.debug.print("ERROR: '{c}' expected.\n", .{'{'});
@@ -736,41 +733,13 @@ pub fn Parser() type {
                     return core.CompilerError.CompileError;
                 };
                 return;
-            }
-
-            const isPrintStatement = self.match(token.TokenType.PRINT) catch |err| {
-                std.debug.print("ERROR: {?} (match print)\n", .{err});
-                return core.CompilerError.RuntimeError;
-            };
-
-            if (isPrintStatement) {
+            } else if (try self.match(token.TokenType.PRINT)) {
                 return self.printStatement();
-            }
-
-            const isIf = self.match(token.TokenType.IF) catch |err| {
-                std.debug.print("ERROR: {?} (match if)\n", .{err});
-                return core.CompilerError.RuntimeError;
-            };
-
-            if (isIf) {
+            } else if (try self.match(token.TokenType.IF)) {
                 return self.ifStatement();
-            }
-
-            const isWhile = self.match(token.TokenType.WHILE) catch |err| {
-                std.debug.print("ERROR: {?} (match while)\n", .{err});
-                return core.CompilerError.RuntimeError;
-            };
-
-            if (isWhile) {
+            } else if (try self.match(token.TokenType.WHILE)) {
                 return self.whileStatement();
-            }
-
-            const isFor = self.match(token.TokenType.FOR) catch |err| {
-                std.debug.print("ERROR: {?} (match for)\n", .{err});
-                return core.CompilerError.RuntimeError;
-            };
-
-            if (isFor) {
+            } else if (try self.match(token.TokenType.FOR)) {
                 return self.forStatement();
             } else {
                 try self.expressionStatement();
@@ -1026,7 +995,10 @@ pub fn Parser() type {
             while (true) {
                 if (self.scanner.scanToken()) |t| {
                     self.current = t;
-                    const tokenStr = try t.toString(self.source);
+                    const tokenStr = t.toString(self.source) catch |err| {
+                        std.debug.print("ERROR: advance(): {any}\n", .{err});
+                        return core.CompilerError.MemoryError;
+                    };
 
                     if (self.verbose) {
                         std.debug.print("\t{?} <= {s} adv\n", .{
