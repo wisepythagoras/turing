@@ -702,6 +702,21 @@ pub fn Parser() type {
             };
         }
 
+        fn forStatement(self: *Self) core.CompilerError!void {
+            _ = try self.consume(token.TokenType.SEMICOLON);
+
+            const loopStart = self.chunk.code.items.len;
+
+            _ = try self.consume(token.TokenType.SEMICOLON);
+
+            try self.statement(true);
+
+            self.emitLoop(loopStart) catch |err| {
+                std.debug.print("ERROR: {any} (emitLoop)\n", .{err});
+                return core.CompilerError.CompileError;
+            };
+        }
+
         fn statement(self: *Self, onlyBlock: bool) core.CompilerError!void {
             const isLeftBrace = self.match(token.TokenType.LEFT_BRACE) catch |err| {
                 std.debug.print("ERROR: {?} (match brace)\n", .{err});
@@ -748,6 +763,15 @@ pub fn Parser() type {
 
             if (isWhile) {
                 return self.whileStatement();
+            }
+
+            const isFor = self.match(token.TokenType.FOR) catch |err| {
+                std.debug.print("ERROR: {?} (match for)\n", .{err});
+                return core.CompilerError.RuntimeError;
+            };
+
+            if (isFor) {
+                return self.forStatement();
             } else {
                 try self.expressionStatement();
             }
