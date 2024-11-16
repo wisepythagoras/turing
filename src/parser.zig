@@ -703,18 +703,58 @@ pub fn Parser() type {
         }
 
         fn forStatement(self: *Self) core.CompilerError!void {
-            _ = try self.consume(token.TokenType.SEMICOLON);
+            self.compiler.beginScope();
+
+            // Initializer clause.
+            if (try self.match(token.TokenType.SEMICOLON)) {
+                // No initializer. Move to the next section.
+            } else if (try self.match(token.TokenType.VAR)) {
+                try self.varDeclaration(false);
+            } else {
+                try self.expressionStatement();
+            }
 
             const loopStart = self.chunk.code.items.len;
+            var exitJump: i32 = -1;
 
-            _ = try self.consume(token.TokenType.SEMICOLON);
+            // Conditional clause.
+            if (!try self.match(token.TokenType.SEMICOLON)) {
+                try self.expression();
+                _ = try self.consume(token.TokenType.SEMICOLON);
 
+                exitJump = self.emitJump(opcode.OpCode.JWF) catch |err| {
+                    std.debug.print("ERROR: Failed to emit jump: {any}\n", .{err});
+                    return core.CompilerError.CompileError;
+                };
+                self.emit(opcode.OpCode.POP) catch |err| {
+                    std.debug.print("ERROR: {any} (emit)\n", .{err});
+                    return core.CompilerError.CompileError;
+                };
+            }
+
+            // TODO: For a break or continue statement maybe the exit jump location needs to be
+            // passed into the statement and all the way down to wherever it's called.
             try self.statement(true);
 
             self.emitLoop(loopStart) catch |err| {
                 std.debug.print("ERROR: {any} (emitLoop)\n", .{err});
                 return core.CompilerError.CompileError;
             };
+
+            // Since the conditional is optional and we may not have an exit, check here for it
+            // and then patch the jump.
+            if (exitJump != -1) {
+                self.patchJump(exitJump) catch |err| {
+                    std.debug.print("ERROR: {any} (patchJump)\n", .{err});
+                    return core.CompilerError.CompileError;
+                };
+                self.emit(opcode.OpCode.POP) catch |err| {
+                    std.debug.print("ERROR: {any} (emit)\n", .{err});
+                    return core.CompilerError.CompileError;
+                };
+            }
+
+            self.compiler.endScope();
         }
 
         fn statement(self: *Self, onlyBlock: bool) core.CompilerError!void {
