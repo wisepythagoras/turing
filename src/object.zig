@@ -1,7 +1,9 @@
 const std = @import("std");
+const func = @import("function.zig");
 
 pub const ObjectType = enum(u8) {
     STRING,
+    FUNCTION,
 
     pub fn fromU8(byte: u8) !ObjectType {
         return std.meta.intToEnum(@This(), byte);
@@ -10,6 +12,7 @@ pub const ObjectType = enum(u8) {
 
 pub const ObjectValueUnion = union {
     string: String(),
+    func: func.Function(),
 };
 
 pub fn Object() type {
@@ -27,6 +30,13 @@ pub fn Object() type {
                         .string = val,
                     },
                 };
+            } else if (@TypeOf(val) == func.Function()) {
+                return Self{
+                    .objType = ObjectType.FUNCTION,
+                    .val = ObjectValueUnion{
+                        .func = val,
+                    },
+                };
             }
 
             return null;
@@ -40,6 +50,8 @@ pub fn Object() type {
 
             if (self.objType == ObjectType.STRING) {
                 return self.val.string.isEqual(&obj.val.string);
+            } else if (self.objType == ObjectType.FUNCTION) {
+                return self.val.func.isEqual(&obj.val.func);
             }
 
             return false;
@@ -62,6 +74,8 @@ pub fn Object() type {
                 }
 
                 return buf;
+            } else if (self.objType == ObjectType.FUNCTION) {
+                // TODO: Implement.
             }
 
             return "";
@@ -71,6 +85,8 @@ pub fn Object() type {
         pub fn toString(self: Self) []const u8 {
             if (self.objType == ObjectType.STRING) {
                 return self.val.string.chars;
+            } else if (self.objType == ObjectType.FUNCTION) {
+                return "function";
             }
 
             return "";
