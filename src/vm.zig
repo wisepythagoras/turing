@@ -15,25 +15,18 @@ pub fn VM() type {
         /// Creates a new VM instance. The `destroy` function should be run in order to free
         /// up memory. `defer myVm.destroy()` is possible.
         pub fn init(verbose: bool) !Self {
-            // TODO: To be used to print the stack trace and disassemble as we run through bytecode.
             const allocator = std.heap.c_allocator;
+            const newChunk = try chunk.Chunk().initPtr(verbose);
+            const stack = std.ArrayList(core.Value()).init(
+                allocator,
+            );
 
-            if (allocator.create(chunk.Chunk())) |memory| {
-                const newChunk = chunk.Chunk().init(allocator, verbose);
-                memory.* = newChunk;
-                const stack = std.ArrayList(core.Value()).init(
-                    allocator,
-                );
-
-                return Self{
-                    .chunk = memory,
-                    .stack = stack,
-                    .verbose = verbose,
-                    .globals = std.StringHashMap(core.Value()).init(allocator),
-                };
-            } else |err| {
-                return err;
-            }
+            return Self{
+                .chunk = newChunk,
+                .stack = stack,
+                .verbose = verbose,
+                .globals = std.StringHashMap(core.Value()).init(allocator),
+            };
         }
 
         /// Add a value onto the stack.

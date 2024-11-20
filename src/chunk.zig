@@ -32,6 +32,17 @@ pub fn Chunk() type {
             };
         }
 
+        pub fn initPtr(verbose: bool) !*Self {
+            const allocator = std.heap.c_allocator;
+
+            if (allocator.create(Chunk())) |ptr| {
+                ptr.* = Self.init(allocator, verbose);
+                return ptr;
+            } else |err| {
+                return err;
+            }
+        }
+
         /// This will destroy the instance and free any used memory.
         pub fn destroy(self: Self) void {
             self.code.deinit();
