@@ -22,6 +22,7 @@ pub fn Object() type {
         objType: ObjectType,
         val: ObjectValueUnion,
 
+        /// Create a new instance of an object.
         pub fn init(val: anytype) ?Self {
             if (@TypeOf(val) == String()) {
                 return Self{
@@ -91,6 +92,23 @@ pub fn Object() type {
 
             return "";
         }
+
+        /// Returns whether this object is a string or not.
+        pub fn isString(self: Self) bool {
+            self.objType == ObjectType.STRING;
+        }
+
+        /// Returns whether this object is a function or not.
+        pub fn isFunction(self: Self) bool {
+            self.objType == ObjectType.FUNCTION;
+        }
+
+        /// Free the memory that was reserved by the underlying object.
+        pub fn destroy(self: *Self) void {
+            if (self.objType == ObjectType.FUNCTION) {
+                self.val.func.destroy();
+            }
+        }
     };
 }
 
@@ -101,6 +119,7 @@ pub fn String() type {
         len: usize,
         chars: []const u8,
 
+        /// Create a new instance of a string object.
         pub fn init(str: []const u8) Self {
             return Self{
                 .chars = str,
@@ -108,6 +127,7 @@ pub fn String() type {
             };
         }
 
+        /// Returns whether the current string object is equal to `obj`.
         pub fn isEqual(self: Self, obj: *String()) bool {
             return std.mem.eql(u8, obj.chars, self.chars);
         }
