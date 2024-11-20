@@ -44,7 +44,7 @@ pub fn Function() type {
             allocator.destroy(self.name);
         }
 
-        pub fn isEqual(self: *Self, func: *Function()) bool {
+        pub fn isEqual(self: Self, func: *Function()) bool {
             return self.name.isEqual(func.name);
         }
     };
