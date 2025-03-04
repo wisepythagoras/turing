@@ -41,8 +41,8 @@ pub fn main() !void {
 
     var entry: []const u8 = "index.loom";
 
-    if (res.positionals.len > 0) {
-        entry = res.positionals[0];
+    if (res.positionals.len > 0 and res.positionals[0].len > 0) {
+        entry = res.positionals[0][0];
     }
 
     var myVm = try vm.VM().init(verbose);
