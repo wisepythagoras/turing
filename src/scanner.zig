@@ -218,7 +218,7 @@ pub fn Scanner() type {
 
                     identifierToken.tokenType = newTokenType;
                 } else |err| {
-                    std.debug.print("ERROR: {?}\n", .{err});
+                    std.debug.print("ERROR: {any}\n", .{err});
                     return core.CompilerError.CompileError;
                 }
 

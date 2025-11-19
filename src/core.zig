@@ -195,7 +195,7 @@ pub fn Value() type {
         pub fn toBytes(self: Self) ![]const u8 {
             if (self.vType == ValueType.OBJECT) {
                 return self.val.object.toBytes() catch |err| {
-                    std.debug.print("ERROR: {?} (toBytes internal)\n", .{err});
+                    std.debug.print("ERROR: {any} (toBytes internal)\n", .{err});
                     return CompilerError.MemoryError; // TODO: Handle this better.
                 };
             }
@@ -204,7 +204,7 @@ pub fn Value() type {
 
             if (self.vType == ValueType.BOOL) {
                 const res = memory.alloc(u8, 1) catch |err| {
-                    std.debug.print("ERROR: {?} (value alloc)\n", .{err});
+                    std.debug.print("ERROR: {any} (value alloc)\n", .{err});
                     return CompilerError.MemoryError;
                 };
 
@@ -213,7 +213,7 @@ pub fn Value() type {
             }
 
             const res = memory.alloc(u8, 8) catch |err| {
-                std.debug.print("ERROR: {?} (value alloc)\n", .{err});
+                std.debug.print("ERROR: {any} (value alloc)\n", .{err});
                 return CompilerError.MemoryError;
             };
 
@@ -466,7 +466,7 @@ pub fn booleanInstruction(name: []const u8, c: *chunk.Chunk(), offset: usize) Co
     if (readValue(c, offset)) |constant| {
         if (constant.vType == ValueType.BOOL) {
             const b = constant.val.boolean;
-            std.debug.print("{s} = {?}\n", .{ name, b });
+            std.debug.print("{s} = {any}\n", .{ name, b });
         }
 
         return offset + 1;
@@ -478,7 +478,7 @@ pub fn booleanInstruction(name: []const u8, c: *chunk.Chunk(), offset: usize) Co
 pub fn valuesToBytes(c: *chunk.Chunk()) CompilerError![]const u8 {
     const memory = std.heap.c_allocator;
     var res = memory.alloc(u8, 0) catch |err| {
-        std.debug.print("ERROR: {?} (alloc)\n", .{err});
+        std.debug.print("ERROR: {any} (alloc)\n", .{err});
         return CompilerError.MemoryError;
     };
 
@@ -490,7 +490,7 @@ pub fn valuesToBytes(c: *chunk.Chunk()) CompilerError![]const u8 {
         len = len + val.len + 2;
 
         res = memory.realloc(res, len) catch |err| {
-            std.debug.print("ERROR: {?} (realloc)\n", .{err});
+            std.debug.print("ERROR: {any} (realloc)\n", .{err});
             return CompilerError.MemoryError;
         };
 
@@ -518,11 +518,11 @@ pub fn constToBytes(c: *chunk.Chunk(), opCode: opcode.OpCode, offset: *usize) Co
 
     const memory = std.heap.c_allocator;
     const res = memory.alloc(u8, size) catch |err| {
-        std.debug.print("ERROR: {?} (alloc)\n", .{err});
+        std.debug.print("ERROR: {any} (alloc)\n", .{err});
         return CompilerError.MemoryError;
     };
     const opCodeBytes = opCode.toBytes() catch |err| {
-        std.debug.print("ERROR: {?} (realloc)\n", .{err});
+        std.debug.print("ERROR: {any} (realloc)\n", .{err});
         return CompilerError.MemoryError;
     };
 

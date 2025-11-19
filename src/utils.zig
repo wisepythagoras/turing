@@ -3,27 +3,36 @@ const core = @import("core.zig");
 const object = @import("object.zig");
 
 /// Read a source file.
-pub fn readFile(fName: []const u8) ![]u8 {
-    var turFile = try std.fs.cwd().openFile(fName, .{});
-    defer turFile.close();
+pub fn readFile(f_name: []const u8) ![]u8 {
+    var file = try std.fs.cwd().openFile(f_name, .{});
+    defer file.close();
 
-    var buf_reader = std.io.bufferedReader(turFile.reader());
-    var in_stream = buf_reader.reader();
     const allocator = std.heap.c_allocator;
+    var buffer_list: std.ArrayList(u8) = .{};
+    var stat = try file.stat();
 
-    if (turFile.getEndPos()) |size| {
-        if (allocator.alloc(u8, size)) |buf| {
-            if (in_stream.read(buf)) |_| {
-                return buf;
-            } else |err| {
-                return err;
-            }
-        } else |err| {
-            return err;
-        }
-    } else |err| {
-        return err;
-    }
+    const buffer = try buffer_list.addManyAsSlice(allocator, stat.size);
+    try file.seekTo(0);
+
+    _ = try file.read(buffer);
+    return buffer;
+
+    // var buf_reader = std.io.bufferedReader(turFile.reader());
+    // var in_stream = buf_reader.reader();
+
+    // if (file.getEndPos()) |size| {
+    //     if (allocator.alloc(u8, size)) |buf| {
+    //         if (in_stream.read(buf)) |_| {
+    //             return buf;
+    //         } else |err| {
+    //             return err;
+    //         }
+    //     } else |err| {
+    //         return err;
+    //     }
+    // } else |err| {
+    //     return err;
+    // }
 }
 
 /// Checks if a character is a digit. This is either a 0-9 char or a decimal.

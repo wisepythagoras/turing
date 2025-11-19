@@ -20,9 +20,8 @@ pub fn Compiler() type {
         verbose: bool,
 
         pub fn init(source: []u8, c: *chunk.Chunk(), verbose: bool) !Self {
-            const memory = std.heap.c_allocator;
             const p = parser.Parser().init(c, source, verbose);
-            const locals = std.ArrayList(local.Local()).init(memory);
+            const locals: std.ArrayList(local.Local()) = .{};
 
             return Self{
                 .source = source,
@@ -43,11 +42,11 @@ pub fn Compiler() type {
         /// the parser so it runs them all at once. The problem with this approach is that it's going
         /// to be slower.
         pub fn scanAllTokens(self: *Self) !std.ArrayList(token.Token()) {
-            var tokens = std.ArrayList(token.Token()).init(std.heap.c_allocator);
+            var tokens: std.ArrayList(token.Token()) = .{};
 
             while (true) {
                 if (self.parser.getScanner().scanToken()) |t| {
-                    try tokens.append(t);
+                    try tokens.append(std.heap.c_allocator, t);
 
                     if (t.tokenType == token.TokenType.EOF) {
                         return tokens;
@@ -58,7 +57,7 @@ pub fn Compiler() type {
                     const tokenStr = try t.toString(self.source);
 
                     if (self.verbose) {
-                        std.debug.print("{?} <= {s}\n", .{
+                        std.debug.print("{any} <= {s}\n", .{
                             t.tokenType,
                             tokenStr,
                         });
@@ -120,7 +119,7 @@ pub fn Compiler() type {
                 if (name.equals(lv.name, self.source) and lv.depth > 0) {
                     const memory = std.heap.c_allocator;
                     const lvPtr = memory.create(local.Local()) catch |err| {
-                        std.debug.print("ERROR: {?} (create ptr)\n", .{err});
+                        std.debug.print("ERROR: {any} (create ptr)\n", .{err});
                         return null;
                     };
 

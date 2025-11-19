@@ -24,7 +24,8 @@ pub fn main() !void {
         .diagnostic = &diag,
         .allocator = memory,
     }) catch |err| {
-        diag.report(std.io.getStdErr().writer(), err) catch {};
+        // Report useful error and exit.
+        try diag.reportToFile(.stderr(), err);
         return err;
     };
     defer res.deinit();
@@ -32,10 +33,7 @@ pub fn main() !void {
     const verbose = res.args.verbose != 0;
 
     if (res.args.help != 0) {
-        var list = std.ArrayList(u8).init(memory);
-        defer list.deinit();
-        try clap.help(list.writer(), clap.Help, &params, clap.HelpOptions{});
-        std.debug.print("{s}\n", .{list.items});
+        try clap.helpToFile(.stderr(), clap.Help, &params, .{});
         std.process.exit(0);
     }
 
@@ -50,12 +48,12 @@ pub fn main() !void {
     if (utils.readFile(entry)) |source| {
         if (std.mem.eql(u8, std.fs.path.extension(entry), ".lb")) {
             myVm.chunk.loadBytecode(source) catch |err| {
-                std.debug.print("ERROR: Loading bytecode {?}\n", .{err});
+                std.debug.print("ERROR: Loading bytecode {any}\n", .{err});
                 std.process.exit(1);
             };
         } else {
             var comp = compiler.Compiler().init(source, myVm.chunk, verbose) catch |err| {
-                std.debug.print("ERROR: {?} (compiler init)\n", .{err});
+                std.debug.print("ERROR: {any} (compiler init)\n", .{err});
                 std.process.exit(1);
             };
             comp.parser.setCompiler(&comp);
@@ -66,12 +64,12 @@ pub fn main() !void {
                     std.debug.print("Program compiled successfully\n", .{});
                 }
             } else |err| {
-                std.debug.print("ERROR: compile(): {?}\n", .{err});
+                std.debug.print("ERROR: compile(): {any}\n", .{err});
                 return;
             }
         }
     } else |err| {
-        std.debug.print("{?}\n", .{err});
+        std.debug.print("{any}\n", .{err});
     }
 
     var ck = myVm.chunk;
@@ -98,16 +96,9 @@ pub fn main() !void {
         _ = try file.writeAll(bytes);
     } else {
         myVm.run() catch |err| {
-            std.debug.print("There was an error running \"{s}\": {?}\n", .{ entry, err });
+            std.debug.print("There was an error running \"{s}\": {any}\n", .{ entry, err });
         };
     }
 
     defer myVm.destroy();
-}
-
-test "simple test" {
-    const list = std.ArrayList(i32).init(std.testing.allocator);
-    defer list.deinit(); // try commenting this out and see if zig detects the memory leak!
-    try list.append(42);
-    try std.testing.expectEqual(@as(i32, 42), list.pop());
 }

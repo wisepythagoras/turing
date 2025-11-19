@@ -6,4 +6,4 @@ find . -regextype sed -regex '.*\.\(zig\|loom\)$' \
     -not -name 'main.js' \
     -not -path './zig-out/*' \
     -not -path './.zig-cache/*' \
-    -exec wc -l {} +
+    -exec wc -l {any} +

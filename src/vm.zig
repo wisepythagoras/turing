@@ -17,9 +17,7 @@ pub fn VM() type {
         pub fn init(verbose: bool) !Self {
             const allocator = std.heap.c_allocator;
             const newChunk = try chunk.Chunk().initPtr(verbose);
-            const stack = std.ArrayList(core.Value()).init(
-                allocator,
-            );
+            const stack: std.ArrayList(core.Value()) = .{};
 
             return Self{
                 .chunk = newChunk,
@@ -31,7 +29,7 @@ pub fn VM() type {
 
         /// Add a value onto the stack.
         pub fn push(self: *Self, constant: core.Value()) !void {
-            try self.stack.append(constant);
+            try self.stack.append(std.heap.c_allocator, constant);
         }
 
         /// Get and remove the last value on the stack.
@@ -79,13 +77,13 @@ pub fn VM() type {
                             }
 
                             self.push(constant) catch |err| {
-                                std.debug.print("ERROR: {?}\n", .{err});
+                                std.debug.print("ERROR: {any}\n", .{err});
                                 break :blk core.InterpretResults.RUNTIME_ERROR;
                             };
 
                             break :blk core.InterpretResults.CONTINUE;
                         } else |err| {
-                            std.debug.print("ERROR: {?}\n", .{err});
+                            std.debug.print("ERROR: {any}\n", .{err});
                             break :blk core.InterpretResults.RUNTIME_ERROR;
                         }
                     },
@@ -116,7 +114,7 @@ pub fn VM() type {
                                 v.setIsImmutable(isConst);
 
                                 self.globals.put(varName.toString(), v) catch |err| {
-                                    std.debug.print("ERROR: {?}\n", .{err});
+                                    std.debug.print("ERROR: {any}\n", .{err});
                                     break :blk core.InterpretResults.COMPILE_ERROR;
                                 };
                             } else {
@@ -125,7 +123,7 @@ pub fn VM() type {
 
                             break :blk core.InterpretResults.CONTINUE;
                         } else |err| {
-                            std.debug.print("ERROR: {?}\n", .{err});
+                            std.debug.print("ERROR: {any}\n", .{err});
                             break :blk core.InterpretResults.RUNTIME_ERROR;
                         }
                     },
@@ -147,7 +145,7 @@ pub fn VM() type {
 
                             if (self.globals.get(varName.toString())) |value| {
                                 self.push(value) catch |err| {
-                                    std.debug.print("ERROR: {?}\n", .{err});
+                                    std.debug.print("ERROR: {any}\n", .{err});
                                     break :blk core.InterpretResults.RUNTIME_ERROR;
                                 };
                             } else {
@@ -157,7 +155,7 @@ pub fn VM() type {
 
                             break :blk core.InterpretResults.CONTINUE;
                         } else |err| {
-                            std.debug.print("ERROR: {?}\n", .{err});
+                            std.debug.print("ERROR: {any}\n", .{err});
                             break :blk core.InterpretResults.RUNTIME_ERROR;
                         }
                     },
@@ -184,7 +182,7 @@ pub fn VM() type {
 
                                 if (self.peek()) |val| {
                                     self.globals.put(varName.toString(), val) catch |err| {
-                                        std.debug.print("ERROR: {?}\n", .{err});
+                                        std.debug.print("ERROR: {any}\n", .{err});
                                         break :blk core.InterpretResults.COMPILE_ERROR;
                                     };
                                 } else {
@@ -197,7 +195,7 @@ pub fn VM() type {
 
                             break :blk core.InterpretResults.CONTINUE;
                         } else |err| {
-                            std.debug.print("ERROR: {?}\n", .{err});
+                            std.debug.print("ERROR: {any}\n", .{err});
                             break :blk core.InterpretResults.RUNTIME_ERROR;
                         }
                     },
@@ -219,11 +217,11 @@ pub fn VM() type {
                             }
 
                             self.push(self.stack.items[@as(usize, @intFromFloat(slot.val.number))]) catch |err| {
-                                std.debug.print("ERROR: Memory corruption: {?}\n", .{err});
+                                std.debug.print("ERROR: Memory corruption: {any}\n", .{err});
                                 break :blk core.InterpretResults.RUNTIME_ERROR;
                             };
                         } else |err| {
-                            std.debug.print("ERROR: unspecified variable error. {?}\n", .{err});
+                            std.debug.print("ERROR: unspecified variable error. {any}\n", .{err});
                             break :blk core.InterpretResults.RUNTIME_ERROR;
                         }
 
@@ -259,7 +257,7 @@ pub fn VM() type {
                                 break :blk core.InterpretResults.RUNTIME_ERROR;
                             }
                         } else |err| {
-                            std.debug.print("ERROR: unspecified variable error. {?}\n", .{err});
+                            std.debug.print("ERROR: unspecified variable error. {any}\n", .{err});
                             break :blk core.InterpretResults.RUNTIME_ERROR;
                         }
 
@@ -279,7 +277,7 @@ pub fn VM() type {
                             constant.val.number *= -1;
 
                             self.push(constant) catch |err| {
-                                std.debug.print("ERROR: {?}\n", .{err});
+                                std.debug.print("ERROR: {any}\n", .{err});
                                 break :blk core.InterpretResults.RUNTIME_ERROR;
                             };
 
@@ -298,7 +296,7 @@ pub fn VM() type {
                             const newVal = core.Value().initBool(newRawVal);
 
                             self.push(newVal) catch |err| {
-                                std.debug.print("ERROR: {?}\n", .{err});
+                                std.debug.print("ERROR: {any}\n", .{err});
                                 break :blk core.InterpretResults.RUNTIME_ERROR;
                             };
 
@@ -541,7 +539,7 @@ pub fn VM() type {
                         return core.InterpretResults.COMPILE_ERROR;
                     };
                     self.push(newValue) catch |err| {
-                        std.debug.print("ERROR: {?}\n", .{err});
+                        std.debug.print("ERROR: {any}\n", .{err});
                         return core.InterpretResults.RUNTIME_ERROR;
                     };
 
@@ -557,7 +555,7 @@ pub fn VM() type {
         }
 
         pub fn resetStack(self: *Self) void {
-            self.stack = std.ArrayList(core.Value()).init(
+            self.stack = std.ArrayList(core.Value()).clearAndFree(
                 std.heap.c_allocator,
             );
         }
@@ -565,7 +563,7 @@ pub fn VM() type {
         pub fn destroy(self: *Self) void {
             self.chunk.destroy();
             self.globals.deinit();
-            self.stack.deinit();
+            self.stack.deinit(std.heap.c_allocator);
             std.heap.c_allocator.destroy(self.chunk);
         }
     };

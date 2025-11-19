@@ -15,6 +15,7 @@ pub fn Chunk() type {
 
         code: std.ArrayList(CodeTuple),
         values: std.ArrayList(core.Value()),
+        aloc: std.mem.Allocator,
         verbose: bool,
 
         // TODO: Keep a linked list of all objects for the purposes of garbage collection.
@@ -22,13 +23,14 @@ pub fn Chunk() type {
 
         /// Initialize the new Chunk.
         pub fn init(allocator: std.mem.Allocator, verbose: bool) Self {
-            const code = std.ArrayList(CodeTuple).init(allocator);
-            const values = std.ArrayList(core.Value()).init(allocator);
+            const code: std.ArrayList(CodeTuple) = .{};
+            const values: std.ArrayList(core.Value()) = .{};
 
             return Self{
                 .code = code,
                 .values = values,
                 .verbose = verbose,
+                .aloc = allocator,
             };
         }
 
@@ -44,9 +46,9 @@ pub fn Chunk() type {
         }
 
         /// This will destroy the instance and free any used memory.
-        pub fn destroy(self: Self) void {
-            self.code.deinit();
-            self.values.deinit();
+        pub fn destroy(self: *Self) void {
+            self.code.deinit(self.aloc);
+            self.values.deinit(self.aloc);
         }
 
         /// Writes a single opcode to the chunk.
@@ -55,18 +57,18 @@ pub fn Chunk() type {
                 const pos: u16 = @as(u16, @intCast(self.values.items.len));
 
                 if (pos > 255) {
-                    return self.code.append(.{ opcode.OpCode.CONSTANT_16.toU8(), line });
+                    return self.code.append(self.aloc, .{ opcode.OpCode.CONSTANT_16.toU8(), line });
                 }
             }
 
-            return self.code.append(.{ opCode.toU8(), line });
+            return self.code.append(self.aloc, .{ opCode.toU8(), line });
         }
 
         /// Converts a byte to an opcode and writes it to the chunk.
         pub fn writeByte(self: *Self, byte: u8, line: usize) !void {
             // const opCode = @as(opcode.OpCode, @enumFromInt(byte));
             // try self.writeOpCode(byte, line);
-            return self.code.append(.{ byte, line });
+            return self.code.append(self.aloc, .{ byte, line });
         }
 
         pub fn print(self: Self) void {
@@ -80,7 +82,7 @@ pub fn Chunk() type {
         }
 
         pub fn addConstant(self: *Self, constant: core.Value()) !usize {
-            if (self.values.append(constant)) {
+            if (self.values.append(self.aloc, constant)) {
                 return self.values.items.len;
             } else |err| {
                 return err;
@@ -123,7 +125,7 @@ pub fn Chunk() type {
             const memory = std.heap.c_allocator;
             const valuesBytes = try core.valuesToBytes(self);
             var res = memory.alloc(u8, valuesBytes.len + 1) catch |err| {
-                std.debug.print("ERROR: {?} (alloc)\n", .{err});
+                std.debug.print("ERROR: {any} (alloc)\n", .{err});
                 return core.CompilerError.MemoryError;
             };
 
@@ -144,7 +146,7 @@ pub fn Chunk() type {
                     // std.debug.print("{any}\n", .{bytes});
                     len = len + bytes.len;
                     res = memory.realloc(res, len) catch |err| {
-                        std.debug.print("ERROR: {?} (realloc)\n", .{err});
+                        std.debug.print("ERROR: {any} (realloc)\n", .{err});
                         return core.CompilerError.MemoryError;
                     };
 
@@ -362,7 +364,7 @@ pub fn Chunk() type {
                         },
                         else => blk: {
                             const opCode = opcode.OpCode.fromU8(b) catch |err| {
-                                std.debug.print("ERROR: Unrecognized opcode \"{d}\". {?}\n", .{ b, err });
+                                std.debug.print("ERROR: Unrecognized opcode \"{d}\". {any}\n", .{ b, err });
                                 break :blk;
                             };
 
@@ -389,13 +391,13 @@ fn instructionToBytes(chunk: *Chunk(), offset: *usize, verbose: bool) core.Compi
     const opCode = @as(opcode.OpCode, @enumFromInt(instruction[0]));
 
     if (verbose) {
-        std.debug.print("OPCODE: {?}\n", .{opCode});
+        std.debug.print("OPCODE: {any}\n", .{opCode});
     }
 
     return switch (opCode) {
         .RETURN => {
             const retRes = opCode.toBytes() catch |err| {
-                std.debug.print("ERROR: {?} (toBytes)\n", .{err});
+                std.debug.print("ERROR: {any} (toBytes)\n", .{err});
                 return core.CompilerError.MemoryError;
             };
             offset.* += 1;
@@ -422,7 +424,7 @@ fn instructionToBytes(chunk: *Chunk(), offset: *usize, verbose: bool) core.Compi
         },
         .NEG, .ADD, .MUL, .DIV, .SUB, .XOR, .MOD, .POW, .AND, .NOT, .EQ, .NE, .GT, .GE, .LT, .LE, .FALSE, .TRUE, .NIL, .OUT, .POP, .DEFG, .GETG, .SETG, .GETL, .SETL => {
             const opRes = opCode.toBytes() catch |err| {
-                std.debug.print("ERROR: {?} (toBytes)\n", .{err});
+                std.debug.print("ERROR: {any} (toBytes)\n", .{err});
                 return core.CompilerError.MemoryError;
             };
             offset.* += 1;

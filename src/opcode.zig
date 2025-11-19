@@ -40,10 +40,10 @@ pub const OpCode = enum(u8) {
     pub fn toString(self: Self) []const u8 {
         const allocator = std.heap.c_allocator;
 
-        if (std.fmt.allocPrint(allocator, "{?}", .{self})) |string| {
+        if (std.fmt.allocPrint(allocator, "{any}", .{self})) |string| {
             return string;
         } else |err| {
-            std.debug.print("{?}\n", .{err});
+            std.debug.print("{any}\n", .{err});
             return "";
         }
     }

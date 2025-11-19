@@ -246,7 +246,7 @@ pub fn Parser() type {
             _ = canAssign;
 
             if (self.verbose) {
-                std.debug.print("number() - {?}, {?}\n", .{ self.previous, self.current });
+                std.debug.print("number() - {any}, {any}\n", .{ self.previous, self.current });
             }
 
             if (self.previous) |prev| {
@@ -265,7 +265,7 @@ pub fn Parser() type {
             _ = canAssign;
 
             if (self.verbose) {
-                std.debug.print("unary() - {?}, {?}\n", .{ self.previous, self.current });
+                std.debug.print("unary() - {any}, {any}\n", .{ self.previous, self.current });
             }
 
             if (self.previous) |previous| {
@@ -293,7 +293,7 @@ pub fn Parser() type {
             _ = canAssign;
 
             if (self.verbose) {
-                std.debug.print("literal() {?}\n", .{self.previous});
+                std.debug.print("literal() {any}\n", .{self.previous});
             }
 
             if (self.previous) |prev| {
@@ -310,7 +310,7 @@ pub fn Parser() type {
             _ = canAssign;
 
             if (self.verbose) {
-                std.debug.print("binary() - {?}, {?}\n", .{ self.previous, self.current });
+                std.debug.print("binary() - {any}, {any}\n", .{ self.previous, self.current });
             }
 
             if (self.previous) |previous| {
@@ -344,7 +344,7 @@ pub fn Parser() type {
 
         pub fn expression(self: *Self) core.CompilerError!void {
             if (self.verbose) {
-                std.debug.print("expression() - {?}, {?}\n", .{ self.previous, self.current });
+                std.debug.print("expression() - {any}, {any}\n", .{ self.previous, self.current });
             }
 
             return self.parsePrecedence(Precedence.ASSIGNMENT);
@@ -403,8 +403,8 @@ pub fn Parser() type {
                 }
             }
 
-            self.compiler.locals.append(localVar) catch |err| {
-                std.debug.print("ERROR: {?} (append)\n", .{err});
+            self.compiler.locals.append(std.heap.c_allocator, localVar) catch |err| {
+                std.debug.print("ERROR: {any} (append)\n", .{err});
                 return core.CompilerError.CompileError;
             };
             self.compiler.localCount += 1;
@@ -412,7 +412,7 @@ pub fn Parser() type {
 
         fn parseVariable(self: *Self, isConst: bool) core.CompilerError!core.Value() {
             _ = self.consume(token.TokenType.IDENTIFIER) catch |err| {
-                std.debug.print("ERROR: Expect variable name. {?}\n", .{err});
+                std.debug.print("ERROR: Expect variable name. {any}\n", .{err});
                 return core.CompilerError.CompileError;
             };
 
@@ -422,7 +422,7 @@ pub fn Parser() type {
                 if (self.compiler.scopeDepth > 0) {
                     const memory = std.heap.c_allocator;
                     const tokenPtr = memory.create(token.Token()) catch |err| {
-                        std.debug.print("ERROR: {?} (create ptr)\n", .{err});
+                        std.debug.print("ERROR: {any} (create ptr)\n", .{err});
                         return core.CompilerError.MemoryError;
                     };
 
@@ -436,7 +436,7 @@ pub fn Parser() type {
                 }
 
                 return utils.strToObject(str) catch |err| {
-                    std.debug.print("ERROR: {?} (strToObject)\n", .{err});
+                    std.debug.print("ERROR: {any} (strToObject)\n", .{err});
                     return core.CompilerError.MemoryError;
                 };
             }
@@ -452,24 +452,24 @@ pub fn Parser() type {
             };
 
             const isEqual = self.match(token.TokenType.EQUAL) catch |err| {
-                std.debug.print("ERROR: {?} (isEqual)\n", .{err});
+                std.debug.print("ERROR: {any} (isEqual)\n", .{err});
                 return core.CompilerError.CompileError;
             };
 
             if (isEqual) {
                 self.expression() catch |err| {
-                    std.debug.print("ERROR: {?} (expression)\n", .{err});
+                    std.debug.print("ERROR: {any} (expression)\n", .{err});
                     return core.CompilerError.CompileError;
                 };
             } else {
                 self.emit(opcode.OpCode.NIL) catch |err| {
-                    std.debug.print("ERROR: {?} (emit)\n", .{err});
+                    std.debug.print("ERROR: {any} (emit)\n", .{err});
                     return core.CompilerError.CompileError;
                 };
             }
 
             _ = self.consume(token.TokenType.SEMICOLON) catch |err| {
-                std.debug.print("Expected ';' after variable declaration. {?}\n", .{err});
+                std.debug.print("Expected ';' after variable declaration. {any}\n", .{err});
                 return core.CompilerError.CompileError;
             };
 
@@ -480,7 +480,7 @@ pub fn Parser() type {
             // becomes the local variable.
             if (self.compiler.scopeDepth == 0) {
                 self.defineVariable(v, isConst) catch |err| {
-                    std.debug.print("ERROR: varDeclaration(): {?}\n", .{err});
+                    std.debug.print("ERROR: varDeclaration(): {any}\n", .{err});
                     return core.CompilerError.CompileError;
                 };
             } else {
@@ -491,20 +491,20 @@ pub fn Parser() type {
         /// Handle declarations of any kind, such as variables or just statements.
         pub fn declaration(self: *Self) core.CompilerError!void {
             const isVar = self.match(token.TokenType.VAR) catch |err| {
-                std.debug.print("ERROR: {?} (match)\n", .{err});
+                std.debug.print("ERROR: {any} (match)\n", .{err});
                 return core.CompilerError.CompileError;
             };
             const isConst = self.match(token.TokenType.CONST) catch |err| {
-                std.debug.print("ERROR: {?} (match)\n", .{err});
+                std.debug.print("ERROR: {any} (match)\n", .{err});
                 return core.CompilerError.CompileError;
             };
 
             if (isVar or isConst) {
                 self.varDeclaration(isConst) catch |err| {
-                    std.debug.print("ERROR: {?} (varDeclaration)\n", .{err});
+                    std.debug.print("ERROR: {any} (varDeclaration)\n", .{err});
 
                     self.synchronize() catch |syncErr| {
-                        std.debug.print("ERROR: {?} (syncronize)\n", .{syncErr});
+                        std.debug.print("ERROR: {any} (syncronize)\n", .{syncErr});
                         return core.CompilerError.CompileError;
                     };
 
@@ -512,10 +512,10 @@ pub fn Parser() type {
                 };
             } else {
                 self.statement(false) catch |err| {
-                    std.debug.print("ERROR: {?} (statement)\n", .{err});
+                    std.debug.print("ERROR: {any} (statement)\n", .{err});
 
                     self.synchronize() catch |syncErr| {
-                        std.debug.print("ERROR: {?} (synchronize)\n", .{syncErr});
+                        std.debug.print("ERROR: {any} (synchronize)\n", .{syncErr});
                         return core.CompilerError.CompileError;
                     };
 
@@ -558,36 +558,36 @@ pub fn Parser() type {
         fn expressionStatement(self: *Self) core.CompilerError!void {
             try self.expression();
             _ = self.consume(token.TokenType.SEMICOLON) catch |err| {
-                std.debug.print("Expected ';' after expression. {?}\n", .{err});
+                std.debug.print("Expected ';' after expression. {any}\n", .{err});
                 return core.CompilerError.CompileError;
             };
 
             self.emit(opcode.OpCode.POP) catch |err| {
-                std.debug.print("ERROR: {?} (emit)\n", .{err});
+                std.debug.print("ERROR: {any} (emit)\n", .{err});
                 return core.CompilerError.CompileError;
             };
         }
 
         fn printStatement(self: *Self) core.CompilerError!void {
             _ = self.consume(token.TokenType.LEFT_PAREN) catch |err| {
-                std.debug.print("Expected '(' after 'print'. {?}\n", .{err});
+                std.debug.print("Expected '(' after 'print'. {any}\n", .{err});
                 return core.CompilerError.CompileError;
             };
 
             try self.expression();
 
             _ = self.consume(token.TokenType.RIGHT_PAREN) catch |err| {
-                std.debug.print("Expected ')' after value or expression. {?}\n", .{err});
+                std.debug.print("Expected ')' after value or expression. {any}\n", .{err});
                 return core.CompilerError.CompileError;
             };
 
             _ = self.consume(token.TokenType.SEMICOLON) catch |err| {
-                std.debug.print("Expected ';' after statement. {?}\n", .{err});
+                std.debug.print("Expected ';' after statement. {any}\n", .{err});
                 return core.CompilerError.CompileError;
             };
 
             self.emit(opcode.OpCode.OUT) catch |err| {
-                std.debug.print("ERROR: {?}\n", .{err});
+                std.debug.print("ERROR: {any}\n", .{err});
                 return core.CompilerError.CompileError;
             };
         }
@@ -598,7 +598,7 @@ pub fn Parser() type {
             }
 
             _ = self.consume(token.TokenType.RIGHT_BRACE) catch |err| {
-                std.debug.print("ERROR: Expected '{c}' to close the block. {?}\n", .{ '}', err });
+                std.debug.print("ERROR: Expected '{c}' to close the block. {any}\n", .{ '}', err });
                 return err;
             };
         }
@@ -651,7 +651,7 @@ pub fn Parser() type {
             };
 
             const isElse = self.match(token.TokenType.ELSE) catch |err| {
-                std.debug.print("ERROR: {?}\n", .{err});
+                std.debug.print("ERROR: {any}\n", .{err});
                 return core.CompilerError.RuntimeError;
             };
 
@@ -783,7 +783,7 @@ pub fn Parser() type {
             }
 
             self.compiler.endScope() catch |err| {
-                std.debug.print("ERROR: {?} (endScope)\n", .{err});
+                std.debug.print("ERROR: {any} (endScope)\n", .{err});
                 return core.CompilerError.CompileError;
             };
         }
@@ -800,7 +800,7 @@ pub fn Parser() type {
                 self.compiler.beginScope();
                 try self.block();
                 self.compiler.endScope() catch |err| {
-                    std.debug.print("ERROR: {?} (endScope)\n", .{err});
+                    std.debug.print("ERROR: {any} (endScope)\n", .{err});
                     return core.CompilerError.CompileError;
                 };
                 return;
@@ -821,7 +821,7 @@ pub fn Parser() type {
             _ = canAssign;
 
             if (self.verbose) {
-                std.debug.print("grouping() - {?}, {?}\n", .{ self.previous, self.current });
+                std.debug.print("grouping() - {any}, {any}\n", .{ self.previous, self.current });
             }
 
             try self.expression();
@@ -847,7 +847,7 @@ pub fn Parser() type {
                     // const o = @as(*object.Object(), @ptrCast(@constCast(&obj)));
 
                     self.emitConstant(core.Value().initObj(o)) catch |err| {
-                        std.debug.print("ERROR: string(): {?}\n", .{err});
+                        std.debug.print("ERROR: string(): {any}\n", .{err});
                         return err;
                     };
 
@@ -865,7 +865,7 @@ pub fn Parser() type {
 
             const memory = std.heap.c_allocator;
             const tokenPtr = memory.create(token.Token()) catch |err| {
-                std.debug.print("ERROR: {?}\n", .{err});
+                std.debug.print("ERROR: {any}\n", .{err});
                 return core.CompilerError.MemoryError;
             };
             tokenPtr.* = t;
@@ -889,7 +889,7 @@ pub fn Parser() type {
 
                 const str = self.source[(t.pos)..(t.pos + t.size)];
                 value = utils.strToObject(str) catch |err| {
-                    std.debug.print("ERROR: {?}\n", .{err});
+                    std.debug.print("ERROR: {any}\n", .{err});
                     return core.CompilerError.MemoryError;
                 };
             }
@@ -935,19 +935,19 @@ pub fn Parser() type {
         /// within a parenthesis).
         fn parsePrecedence(self: *Self, prec: Precedence) core.CompilerError!void {
             if (self.verbose) {
-                std.debug.print("parsePrecedence() - {?}, {?}, {?}\n", .{ prec, self.previous, self.current });
+                std.debug.print("parsePrecedence() - {any}, {any}, {any}\n", .{ prec, self.previous, self.current });
             }
 
             // First we have to parse the prefix expression by reading the next token and
             // get the rule right after. This will give us the prefix operation.
             _ = self.advance() catch |err| {
-                std.debug.print("ERROR: advance(): {}\n", .{err});
+                std.debug.print("ERROR: advance(): {any}\n", .{err});
                 return core.CompilerError.CompileError;
             };
 
             if (self.previous) |t| {
                 const rule = t.tokenType.getRule() catch |err| {
-                    std.debug.print("ERROR: token.getRule(): {}\n", .{
+                    std.debug.print("ERROR: token.getRule(): {any}\n", .{
                         err,
                     });
                     return err;
@@ -968,32 +968,32 @@ pub fn Parser() type {
 
                 if (prefixRule == OperationType.GROUPING) {
                     self.grouping(canAssign) catch |err| {
-                        std.debug.print("ERROR: grouping(): {}\n", .{err});
+                        std.debug.print("ERROR: grouping(): {any}\n", .{err});
                         return core.CompilerError.CompileError;
                     };
                 } else if (prefixRule == OperationType.UNARY) {
                     self.unary(canAssign) catch |err| {
-                        std.debug.print("ERROR: unary(): {}\n", .{err});
+                        std.debug.print("ERROR: unary(): {any}\n", .{err});
                         return core.CompilerError.CompileError;
                     };
                 } else if (prefixRule == OperationType.NUMBER) {
                     self.number(canAssign) catch |err| {
-                        std.debug.print("ERROR: number(): {}\n", .{err});
+                        std.debug.print("ERROR: number(): {any}\n", .{err});
                         return core.CompilerError.CompileError;
                     };
                 } else if (prefixRule == OperationType.LITERAL) {
                     self.literal(canAssign) catch |err| {
-                        std.debug.print("ERROR: literal(): {}\n", .{err});
+                        std.debug.print("ERROR: literal(): {any}\n", .{err});
                         return core.CompilerError.CompileError;
                     };
                 } else if (prefixRule == OperationType.STRING) {
                     self.string(canAssign) catch |err| {
-                        std.debug.print("ERROR: string(): {}\n", .{err});
+                        std.debug.print("ERROR: string(): {any}\n", .{err});
                         return core.CompilerError.CompileError;
                     };
                 } else if (prefixRule == OperationType.VARIABLE) {
                     self.variable(canAssign) catch |err| {
-                        std.debug.print("ERROR: variable(): {}\n", .{err});
+                        std.debug.print("ERROR: variable(): {any}\n", .{err});
                         return core.CompilerError.CompileError;
                     };
                 }
@@ -1007,11 +1007,11 @@ pub fn Parser() type {
 
                     while (prec.toUsize() <= currentTokenRule[3].toUsize()) {
                         if (self.verbose) {
-                            std.debug.print("prec <= currentTokenPrec {?}\n", .{currentToken.tokenType});
+                            std.debug.print("prec <= currentTokenPrec {any}\n", .{currentToken.tokenType});
                         }
 
                         const newToken = self.advance() catch |err| {
-                            std.debug.print("ERROR: {}\n", .{err});
+                            std.debug.print("ERROR: {any}\n", .{err});
                             return core.CompilerError.CompileError;
                         };
 
@@ -1023,17 +1023,17 @@ pub fn Parser() type {
 
                         if (influxRule == OperationType.BINARY) {
                             self.binary(canAssign) catch |err| {
-                                std.debug.print("ERROR: {}\n", .{err});
+                                std.debug.print("ERROR: {any}\n", .{err});
                                 return core.CompilerError.CompileError;
                             };
                         } else if (influxRule == OperationType.AND) {
                             self.logicAnd(canAssign) catch |err| {
-                                std.debug.print("ERROR: {}\n", .{err});
+                                std.debug.print("ERROR: {any}\n", .{err});
                                 return core.CompilerError.CompileError;
                             };
                         } else if (influxRule == OperationType.OR) {
                             self.logicOr(canAssign) catch |err| {
-                                std.debug.print("ERROR: {}\n", .{err});
+                                std.debug.print("ERROR: {any}\n", .{err});
                                 return core.CompilerError.CompileError;
                             };
                         }
@@ -1049,7 +1049,7 @@ pub fn Parser() type {
                             return core.CompilerError.UnexpectedToken;
                         }
                     } else |err| {
-                        std.debug.print("ERROR: {?}\n", .{err});
+                        std.debug.print("ERROR: {any}\n", .{err});
                         return core.CompilerError.CompileError;
                     }
                 }
@@ -1058,7 +1058,7 @@ pub fn Parser() type {
 
         pub fn advance(self: *Self) !token.Token() {
             if (self.verbose) {
-                std.debug.print("advance() - {?}, {?}\n", .{ self.previous, self.current });
+                std.debug.print("advance() - {any}, {any}\n", .{ self.previous, self.current });
             }
 
             self.previous = self.current;
@@ -1072,7 +1072,7 @@ pub fn Parser() type {
                     };
 
                     if (self.verbose) {
-                        std.debug.print("\t{?} <= {s} adv\n", .{
+                        std.debug.print("\t{} <= {s} adv\n", .{
                             t.tokenType,
                             tokenStr,
                         });
@@ -1095,12 +1095,12 @@ pub fn Parser() type {
         pub fn consume(self: *Self, tokenType: token.TokenType) !token.Token() {
             if (self.current) |current| {
                 if (self.verbose) {
-                    std.debug.print("> {} = {} - {}\n", .{ current.tokenType, tokenType, self.scanner.pos });
+                    std.debug.print("> {any} = {any} - {any}\n", .{ current.tokenType, tokenType, self.scanner.pos });
                 }
 
                 if (current.tokenType == tokenType) {
                     return self.advance() catch |err| {
-                        std.debug.print("ERROR: {?}\n", .{err});
+                        std.debug.print("ERROR: {any}\n", .{err});
                         return core.CompilerError.CompileError;
                     };
                 } else {
@@ -1114,7 +1114,7 @@ pub fn Parser() type {
         /// Check if the current token is of a specific type.
         pub fn check(self: *Self, tokenType: token.TokenType) !bool {
             if (self.verbose) {
-                std.debug.print("check({?}) - {?}, {?}\n", .{ tokenType, self.previous, self.current });
+                std.debug.print("check({any}) - {any}, {any}\n", .{ tokenType, self.previous, self.current });
             }
 
             if (self.current) |curr| {
@@ -1127,7 +1127,7 @@ pub fn Parser() type {
         /// Match the current token to the token type and then advance.
         pub fn match(self: *Self, tokenType: token.TokenType) !bool {
             if (self.verbose) {
-                std.debug.print("match({?}) - {?}, {?}\n", .{ tokenType, self.previous, self.current });
+                std.debug.print("match({any}) - {any}, {any}\n", .{ tokenType, self.previous, self.current });
             }
 
             if (!try self.check(tokenType)) {
